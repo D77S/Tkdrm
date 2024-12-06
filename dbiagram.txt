@@ -1,0 +1,41 @@
+// Use DBML to define your database structure
+// Docs: https://dbml.dbdiagram.io/docs
+// https://dbdiagram.io/d
+
+enum keeper_levels {
+  rtu_tnp
+  custom_house
+  custom_post
+}
+
+Table keeper_levels {
+  id integer [primary key]
+  level keeper_levels
+}
+
+Table keeper_level_1 {
+  id integer [primary key]
+  code integer [not null, unique, note: 'Код т. органа']
+  title varchar [not null, unique, note: 'Название РТУ или термин "ТНП"']
+}
+
+Table keeper_level_2 {
+  id integer [primary key]
+  code integer [not null, unique, note: 'Код т. органа']
+  title varchar [not null, unique, note: 'Название таможни']
+  keeper_level_1_id integer [not null, ref: > keeper_level_1.id]
+}
+
+Table keeper_level_3 {
+  id integer [primary key]
+  code integer [not null, unique, note: 'Код т. органа']
+  title varchar [not null, unique, note: 'Название т. поста']
+  keeper_level_2_id integer [not null, ref: > keeper_level_2.id]
+}
+
+
+Table items {
+  id integer [primary key]
+  keeper_type integer [ref: > keeper_types.id]
+  keeper_id integer [ref: > keeper_level_1.id]
+}
