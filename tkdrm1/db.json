@@ -1,0 +1,392 @@
+[
+{
+  "model": "core.rtu",
+  "pk": 1,
+  "fields": {
+    "code": 10700000,
+    "title": "Дальневосточное таможенное управление",
+    "level": 1,
+    "upper_id": null
+  }
+},
+{
+  "model": "core.rtu",
+  "pk": 2,
+  "fields": {
+    "code": 10200000,
+    "title": "Северо-Западное таможенное управление",
+    "level": 1,
+    "upper_id": null
+  }
+},
+{
+  "model": "core.rtu",
+  "pk": 3,
+  "fields": {
+    "code": 10600000,
+    "title": "Сибирское таможенное управление",
+    "level": 1,
+    "upper_id": null
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 1,
+  "fields": {
+    "code": 10605000,
+    "title": "Алтайская таможня",
+    "level": 2,
+    "upper_id": 3
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 2,
+  "fields": {
+    "code": 10607000,
+    "title": "Иркутская таможня",
+    "level": 2,
+    "upper_id": 3
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 3,
+  "fields": {
+    "code": 10608000,
+    "title": "Кемеровская таможня",
+    "level": 2,
+    "upper_id": 3
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 4,
+  "fields": {
+    "code": 10718000,
+    "title": "Бурятская таможня",
+    "level": 2,
+    "upper_id": 1
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 5,
+  "fields": {
+    "code": 10702000,
+    "title": "Владивостокская таможня",
+    "level": 2,
+    "upper_id": 1
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 6,
+  "fields": {
+    "code": 10714000,
+    "title": "Находкинская таможня",
+    "level": 2,
+    "upper_id": 1
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 7,
+  "fields": {
+    "code": 10216000,
+    "title": "Балтийская таможня",
+    "level": 2,
+    "upper_id": 2
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 8,
+  "fields": {
+    "code": 10206000,
+    "title": "Выборгская таможня",
+    "level": 2,
+    "upper_id": 2
+  }
+},
+{
+  "model": "core.custhouse",
+  "pk": 9,
+  "fields": {
+    "code": 10227000,
+    "title": "Карельская таможня",
+    "level": 2,
+    "upper_id": 2
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 1,
+  "fields": {
+    "code": 10605020,
+    "title": "Барнаульский таможенный пост",
+    "level": 3,
+    "upper_id": 1
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 2,
+  "fields": {
+    "code": 10605030,
+    "title": "Бийский таможенный пост",
+    "level": 3,
+    "upper_id": 1
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 3,
+  "fields": {
+    "code": 10605110,
+    "title": "Горно-Алтайский таможенный пост",
+    "level": 3,
+    "upper_id": 1
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 4,
+  "fields": {
+    "code": 10607020,
+    "title": "Ангарский таможенный пост",
+    "level": 3,
+    "upper_id": 2
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 5,
+  "fields": {
+    "code": 10607090,
+    "title": "Братский таможенный пост",
+    "level": 3,
+    "upper_id": 2
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 6,
+  "fields": {
+    "code": 10607040,
+    "title": "Иркутский таможенный пост",
+    "level": 3,
+    "upper_id": 2
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 7,
+  "fields": {
+    "code": 10608090,
+    "title": "Асиновский таможенный пост",
+    "level": 3,
+    "upper_id": 3
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 8,
+  "fields": {
+    "code": 10608010,
+    "title": "Беловский таможенный пост",
+    "level": 3,
+    "upper_id": 3
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 9,
+  "fields": {
+    "code": 10608070,
+    "title": "Кузбасский таможенный пост",
+    "level": 3,
+    "upper_id": 3
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 10,
+  "fields": {
+    "code": 10718010,
+    "title": "Таможенный пост ДАПП Монды",
+    "level": 3,
+    "upper_id": 4
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 11,
+  "fields": {
+    "code": 10718020,
+    "title": "Таможенный пост ЖДПП Наушки",
+    "level": 3,
+    "upper_id": 4
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 12,
+  "fields": {
+    "code": 10718030,
+    "title": "Таможенный пост МАПП Кяхта",
+    "level": 3,
+    "upper_id": 4
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 13,
+  "fields": {
+    "code": 10702020,
+    "title": "Первомайский таможенный пост",
+    "level": 3,
+    "upper_id": 5
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 14,
+  "fields": {
+    "code": 10702010,
+    "title": "Таможенный пост Аэропорт Владивосток",
+    "level": 3,
+    "upper_id": 5
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 15,
+  "fields": {
+    "code": 10702030,
+    "title": "Таможенный пост Морской порт Владивосток",
+    "level": 3,
+    "upper_id": 5
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 16,
+  "fields": {
+    "code": 10714020,
+    "title": "Ольгинский таможенный пост",
+    "level": 3,
+    "upper_id": 6
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 17,
+  "fields": {
+    "code": 10714040,
+    "title": "Таможенный пост Морской порт Восточный",
+    "level": 3,
+    "upper_id": 6
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 18,
+  "fields": {
+    "code": 10714060,
+    "title": "Таможенный пост Морской порт Находка",
+    "level": 3,
+    "upper_id": 6
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 19,
+  "fields": {
+    "code": 10216020,
+    "title": "Кронштадский таможенный пост",
+    "level": 3,
+    "upper_id": 7
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 20,
+  "fields": {
+    "code": 10216160,
+    "title": "Таможенный пост Бронка",
+    "level": 3,
+    "upper_id": 7
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 21,
+  "fields": {
+    "code": 10216120,
+    "title": "Таможенный пост Гавань",
+    "level": 3,
+    "upper_id": 7
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 22,
+  "fields": {
+    "code": 10206070,
+    "title": "Выборгский железнодорожный таможенный пост",
+    "level": 3,
+    "upper_id": 8
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 23,
+  "fields": {
+    "code": 10206080,
+    "title": "Выборгский таможенный пост",
+    "level": 3,
+    "upper_id": 8
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 24,
+  "fields": {
+    "code": 10206020,
+    "title": "Таможенный пост ЖДПП Бусловская",
+    "level": 3,
+    "upper_id": 8
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 25,
+  "fields": {
+    "code": 10227020,
+    "title": "Кондопожский таможенный пост",
+    "level": 3,
+    "upper_id": 9
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 26,
+  "fields": {
+    "code": 10227030,
+    "title": "Костомукшский таможенный пост",
+    "level": 3,
+    "upper_id": 9
+  }
+},
+{
+  "model": "core.custpost",
+  "pk": 27,
+  "fields": {
+    "code": 10227040,
+    "title": "Лахденпохский таможенный пост",
+    "level": 3,
+    "upper_id": 9
+  }
+}
+]
