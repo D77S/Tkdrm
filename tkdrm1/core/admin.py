@@ -1,3 +1,7 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Rtu, CustHouse, CustPost
+
+admin.site.register(Rtu)
+admin.site.register(CustHouse)
+admin.site.register(CustPost)

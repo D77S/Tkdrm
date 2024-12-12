@@ -1,0 +1,1 @@
+python -Xutf8 manage.py dumpdata --exclude contenttypes --exclude auth.permission --indent 2 -o db.json
