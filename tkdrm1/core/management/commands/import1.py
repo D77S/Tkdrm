@@ -1,19 +1,20 @@
 from django.core.management.base import BaseCommand, CommandError
-import csv
-# from staff.models import Staff
+import pandas
 
 class Command(BaseCommand):
 
     def handle(self, *args, **options):
-        print('АААААААААА!')
-        # with open('3.csv') as csv_file:
-        #     csv_reader = csv.DictReader(csv_file, delimiter=',')
-        #     for row in csv_reader:
-        #         row2 = row
-                # firstname = row['firstname']
-                # lastname = row['lastname']
-                # email = row['email']
-                # staff = Staff(firstname=firstname, lastname=lastname, email=email)
-                # staff.save()
-        #     print(type(row2))
-    # csv_file.close() # you don't need this since you used `with`
+        data=pandas.read_excel('BD_25-11-2024.xlsx',
+                               # skiprows=5,
+                               # nrows=2,
+                               header=0,
+                               sheet_name='Новая база2',
+                               usecols=range(0, 17),
+                               )
+
+        clean_data = [[j for j in i] for i in data.values]
+
+
+        print(clean_data[len(clean_data)-2])
+        print(clean_data[len(clean_data)-1])
+                
