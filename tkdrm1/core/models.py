@@ -21,11 +21,12 @@ class BaseModel(models.Model):
 class Rtu(BaseModel):
     """."""
 
-    code = models.IntegerField(
+    code = models.CharField(
+        max_length=8,
         unique=True,
         null=False,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{8}$')],
+        validators=[RegexValidator(regex=r'^1\d{2}00000$')],
         verbose_name='Код т.органа'
     )
     level = models.IntegerField(validators=[
@@ -46,11 +47,12 @@ class Rtu(BaseModel):
 class CustHouse(BaseModel):
     """."""
 
-    code = models.IntegerField(
+    code = models.CharField(
+        max_length=8,
         unique=True,
         null=False,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{8}$')],
+        validators=[RegexValidator(regex=r'^1\d{5}000$')],
         verbose_name='Код т.органа'
     )
     level = models.IntegerField(validators=[
@@ -78,11 +80,12 @@ class CustHouse(BaseModel):
 class CustPost(BaseModel):
     """."""
 
-    code = models.IntegerField(
+    code = models.CharField(
+        max_length=8,
         unique=True,
         null=False,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{8}$')],
+        validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
     )
     level = models.IntegerField(validators=[
