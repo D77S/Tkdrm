@@ -44,7 +44,7 @@ class Command(BaseCommand):
 
         del_flag = 'm'
         while not (del_flag == 'y' or del_flag == 'n'):
-            del_flag = input('Удолять старую БД (y/n)?')
+            del_flag = input('Удолять в БД проекта таблицы РТУ, Таможни, Посты (y/n)?')  # noqa
         print(del_flag)
 
         if del_flag == 'y':
@@ -52,9 +52,12 @@ class Command(BaseCommand):
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
 
-
         print(clean_clean_data[0])
         print(clean_clean_data[1])
         print('...')
         print(clean_clean_data[len(clean_clean_data)-2])
         print(clean_clean_data[len(clean_clean_data)-1])
+
+        for i in clean_clean_data:
+            if i[7] not in ['1', '2', '3', '4']:
+                print(f'Строка {i[0]}, невалидный столбец 8.')
