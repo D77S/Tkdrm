@@ -1,28 +1,47 @@
 from django.contrib import admin
-from .models import Rtu, CustHouse, CustPost
+from .models import Rtu, CustHouse, CustPost, CustPlace
 
-empty_value_display = 'Не задано'
+admin.site.empty_value_display = 'Не задано'
 
 
 @admin.register(Rtu)
 class CoreRtuAdmin(admin.ModelAdmin):
-    exclude=('level',)
-    list_display=('title',
-                  'code')
-    list_editable=('code',)
-    list_per_page=10
-    ordering=('title',)
+    exclude = ('level',)
+    list_display = ('title',
+                    'code')
+    list_editable = ('code',)
+    list_per_page = 14
+    ordering = ('title',)
 
 
-@admin.register(CustHouse, CustPost)
-class CoreCustAdmin(CoreRtuAdmin):
-    list_display=('title',
-                  'code',
-                  'upper_id')
-    list_editable=('code',
-                   'upper_id')
+@admin.register(CustHouse)
+class CoreCustHouseAdmin(CoreRtuAdmin):
+    list_display = ('title',
+                    'code',
+                    'upper_id')
+    list_editable = ('code',
+                     'upper_id')
+    raw_id_fields = ('upper_id',)
 
 
-# admin.site.register(Rtu, CoreRtuAdmin)
-# admin.site.register(CustHouse, CoreCustAdmin)
-# admin.site.register(CustPost, CoreCustAdmin)
+@admin.register(CustPost)
+class CoreCustPostAdmin(CoreRtuAdmin):
+    list_display = ('title',
+                    'code',
+                    'upper_id')
+    list_editable = ('code',
+                     'upper_id')
+    raw_id_fields = ('upper_id',)
+
+
+@admin.register(CustPlace)
+class CoreCustPlaceAdmin(admin.ModelAdmin):
+    list_display = ('title',
+                    'code',
+                    'upper_id')
+    list_editable = ('code',
+                     'upper_id')
+    list_per_page = 14
+    ordering = ('title',)
+    list_filter = ('level',)
+    raw_id_fields = ('upper_id',)
