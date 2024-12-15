@@ -73,8 +73,7 @@ class Command(BaseCommand):
             return row_flags
 
         def field_processing(row, f_number):
-            """Обработка отдельного поля с номером f_number
-            в строке row.
+            """Обработка отдельного поля с номером f_number в строке row.
             Возврат:
             0 - штатное завершение без записи в БД;
             1 - аварийное завершение без записи в БД;
@@ -203,6 +202,8 @@ class Command(BaseCommand):
                 # валидная строка, таможня
                 # обработка названия РТУ
                 field_processing(i, 1)
+                # обработка названия таможни
+                field_processing(i, 2)
                 continue
             if i[7] == '4' and row_flags == [True, False, False]:
                 # валидная строка, РТУ
