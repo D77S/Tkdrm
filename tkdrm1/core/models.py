@@ -1,7 +1,15 @@
 """."""
 # from django.core.exceptions import ValidationError
-from django.core.validators import (MinValueValidator, MaxValueValidator,
-                                    RegexValidator)
+from django.contrib.contenttypes.fields import (
+    GenericForeignKey,
+    GenericRelation
+)
+from django.contrib.contenttypes.models import ContentType
+from django.core.validators import (
+    MinValueValidator,
+    MaxValueValidator,
+    RegexValidator
+)
 from django.db import models
 
 
@@ -31,18 +39,13 @@ class CustPlace(models.Model):
         verbose_name='Название'
     )
     code = models.CharField(
-        max_length=8,
-        unique=True,
-        null=False,
-        blank=False,
-        validators=[RegexValidator(regex=r'^1\d{7}$')],
-        verbose_name='Код т.органа'
+       max_length=8,
+       unique=True,
+       null=False,
+       blank=False,
+       validators=[RegexValidator(regex=r'^1\d{7}$')],
+       verbose_name='Код т.органа'
     )
-    # level = models.IntegerField(validators=[
-    #     MinValueValidator(1),
-    #     MaxValueValidator(3)],
-    #     verbose_name='Уровень'
-    #     )
     level = models.CharField(choices=CustChoices,
                              verbose_name='Уровень т.органа',
                              max_length=1,
@@ -81,6 +84,11 @@ class Rtu(BaseModel):
         MaxValueValidator(3)],
         default=1
         )
+    devices = GenericRelation(
+        'Device',
+        related_query_name='rtu',
+        related_name='rtus'
+    )
 
     class Meta:
         verbose_name = 'Региональное таможенное управление'
@@ -113,6 +121,11 @@ class CustHouse(BaseModel):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_house_to_rtu")
+    devices = GenericRelation(
+        'Device',
+        related_query_name='customhouse',
+        related_name='customhouses'
+    )
 
     class Meta:
         verbose_name = 'Таможня'
@@ -145,6 +158,11 @@ class CustPost(BaseModel):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_post_to_cust_house")
+    devices = GenericRelation(
+        'Device',
+        related_query_name='custompost',
+        related_name='customposts'
+    )
 
     class Meta:
         verbose_name = 'Таможенный пост'
@@ -153,3 +171,21 @@ class CustPost(BaseModel):
     def __str__(self):
         """."""
         return self.title
+
+
+class site_keeper(BaseModel):
+    """."""
+    def __str__(self):
+        """."""
+        return self.title
+
+
+class Device(models.Model):
+    """."""
+    content_type = models.ForeignKey(ContentType, on_delete=models.RESTRICT)
+    object_id = models.PositiveIntegerField()
+    owner = GenericForeignKey('content_type', 'object_id')
+
+    def __str__(self):
+        """."""
+        return f'Объект прибора с id={self.id}, собственник={self.owner}'
