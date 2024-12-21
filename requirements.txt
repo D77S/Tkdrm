@@ -1,6 +1,5 @@
 asgiref==3.8.1
 Django==3.2.16
-django-genericforeignkey==0.60.4
 django_debug_toolbar==3.8.1
 et_xmlfile==2.0.0
 numpy==2.0.2

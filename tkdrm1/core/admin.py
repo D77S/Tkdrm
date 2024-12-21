@@ -42,17 +42,7 @@ class CoreCustPostAdmin(CoreRtuAdmin):
 
 @admin.register(Device)
 class CoreDeviceAdmin(admin.ModelAdmin):
-    list_select_related = [
-        'content_type',
-
-    ]
-    # formfield_overrides = {
-    #     GenericForeignKey: {'widget': GenericForeignKeyRawIdWidget},
-    # }
-    # list_display = ('title',
-    #                 'content_type',
-    #                 'object_id',
-    #                 'owner')
+    pass
 
 # @admin.register(CustPlace)
 # class CoreCustPlaceAdmin(admin.ModelAdmin):

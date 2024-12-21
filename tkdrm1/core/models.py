@@ -1,10 +1,5 @@
 """."""
 # from django.core.exceptions import ValidationError
-from django.contrib.contenttypes.fields import (
-    GenericForeignKey,
-    GenericRelation
-)
-from django.contrib.contenttypes.models import ContentType
 from django.core.validators import (
     MinValueValidator,
     MaxValueValidator,
@@ -84,11 +79,6 @@ class Rtu(BaseModel):
         MaxValueValidator(3)],
         default=1
         )
-    devices = GenericRelation(
-        'Device',
-        related_query_name='rtu',
-        related_name='rtus'
-    )
 
     class Meta:
         verbose_name = 'Региональное таможенное управление'
@@ -121,11 +111,6 @@ class CustHouse(BaseModel):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_house_to_rtu")
-    devices = GenericRelation(
-        'Device',
-        related_query_name='customhouse',
-        related_name='customhouses'
-    )
 
     class Meta:
         verbose_name = 'Таможня'
@@ -158,11 +143,6 @@ class CustPost(BaseModel):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_post_to_cust_house")
-    devices = GenericRelation(
-        'Device',
-        related_query_name='custompost',
-        related_name='customposts'
-    )
 
     class Meta:
         verbose_name = 'Таможенный пост'
@@ -182,10 +162,8 @@ class site_keeper(BaseModel):
 
 class Device(models.Model):
     """."""
-    content_type = models.ForeignKey(ContentType, on_delete=models.RESTRICT)
-    object_id = models.PositiveIntegerField()
-    owner = GenericForeignKey('content_type', 'object_id')
+    pass
 
     def __str__(self):
         """."""
-        return f'Объект прибора с id={self.id}, собственник={self.owner}'
+        return f'Объект прибора с id={self.id}'

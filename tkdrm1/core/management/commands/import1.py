@@ -1,3 +1,5 @@
+import os
+import sys
 from django.core.management.base import BaseCommand
 import math
 import pandas
@@ -30,109 +32,119 @@ class Command(BaseCommand):
                         data_row.append('Южное таможенное управление')
                     elif j == 'СКТУ':
                         data_row.append('Северо-Кавказское таможенное управление')  # noqa
+                    elif j == 'ТНП':
+                        data_row.append('')
                     else:
                         data_row.append(j)
                 list_out.append(data_row)
             return list_out
 
-        def code_finder(codes: dict[str, str], title: str):
-            """."""
-            code = codes.get(title, None)
-            if code is None:
-                temp_post = title.find('Таможенный пост')
-                if temp_post != -1:
-                    temp_title_1 = title.replace('Таможенный пост', '')
-                    temp_title_1 = temp_title_1.strip()
-                    temp_code_2 = codes.get('Таможенный пост ' + temp_title_1, None)  # noqa
-                    if temp_code_2 is not None:
-                        return temp_code_2
-                    temp_code_3 = codes.get(temp_title_1 + ' таможенный пост', None)  # noqa
-                    if temp_code_3 is not None:
-                        return temp_code_3
-                temp_post = title.find('таможенный пост')
-                if temp_post != -1:
-                    temp_title_1 = title.replace('таможенный пост', '')
-                    temp_title_1 = temp_title_1.strip()
-                    temp_code_2 = codes.get('Таможенный пост ' + temp_title_1, None)  # noqa
-                    if temp_code_2 is not None:
-                        return temp_code_2
-                    temp_code_3 = codes.get(temp_title_1 + ' таможенный пост', None)  # noqa
-                    if temp_code_3 is not None:
-                        return temp_code_3
-                return code
-            return code
+        # def code_finder():
+        #     """."""
+        #     code = codes.get(title, None)
+        #     if code is None:
+        #         temp_post = title.find('Таможенный пост')
+        #         if temp_post != -1:
+        #             temp_title_1 = title.replace('Таможенный пост', '')
+        #             temp_title_1 = temp_title_1.strip()
+        #             temp_code_2 = codes.get('Таможенный пост ' + temp_title_1, None)  # noqa
+        #             if temp_code_2 is not None:
+        #                 return temp_code_2
+        #             temp_code_3 = codes.get(temp_title_1 + ' таможенный пост', None)  # noqa
+        #             if temp_code_3 is not None:
+        #                 return temp_code_3
+        #         temp_post = title.find('таможенный пост')
+        #         if temp_post != -1:
+        #             temp_title_1 = title.replace('таможенный пост', '')
+        #             temp_title_1 = temp_title_1.strip()
+        #             temp_code_2 = codes.get('Таможенный пост ' + temp_title_1, None)  # noqa
+        #             if temp_code_2 is not None:
+        #                 return temp_code_2
+        #             temp_code_3 = codes.get(temp_title_1 + ' таможенный пост', None)  # noqa
+        #             if temp_code_3 is not None:
+        #                 return temp_code_3
+        #         return code
+        #     return code
 
-        def make_flags_1_4(row):
-            """Создание массива битовых флагов полей 1-3."""
-            row_flags = []
-            for j in range(1, 4):
-                if i[j] == '':
-                    row_flags.append(False)
-                else:
-                    row_flags.append(True)
-            return row_flags
+        # def make_flags_1_4(row):
+        #     """Создание массива битовых флагов полей 1-3."""
+        #     row_flags = []
+        #     for j in range(1, 4):
+        #         if i[j] == '':
+        #             row_flags.append(False)
+        #         else:
+        #             row_flags.append(True)
+        #     return row_flags
 
-        def field_processing(row, f_number):
-            """Обработка отдельного поля с номером f_number в строке row.
-            Возврат:
-            0 - штатное завершение без записи в БД;
-            1 - аварийное завершение без записи в БД;
-            2 - штатное завершение.
-            """
-            if row[f_number] == 'ТНП' or row[f_number] == '':
-                return 0
-            # Попытка поиска кода т.органа
-            code = code_finder(clean_codes, row[f_number])
-            if code is None:
-                # ошибка по коду т.органа, аварийное завершение обработки строки  # noqa
-                print(f'Строка {i[0]}, не найден код т.органа для {row[f_number]}.')  # noqa
-                return 1
-            # Попытка поиска наличия в БД данного поля в одной из таблиц
-            # и запись в БД, если там ещё нет.
-            if f_number == 1:
-                if not Rtu.objects.filter(title=row[1]).exists():
-                    Rtu.objects.create(title=row[1], code=code, level=1)
-                if not CustPlace.objects.filter(title=row[1]).exists():
-                    CustPlace.objects.create(title=row[1], code=code, level=1, upper_id=None)  # noqa
-                return 2
-            elif f_number == 2:
-                if row[1] == 'ТНП':
-                    if not CustHouse.objects.filter(title=row[2]).exists():
-                        CustHouse.objects.create(title=row[2], code=code, level=2, upper_id=None)  # noqa
-                    if not CustPlace.objects.filter(title=row[2]).exists():
-                        CustPlace.objects.create(title=row[2], code=code, level=2, upper_id=None)  # noqa
-                else:
-                    if not CustHouse.objects.filter(title=row[2]).exists():
-                        if Rtu.objects.filter(title=row[1]).exists():
-                            upper_id = Rtu.objects.get(title=row[1])
-                            CustHouse.objects.create(title=row[2], code=code, level=2, upper_id=upper_id)  # noqa
-                        else:
-                            print(f'Строка {i[0]}, в БД1 не найден вышестоящий т.о. для {row[2]}.')  # noqa
-                    if not CustPlace.objects.filter(title=row[2]).exists():
-                        if CustPlace.objects.filter(title=row[1]).exists():
-                            upper_id = CustPlace.objects.get(title=row[1])
-                            CustPlace.objects.create(title=row[2], code=code, level=2, upper_id=upper_id)  # noqa
-                        else:
-                            print(f'Строка {i[0]}, в БД2 не найден вышестоящий т.о. для {row[2]}.')  # noqa
-                return 2
+        # def field_processing(row, f_number):
+        #     """Обработка отдельного поля с номером f_number в строке row.
+        #     Возврат:
+        #     0 - штатное завершение без записи в БД;
+        #     1 - аварийное завершение без записи в БД;
+        #     2 - штатное завершение.
+        #     """
+        #     if row[f_number] == 'ТНП' or row[f_number] == '':
+        #         return 0
+        #     # Попытка поиска кода т.органа
+        #     code = code_finder(clean_codes, row[f_number])
+        #     if code is None:
+        #         # ошибка по коду т.органа, аварийное завершение обработки строки  # noqa
+        #         print(f'Строка {i[0]}, не найден код т.органа для {row[f_number]}.')  # noqa
+        #         return 1
+        #     # Попытка поиска наличия в БД данного поля в одной из таблиц
+        #     # и запись в БД, если там ещё нет.
+        #     if f_number == 1:
+        #         if not Rtu.objects.filter(title=row[1]).exists():
+        #             Rtu.objects.create(title=row[1], code=code, level=1)
+        #         if not CustPlace.objects.filter(title=row[1]).exists():
+        #             CustPlace.objects.create(title=row[1], code=code, level=1, upper_id=None)  # noqa
+        #         return 2
+        #     elif f_number == 2:
+        #         if row[1] == 'ТНП':
+        #             if not CustHouse.objects.filter(title=row[2]).exists():
+        #                 CustHouse.objects.create(title=row[2], code=code, level=2, upper_id=None)  # noqa
+        #             if not CustPlace.objects.filter(title=row[2]).exists():
+        #                 CustPlace.objects.create(title=row[2], code=code, level=2, upper_id=None)  # noqa
+        #         else:
+        #             if not CustHouse.objects.filter(title=row[2]).exists():
+        #                 if Rtu.objects.filter(title=row[1]).exists():
+        #                     upper_id = Rtu.objects.get(title=row[1])
+        #                     CustHouse.objects.create(title=row[2], code=code, level=2, upper_id=upper_id)  # noqa
+        #                 else:
+        #                     print(f'Строка {i[0]}, в БД1 не найден вышестоящий т.о. для {row[2]}.')  # noqa
+        #             if not CustPlace.objects.filter(title=row[2]).exists():
+        #                 if CustPlace.objects.filter(title=row[1]).exists():
+        #                     upper_id = CustPlace.objects.get(title=row[1])
+        #                     CustPlace.objects.create(title=row[2], code=code, level=2, upper_id=upper_id)  # noqa
+        #                 else:
+        #                     print(f'Строка {i[0]}, в БД2 не найден вышестоящий т.о. для {row[2]}.')  # noqa
+        #         return 2
 
-            elif f_number == 3:
-                if not CustPost.objects.filter(title=row[3]).exists():
-                    if CustHouse.objects.filter(title=row[2]).exists():
-                        upper_id = CustHouse.objects.get(title=row[2])
-                        CustPost.objects.create(title=row[3], code=code, level=3, upper_id=upper_id)  # noqa
-                    else:
-                        print(f'Строка {i[0]}, в БД1 не найден вышестоящий т.о. для {row[3]}.')  # noqa
-                if not CustPlace.objects.filter(title=row[3]).exists():
-                    if CustPlace.objects.filter(title=row[2]).exists():
-                        upper_id = CustPlace.objects.get(title=row[2])
-                        CustPlace.objects.create(title=row[3], code=code, level=3, upper_id=upper_id)  # noqa
-                    else:
-                        print(f'Строка {i[0]}, в БД2 не найден вышестоящий т.о. для {row[3]}.')  # noqa
+        #     elif f_number == 3:
+        #         if not CustPost.objects.filter(title=row[3]).exists():
+        #             if CustHouse.objects.filter(title=row[2]).exists():
+        #                 upper_id = CustHouse.objects.get(title=row[2])
+        #                 CustPost.objects.create(title=row[3], code=code, level=3, upper_id=upper_id)  # noqa
+        #             else:
+        #                 print(f'Строка {i[0]}, в БД1 не найден вышестоящий т.о. для {row[3]}.')  # noqa
+        #         if not CustPlace.objects.filter(title=row[3]).exists():
+        #             if CustPlace.objects.filter(title=row[2]).exists():
+        #                 upper_id = CustPlace.objects.get(title=row[2])
+        #                 CustPlace.objects.create(title=row[3], code=code, level=3, upper_id=upper_id)  # noqa
+        #             else:
+        #                 print(f'Строка {i[0]}, в БД2 не найден вышестоящий т.о. для {row[3]}.')  # noqa
 
-            return 2
+        #     return 2
 
-        data = pandas.read_excel('BD_25-11-2024.xlsx',
+        current_excel_files_list = [x for x in os.listdir() if (
+            x.endswith('.xlsx') or
+            x.endswith('.xls') or
+            x.endswith('.xlsm')
+        )]
+        if len(current_excel_files_list) == 0:
+            print('Эксель-файлов в текущей папке не найдено.')
+            sys.exit()
+        data = pandas.read_excel(current_excel_files_list[0],
                                  # skiprows=0,
                                  # nrows=2,
                                  header=None,
@@ -140,18 +152,8 @@ class Command(BaseCommand):
                                  usecols=range(0, 17),
                                  )
 
-        clean_data = [['' if isinstance(j, float) and math.isnan(j) else str(j) for j in i] for i in data.values if isinstance(i[0], int)]  # noqa
-        clean_clean_data = rtu_replace(clean_data)
-
-        codes = pandas.read_excel('BD_25-11-2024.xlsx',
-                                  # skiprows=0,
-                                  # nrows=2,
-                                  header=None,
-                                  sheet_name='Коды',
-                                  usecols=range(1, 3),
-                                  )
-
-        clean_codes = {str(i[0]): str(i[1]) for i in codes.values}
+        clean_data_first = [['' if isinstance(j, float) and math.isnan(j) else str(j) for j in i] for i in data.values if isinstance(i[0], int)]  # noqa
+        clean_data_second = rtu_replace(clean_data_first)
 
         del_flag = 't'
         while not (del_flag == 'y' or del_flag == 'n'):
@@ -163,13 +165,15 @@ class Command(BaseCommand):
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
 
-        print(clean_clean_data[0])
-        print(clean_clean_data[1])
+        print(clean_data_second[0])
+        print(clean_data_second[1])
         print('...')
-        print(clean_clean_data[len(clean_clean_data)-2])
-        print(clean_clean_data[len(clean_clean_data)-1])
+        print(clean_data_second[len(clean_data_second)-2])
+        print(clean_data_second[len(clean_data_second)-1])
 
-        for i in clean_clean_data:
+        sys.exit()
+
+        for i in clean_data_second:
 
             row_flags = make_flags_1_4(i)
 
