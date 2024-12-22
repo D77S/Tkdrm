@@ -71,7 +71,7 @@ class Command(BaseCommand):
                     code.append(i[4])
 
             if len(code) == 1:
-                print(f'code_finder: найден код для поля уровня \'{f_number}\' со значением \'{row[1]}\': \'{code[0]}\'')  # noqa
+                print(f'code_finder: найден код для поля уровня \'{f_number}\' со значением \'{row[f_number]}\': \'{code[0]}\'')  # noqa
                 return code[0]
             elif len(code) > 1:
                 print(f'Внимание!! code_finder: найдено кодов для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' больше одного, а именно: {code}')  # noqa
@@ -233,7 +233,7 @@ class Command(BaseCommand):
                 # Случай 2.
                 if code_1 is None and code_2 is not None:
                     # По уровню, вышестоящему к текущему, если в БД1 такого ещё нет  # noqa
-                    if not CustHouse.objects.filter(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None).exists():  # noqa
+                    if not CustHouse.objects.filter(title=row[2], code=code_2).exists():  # noqa
                         print('создаем таможню в БД1')
                         curr_ch_1 = CustHouse.objects.create(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None)  # noqa
                     else:
@@ -292,8 +292,51 @@ class Command(BaseCommand):
                         return (1, curr_1, curr_2)
                     else:
                         return FAIL
-
-
+                #  Случай 4.
+                if code_1 is not None and code_2 is not None:
+                    # По уровню, самому вышестоящему к текущему, если в БД1 такого ещё нет  # noqa
+                    if not Rtu.objects.filter(title=row[1], code=code_1).exists():  # noqa
+                        print('создаем РТУ в БД1')
+                        curr_rtu_1 = Rtu.objects.create(title=row[1], code=code_1, level=1)  # noqa
+                    else:
+                        print('получаем РТУ из БД1, она уже была там')
+                        curr_rtu_1 = Rtu.objects.get(title=row[1], code=code_1)  # noqa
+                    # По уровню, самому вышестоящему к текущему, если в БД2 такого ещё нет  # noqa
+                    if not CustPlace.objects.filter(title=row[1], code=code_1).exists():  # noqa
+                        print('создаем РТУ в БД2')
+                        curr_rtu_2 = CustPlace.objects.create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
+                    else:
+                        print('получаем РТУ из БД2, она уже там есть')
+                        curr_rtu_2 = CustPlace.objects.get(title=row[1], code=code_1)  # noqa
+                    # По уровню, вышестоящему к текущему, если в БД1 такого ещё нет  # noqa
+                    if not CustHouse.objects.filter(title=row[2], code=code_2).exists():  # noqa
+                        print('создаем таможню в БД1')
+                        curr_ch_1 = CustHouse.objects.create(title=row[2], code=code_2, level=1, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    else:
+                        print('получаем таможню из БД1, она уже была там')
+                        curr_ch_1 = CustHouse.objects.get(title=row[2], code=code_2)  # noqa
+                    # По уровню, вышестоящему к текущему, если в БД2 такого ещё нет  # noqa
+                    if not CustPlace.objects.filter(title=row[2], code=code_2).exists():  # noqa
+                        print('создаем таможню в БД2')
+                        curr_ch_2 = CustPlace.objects.create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1)  # noqa
+                    else:
+                        print('получаем таможню из БД2, она уже там есть')
+                        curr_ch_2 = CustPlace.objects.get(title=row[2], code=code_2)  # noqa
+                    # По текущему уровню, если в БД1 такой еще нет
+                    f1 = f2 = False
+                    if not CustPost.objects.filter(title=row[3], code=code_3, level=3, upper_id=curr_ch_1, upper_level='2').exists():  # noqa
+                        print('создаем пост в БД1')
+                        f1 = True
+                        curr_1 = CustPost.objects.create(title=row[3], code=code_3, level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
+                    # По текущему уровню, если в БД2 такой еще нет
+                    if not CustPlace.objects.filter(title=row[3], code=code_3).exists():  # noqa
+                        print('cоздаем пост в БД2')
+                        f2 = True
+                        curr_2 = CustPlace.objects.create(title=row[3], code=code_3, level=3, upper_id=curr_ch_2)  # noqa
+                    if f1 and f2:
+                        return (1, curr_1, curr_2)
+                    else:
+                        return FAIL
 
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
