@@ -42,61 +42,43 @@ class Command(BaseCommand):
             Из строки row извлекается поле номер f_number,
             затем по списку array перебираются строки в поисках такой,
             у которой выполняются все условия:
-            - все поля от 2-го по f_number совпадают с полями в row
+            - все поля от 1-го по f_number совпадают с полями в row
               тех же номеров;
             - в поле 11 текст "основная";
             - значение поля 8, сложенное со значением f_number, равно 5.
             Найденных строк с данными условиями должна быть ровано одна.
             Из найденной извлекается код из поля 4 и возвращается.
+            Если значение f_number не равно 1 или 2 или 3 - возвращается None.
             Если в row поле f_number пусто - возвращается None.
             Если не найдено - возвращается 'not found'.
             Если найдено более одной такой - возвращается 'found many'.
             """
-            if row[f_number] == '':
+            print(f'code_finder: обработка поля уровня \'{f_number}\', ищем в массиве значение \'{row[f_number]}\'')  # noqa
+            if (f_number not in [1, 2, 3]) or row[f_number] == '':
                 return None
             code = []
-            # Если обрабатывается объект уровня 1 (РТУ)
-            if f_number == 1:
-                print(f'Работает code_finder, обработка поля РТУ, ищем в массиве значение {row[1]}')  # noqa
-                for i in array:
-                    if i[11] != 'основная':
-                        continue
-                    if (i[1] == row[1] and
-                            i[2] == '' and
-                            i[3] == '' and
-                            i[8] == '4'):
-                        code.append(i[4])
-                if len(code) == 1:
-                    print(f'code_finder: найден код для РТУ {row[1]}: {code[0]}')  # noqa
-                    return code[0]
-                elif len(code) > 1:
-                    print(f'Внимание!! code_finder: найдено кодов для РТУ {row[1]} больше одного: {code}')  # noqa
-                    return 'found many'
+            temp_row = []
+            for j in range(1, 3 + 1):
+                if j <= f_number:
+                    temp_row.append(row[j])
                 else:
-                    print(f'code_finder: для РТУ {row[1]} код так и не был найден')  # noqa
-                    return 'not found'
-            # Если обрабатывается объект уровня 2 (таможня)
-            elif f_number == 2:
-                print(f'Работает code_finder, обработка поля таможня, ищем в массиве значение {row[2]}')  # noqa
-                for i in array:
-                    if i[11] != 'основная':
-                        continue
-                    if (i[1] == row[1] and
-                        i[2] == row[2] and
-                        i[3] == '' and
-                            i[8] == '3'):
-                        code.append(i[4])
-                if len(code) == 1:
-                    print(f'code_finder: найден код для таможни {row[2]} при РТУ {row[1]}: {code[0]}')  # noqa
-                    return code[0]
-                elif len(code) > 1:
-                    print(f'Внимание!! code_finder: найдено кодов для {row[2]} при РТУ {row[1]} больше одного: {code}')  # noqa
-                    return 'found many'
-                else:
-                    print(f'code_finder: для таможни {row[2]} при РТУ {row[1]} код так и не был найден')  # noqa
-                    return 'not found'
-            # Если обрабатывается объект уровня 3 (пост)
-            pass
+                    temp_row.append('')
+
+            for i in array:
+                if i[11] != 'основная':
+                    continue
+                if i[1:4] == temp_row and (f_number + int(i[8]) == 5):
+                    code.append(i[4])
+
+            if len(code) == 1:
+                print(f'code_finder: найден код для поля уровня \'{f_number}\' со значением \'{row[1]}\': \'{code[0]}\'')  # noqa
+                return code[0]
+            elif len(code) > 1:
+                print(f'Внимание!! code_finder: найдено кодов для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' больше одного, а именно: {code}')  # noqa
+                return 'found many'
+            else:
+                print(f'code_finder: для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' код так и не был найден')  # noqa
+                return 'not found'
 
         def field_processing(array, row, f_number):
             """Обработка отдельного поля с номером f_number в строке row.
@@ -155,16 +137,16 @@ class Command(BaseCommand):
 
                 print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_2}\'')  # noqa
                 # Над обработать два случая:
-                # 1. code_1 is None and code_2 is not None (таможня ТНП)
-                # 2. code_1 is not None and code_2 is not None (таможня не ТНП)
+                # 1. code_1 is None,     code_2 is not None (таможня ТНП)
+                # 2. code_1 is not None, code_2 is not None (таможня не ТНП)
                 # Случай 1.
                 if code_1 is None:
                     # По текущему уровню, если в БД1 такой ещё нет
                     f1 = f2 = False
-                    if not CustHouse.objects.filter(title=row[2], code=code_2, upper_id=None).exists():  # noqa
+                    if not CustHouse.objects.filter(title=row[2], code=code_2, upper_id=None, upper_level=None).exists():  # noqa
                         print('создаем таможню в БД1')
                         f1 = True
-                        curr_1 = CustHouse.objects.create(title=row[2], code=code_2, level=2, upper_id=None)  # noqa
+                        curr_1 = CustHouse.objects.create(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None)  # noqa
                     # По текущему уровню, если в БД2 такой еще нет
                     if not CustPlace.objects.filter(title=row[2], code=code_2, upper_id=None).exists():  # noqa
                         print('создаем таможню в БД2')
@@ -175,15 +157,15 @@ class Command(BaseCommand):
                     else:
                         return FAIL
                 # Случай 2.
-                else:
-                    # По всем уровням, вышестоящим к текущему, если в БД1 такого ещё нет  # noqa
+                if code_1 is not None:
+                    # По уровню, вышестоящему к текущему, если в БД1 такого ещё нет  # noqa
                     if not Rtu.objects.filter(title=row[1], code=code_1).exists():  # noqa
                         print('создаем РТУ в БД1')
                         curr_rtu_1 = Rtu.objects.create(title=row[1], code=code_1, level=1)  # noqa
                     else:
                         print('получаем РТУ из БД1, он уже был там')
                         curr_rtu_1 = Rtu.objects.get(title=row[1], code=code_1, level=1)  # noqa
-                    # По всем уровням, вышестоящим к текущему, если в БД2 такого ещё нет  # noqa
+                    # По уровню, вышестоящему к текущему, если в БД2 такого ещё нет  # noqa
                     if not CustPlace.objects.filter(title=row[1], code=code_1).exists():  # noqa
                         print('создаем РТУ в БД2')
                         curr_rtu_2 = CustPlace.objects.create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
@@ -192,10 +174,10 @@ class Command(BaseCommand):
                         curr_rtu_2 = CustPlace.objects.get(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
                     # По текущему уровню, если в БД1 такой ещё нет
                     f1 = f2 = False
-                    if not CustHouse.objects.filter(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1).exists():  # noqa
+                    if not CustHouse.objects.filter(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1, upper_level='1').exists():  # noqa
                         print('создаем таможню в БД1')
                         f1 = True
-                        curr_1 = CustHouse.objects.create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1)  # noqa
+                        curr_1 = CustHouse.objects.create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
                     # По текущему уровню, если в БД2 такой еще нет
                     if not CustPlace.objects.filter(title=row[2], code=code_2, level=2, upper_id=curr_rtu_2).exists():  # noqa
                         print('создаем таможню в БД2')
@@ -206,21 +188,82 @@ class Command(BaseCommand):
                     else:
                         return FAIL
 
-        #     elif f_number == 3:
-        #         if not CustPost.objects.filter(title=row[3]).exists():
-        #             if CustHouse.objects.filter(title=row[2]).exists():
-        #                 upper_id = CustHouse.objects.get(title=row[2])
-        #                 CustPost.objects.create(title=row[3], code=code, level=3, upper_id=upper_id)  # noqa
-        #             else:
-        #                 print(f'Строка {i[0]}, в БД1 не найден вышестоящий т.о. для {row[3]}.')  # noqa
-        #         if not CustPlace.objects.filter(title=row[3]).exists():
-        #             if CustPlace.objects.filter(title=row[2]).exists():
-        #                 upper_id = CustPlace.objects.get(title=row[2])
-        #                 CustPlace.objects.create(title=row[3], code=code, level=3, upper_id=upper_id)  # noqa
-        #             else:
-        #                 print(f'Строка {i[0]}, в БД2 не найден вышестоящий т.о. для {row[3]}.')  # noqa
+            elif f_number == 3:
+                # Попытаться найти в array коды РТУ для искомого поста таможни или None для ТНП  # noqa
+                code_1 = code_finder(array, row, 1)
+                # искомой таможни
+                code_2 = code_finder(array, row, 2)
+                # искомого поста
+                code_3 = code_finder(array, row, 3)
+                # Для всех уровней от 1 до текущего (тут: 3)
+                # проверка на not found и found many
+                if code_1 == 'not found' or code_1 == 'found many':
+                    return FAIL
+                if code_2 == 'not found' or code_2 == 'found many':
+                    return FAIL
+                if code_3 == 'not found' or code_3 == 'found many':
+                    return FAIL
+                # для текущего уровня проверка на None (не пуст, но не найден)
+                if code_3 is None:
+                    return FAIL
 
-        #     return 2
+                print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
+                # Над обработать четыре случая:
+                # 1. code_1 is None,     code_2 is None,     code_3 is not None (пост ТНП)  # noqa
+                # 2. code_1 is None,     code_2 is not None, code_3 is not None (пост таможни ТНП)  # noqa
+                # 3. code_1 is not None, code_2 is None,     code_3 is not None (пост РТУ)  # noqa
+                # 4. code_1 is not None, code_2 is not None, code_3 is not None (пост таможни РТУ)  # noqa
+                # Случай 1.
+                if code_1 is None and code_2 is None:
+                    # По уровню 3, если в БД1 такой ещё нет
+                    f1 = f2 = False
+                    if not CustPost.objects.filter(title=row[3], code=code_3, upper_id=None, upper_level=None).exists():  # noqa
+                        print('создаем пост в БД1')
+                        f1 = True
+                        curr_1 = CustPost.objects.create(title=row[3], code=code_3, upper_id=None, upper_level=None)  # noqa
+                    # По уровню 3, если в БД2 такой еще нет
+                    if not CustPlace.objects.filter(title=row[3], code=code_3, upper_id=None).exists():  # noqa
+                        print('создаем пост в БД2')
+                        f2 = True
+                        curr_2 = CustPlace.objects.create(title=row[3], code=code_3, upper_id=None)  # noqa
+                    if f1 and f2:
+                        return (1, curr_1, curr_2)
+                    else:
+                        return FAIL
+                # Случай 2.
+                if code_1 is None and code_2 is not None:
+                    # По уровню, вышестоящему к текущему, если в БД1 такого ещё нет  # noqa
+                    if not CustHouse.objects.filter(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None).exists():  # noqa
+                        print('создаем таможню в БД1')
+                        curr_ch_1 = CustHouse.objects.create(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None)  # noqa
+                    else:
+                        print('получаем таможню из БД1, она уже была там')
+                        curr_ch_1 = CustHouse.objects.get(title=row[2], code=code_2)  # noqa
+                    # По уровню, вышестоящему к текущему, если в БД2 такого ещё нет  # noqa
+                    if not CustPlace.objects.filter(title=row[2], code=code_2).exists():  # noqa
+                        print('создаем таможню в БД2')
+                        curr_ch_2 = CustPlace.objects.create(title=row[2], code=code_2, level=2, upper_id=None)  # noqa
+                    else:
+                        print('получаем таможню из БД2, она уже там есть')
+                        curr_ch_2 = CustPlace.objects.get(title=row[2], code=code_2)  # noqa
+                    # По текущему уровню, если в БД1 такой еще нет
+                    f1 = f2 = False
+                    if not CustPost.objects.filter(title=row[3], code=code_3, level=3, upper_id=curr_ch_1, upper_level='2').exists():  # noqa
+                        print('создаем пост в БД1')
+                        f1 = True
+                        curr_1 = CustPost.objects.create(title=row[3], code=code_3, level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
+                    # По текущему уровню, если в БД2 такой еще нет
+                    if not CustPlace.objects.filter(title=row[3], code=code_3).exists():  # noqa
+                        print('cоздаем пост в БД2')
+                        f2 = True
+                        curr_2 = CustPlace.objects.create(title=row[3], code=code_3, level=3, upper_id=curr_ch_2)  # noqa
+                    if f1 and f2:
+                        return (1, curr_1, curr_2)
+                    else:
+                        return FAIL
+
+
+
 
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
@@ -263,15 +306,18 @@ class Command(BaseCommand):
 
             # обработка названия РТУ, если есть
             if i[1] != '':
-                print(f'Главный цикл. Строка {i[0]}, обработка поля РТУ, равного {i[1]}')  # noqa
+                print(f'Главный цикл. Строка \'{i[0]}\', обработка поля уровня \'{1}\', равного \'{i[1]}\'')  # noqa
                 field_processing(clean_data_second, i, 1)
 
             # обработка названия таможни, если есть
             if i[2] != '':
-                print(f'Главный цикл. Строка {i[0]}, обработка поля таможня, равного {i[2]}')  # noqa
+                print(f'Главный цикл. Строка \'{i[0]}\', обработка поля уровня \'{2}\', равного \'{i[2]}\'')  # noqa
                 field_processing(clean_data_second, i, 2)
 
-            # if i[0] == '2':
+            # обработка названия т.поста, если есть
+            if i[3] != '':
+                print(f'Главный цикл. Строка \'{i[0]}\', обработка поля уровня \'{3}\', равного \'{i[3]}\'')  # noqa
+                field_processing(clean_data_second, i, 3)
+
+            # if i[0] == '1':
             #     sys.exit()
-            # обработка названия т.поста (если есть!)
-            # field_processing(i, 3)

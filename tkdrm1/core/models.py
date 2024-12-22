@@ -7,29 +7,15 @@ from django.core.validators import (
 )
 from django.db import models
 
-
-class BaseModel(models.Model):
-    """."""
-
-    title = models.CharField(
-        max_length=255,
-        unique=True,
-        null=False,
-        verbose_name='Название'
-    )
-
-    class Meta:
-        abstract = True
+CUSTCHOICES = (('1', 'РТУ'), ('2', 'Таможня'), ('3', 'Пост'))
 
 
 class CustPlace(models.Model):
     """."""
 
-    CustChoices = (('1', 'РТУ'), ('2', 'Таможня'), ('3', 'Пост'))
-
     title = models.CharField(
         max_length=255,
-        unique=True,
+        unique=False,  # !!!!!!
         null=False,
         verbose_name='Название'
     )
@@ -41,7 +27,7 @@ class CustPlace(models.Model):
        validators=[RegexValidator(regex=r'^1\d{7}$')],
        verbose_name='Код т.органа'
     )
-    level = models.CharField(choices=CustChoices,
+    level = models.CharField(choices=CUSTCHOICES,
                              verbose_name='Уровень т.органа',
                              max_length=1,
                              null=False,
@@ -63,9 +49,15 @@ class CustPlace(models.Model):
         return self.title
 
 
-class Rtu(BaseModel):
+class Rtu(models.Model):
     """."""
 
+    title = models.CharField(
+        max_length=255,
+        unique=True,
+        null=False,
+        verbose_name='Название'
+    )
     code = models.CharField(
         max_length=8,
         unique=True,
@@ -89,9 +81,15 @@ class Rtu(BaseModel):
         return self.title
 
 
-class CustHouse(BaseModel):
+class CustHouse(models.Model):
     """."""
 
+    title = models.CharField(
+        max_length=255,
+        unique=True,
+        null=False,
+        verbose_name='Название'
+    )
     code = models.CharField(
         max_length=8,
         unique=True,
@@ -111,6 +109,12 @@ class CustHouse(BaseModel):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_house_to_rtu")
+    upper_level = models.CharField(choices=CUSTCHOICES,
+                                   verbose_name='Уровень вышестоящего т.органа',  # noqa
+                                   max_length=1,
+                                   null=True,
+                                   blank=False,
+                                   )
 
     class Meta:
         verbose_name = 'Таможня'
@@ -121,9 +125,15 @@ class CustHouse(BaseModel):
         return self.title
 
 
-class CustPost(BaseModel):
+class CustPost(models.Model):
     """."""
 
+    title = models.CharField(
+        max_length=255,
+        unique=False,  # !!!!!!
+        null=False,
+        verbose_name='Название'
+    )
     code = models.CharField(
         max_length=8,
         unique=True,
@@ -143,6 +153,12 @@ class CustPost(BaseModel):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_post_to_cust_house")
+    upper_level = models.CharField(choices=CUSTCHOICES,
+                                   verbose_name='Уровень вышестоящего т.органа',  # noqa
+                                   max_length=1,
+                                   null=True,
+                                   blank=False,
+                                   )
 
     class Meta:
         verbose_name = 'Таможенный пост'
@@ -153,7 +169,7 @@ class CustPost(BaseModel):
         return self.title
 
 
-class site_keeper(BaseModel):
+class site_keeper(models.Model):
     """."""
     def __str__(self):
         """."""
