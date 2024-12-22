@@ -261,7 +261,37 @@ class Command(BaseCommand):
                         return (1, curr_1, curr_2)
                     else:
                         return FAIL
-
+                # Случай 3.
+                if code_1 is not None and code_2 is None:
+                    # По уровню, вышестоящему к текущему, если в БД1 такого ещё нет  # noqa
+                    if not Rtu.objects.filter(title=row[1], code=code_1).exists():  # noqa
+                        print('создаем РТУ в БД1')
+                        curr_rtu_1 = Rtu.objects.create(title=row[1], code=code_1, level=1)  # noqa
+                    else:
+                        print('получаем РТУ из БД1, она уже была там')
+                        curr_rtu_1 = Rtu.objects.get(title=row[1], code=code_1)  # noqa
+                    # По уровню, вышестоящему к текущему, если в БД2 такого ещё нет  # noqa
+                    if not CustPlace.objects.filter(title=row[1], code=code_1).exists():  # noqa
+                        print('создаем РТУ в БД2')
+                        curr_rtu_2 = CustPlace.objects.create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
+                    else:
+                        print('получаем РТУ из БД2, она уже там есть')
+                        curr_rtu_2 = CustPlace.objects.get(title=row[1], code=code_1)  # noqa
+                    # По текущему уровню, если в БД1 такой еще нет
+                    f1 = f2 = False
+                    if not CustPost.objects.filter(title=row[3], code=code_3, level=3, upper_id=curr_rtu_1, upper_level='1').exists():  # noqa
+                        print('создаем пост в БД1')
+                        f1 = True
+                        curr_1 = CustPost.objects.create(title=row[3], code=code_3, level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    # По текущему уровню, если в БД2 такой еще нет
+                    if not CustPlace.objects.filter(title=row[3], code=code_3).exists():  # noqa
+                        print('cоздаем пост в БД2')
+                        f2 = True
+                        curr_2 = CustPlace.objects.create(title=row[3], code=code_3, level=3, upper_id=curr_rtu_2)  # noqa
+                    if f1 and f2:
+                        return (1, curr_1, curr_2)
+                    else:
+                        return FAIL
 
 
 
