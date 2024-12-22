@@ -12,10 +12,7 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
 
         def rtu_replace(list_in):
-            """Принимает список строк.
-            В каждой строке принятого списка смотрит второй элемент,
-            если там аббревиатура - то заменяет её на полное имя по словарю.
-            Возвращает измененный список."""
+            """."""
             PATTERN = {
                 'ДВТУ': 'Дальневосточное таможенное управление',
                 'ПТУ': 'Приволжское таможенное управление',
@@ -83,9 +80,8 @@ class Command(BaseCommand):
         def field_processing(array, row, f_number):
             """Обработка отдельного поля с номером f_number в строке row.
             Возврат:
-            (0, 0, 0) - завершение без записи в БД. Ну или только в одну из
-            двух БД (что крайне маловероятно);
-            (1, <объект БД1>, <объект БД2) - завершение c записью в БД.
+            (0, 0, 0) - завершение без записи в обе БД.;
+            (1, <объект БД1>, <объект БД2) - завершение c записью в обе БД.
             """
             FAIL = (0, 0, 0)
             if row[f_number] == '':
@@ -95,16 +91,15 @@ class Command(BaseCommand):
 
             for i in range(1, 3 + 1):
                 codes.append(code_finder(array, row, i))
+                # Для всех уровней от 1 до текущего вкл-но проверка на not found и found many  # noqa
+                if i <= f_number and (codes[i] == 'not found' or codes[i] == 'found many'):  # noqa
+                    return FAIL
+            # для текущего уровня проверка на None (не пуст, но не найден)
+            if codes[f_number] is None:
+                return FAIL
 
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
-                # Для всех уровней от 1 до текущего (тут: 1) проверка на not found и found many  # noqa
-                if codes[1] == 'not found' or codes[1] == 'found many':
-                    return FAIL
-                # для текущего уровня проверка на None (не пуст, но не найден)
-                if codes[1] is None:
-                    return FAIL
-
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_1}\'')  # noqa
                 curr_1, f1 = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                 curr_2, f2 = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
@@ -114,13 +109,6 @@ class Command(BaseCommand):
 
             # Если анализируется объект уровня 2 (таможня)
             elif f_number == 2:
-                # Для всех уровней от 1 до текущего (тут: 2) проверка на not found и found many  # noqa
-                if (codes[1] == 'not found' or codes[1] == 'found many' or
-                   codes[2] == 'not found' or codes[2] == 'found many'):
-                    return FAIL
-                # для текущего уровня проверка на None (не пуст, но не найден)
-                if codes[2] is None:
-                    return FAIL
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_2}\'')  # noqa
                 # Над обработать два случая:
                 # 1. codes[1] is None,     codes[2] is not None (таможня ТНП)
@@ -141,14 +129,6 @@ class Command(BaseCommand):
                 return FAIL
 
             elif f_number == 3:
-                # Для всех уровней от 1 до текущего (тут: 3) проверка на not found и found many  # noqa
-                if (codes[1] == 'not found' or codes[1] == 'found many' or
-                   codes[2] == 'not found' or codes[2] == 'found many' or
-                   codes[3] == 'not found' or codes[3] == 'found many'):
-                    return FAIL
-                # для текущего уровня проверка на None (не пуст, но не найден)
-                if codes[3] is None:
-                    return FAIL
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
                 # Над обработать четыре случая:
                 # 1. codes[1] is None,     codes[2] is None,     codes[3] is not None (пост ТНП)  # noqa
