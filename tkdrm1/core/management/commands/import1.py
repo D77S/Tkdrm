@@ -91,104 +91,103 @@ class Command(BaseCommand):
             if row[f_number] == '':
                 return FAIL
 
+            codes = [None,]
+
+            for i in range(1, 3 + 1):
+                codes.append(code_finder(array, row, i))
+
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
-                code_1 = code_finder(array, row, 1)
                 # Для всех уровней от 1 до текущего (тут: 1) проверка на not found и found many  # noqa
-                if code_1 == 'not found' or code_1 == 'found many':
+                if codes[1] == 'not found' or codes[1] == 'found many':
                     return FAIL
                 # для текущего уровня проверка на None (не пуст, но не найден)
-                if code_1 is None:
+                if codes[1] is None:
                     return FAIL
 
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_1}\'')  # noqa
-                curr_1, f1 = Rtu.objects.get_or_create(title=row[1], code=code_1, level=1)  # noqa
-                curr_2, f2 = CustPlace.objects.get_or_create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
+                curr_1, f1 = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                curr_2, f2 = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                 if f1 and f2:
                     return (1, curr_1, curr_2)
                 return FAIL
 
             # Если анализируется объект уровня 2 (таможня)
             elif f_number == 2:
-                code_1 = code_finder(array, row, 1)
-                code_2 = code_finder(array, row, 2)
                 # Для всех уровней от 1 до текущего (тут: 2) проверка на not found и found many  # noqa
-                if (code_1 == 'not found' or code_1 == 'found many' or
-                   code_2 == 'not found' or code_2 == 'found many'):
+                if (codes[1] == 'not found' or codes[1] == 'found many' or
+                   codes[2] == 'not found' or codes[2] == 'found many'):
                     return FAIL
                 # для текущего уровня проверка на None (не пуст, но не найден)
-                if code_2 is None:
+                if codes[2] is None:
                     return FAIL
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_2}\'')  # noqa
                 # Над обработать два случая:
-                # 1. code_1 is None,     code_2 is not None (таможня ТНП)
-                # 2. code_1 is not None, code_2 is not None (таможня не ТНП)
+                # 1. codes[1] is None,     codes[2] is not None (таможня ТНП)
+                # 2. codes[1] is not None, codes[2] is not None (таможня не ТНП)  # noqa
                 # Случай 1.
-                if code_1 is None:
-                    curr_1, f1 = CustHouse.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None)  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=None)  # noqa
+                if codes[1] is None:
+                    curr_1, f1 = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None, upper_level=None)  # noqa
+                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None)  # noqa
                 # Случай 2.
-                if code_1 is not None:
-                    curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=code_1, level=1)  # noqa
-                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
-                    curr_1, f1 = CustHouse.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_2)  # noqa
+                if codes[1] is not None:
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
+                    curr_1, f1 = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
 
                 if f1 and f2:
                     return (1, curr_1, curr_2)
                 return FAIL
 
             elif f_number == 3:
-                code_1 = code_finder(array, row, 1)
-                code_2 = code_finder(array, row, 2)
-                code_3 = code_finder(array, row, 3)
                 # Для всех уровней от 1 до текущего (тут: 3) проверка на not found и found many  # noqa
-                if (code_1 == 'not found' or code_1 == 'found many' or
-                   code_2 == 'not found' or code_2 == 'found many' or
-                   code_3 == 'not found' or code_3 == 'found many'):
+                if (codes[1] == 'not found' or codes[1] == 'found many' or
+                   codes[2] == 'not found' or codes[2] == 'found many' or
+                   codes[3] == 'not found' or codes[3] == 'found many'):
                     return FAIL
                 # для текущего уровня проверка на None (не пуст, но не найден)
-                if code_3 is None:
+                if codes[3] is None:
                     return FAIL
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
                 # Над обработать четыре случая:
-                # 1. code_1 is None,     code_2 is None,     code_3 is not None (пост ТНП)  # noqa
-                # 2. code_1 is None,     code_2 is not None, code_3 is not None (пост таможни ТНП)  # noqa
-                # 3. code_1 is not None, code_2 is None,     code_3 is not None (пост РТУ)  # noqa
-                # 4. code_1 is not None, code_2 is not None, code_3 is not None (пост таможни РТУ)  # noqa
+                # 1. codes[1] is None,     codes[2] is None,     codes[3] is not None (пост ТНП)  # noqa
+                # 2. codes[1] is None,     codes[2] is not None, codes[3] is not None (пост таможни ТНП)  # noqa
+                # 3. codes[1] is not None, codes[2] is None,     codes[3] is not None (пост РТУ)  # noqa
+                # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
                 # Случай 1.
-                if code_1 is None and code_2 is None:
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=code_3, upper_id=None, upper_level=None)  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=code_3, upper_id=None)  # noqa
+                if codes[1] is None and codes[2] is None:
+                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], upper_id=None, upper_level=None)  # noqa
+                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], upper_id=None)  # noqa
                     if f1 and f2:
                         return (1, curr_1, curr_2)
                     return FAIL
                 # Случай 2.
-                if code_1 is None and code_2 is not None:
-                    curr_ch_1, _ = CustHouse.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=None, upper_level=None)  # noqa
-                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=None)  # noqa
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=code_3, level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=code_3, level=3, upper_id=curr_ch_2)  # noqa
+                if codes[1] is None and codes[2] is not None:
+                    curr_ch_1, _ = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None, upper_level=None)  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None)  # noqa
+                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
+                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
                     if f1 and f2:
                         return (1, curr_1, curr_2)
                     return FAIL
                 # Случай 3.
-                if code_1 is not None and code_2 is None:
-                    curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=code_1, level=1)  # noqa
-                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=code_3, level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=code_3, level=3, upper_id=curr_rtu_2)  # noqa
+                if codes[1] is not None and codes[2] is None:
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
+                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_2)  # noqa
                     if f1 and f2:
                         return (1, curr_1, curr_2)
                     return FAIL
                 #  Случай 4.
-                if code_1 is not None and code_2 is not None:
-                    curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=code_1, level=1)  # noqa
-                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=code_1, level=1, upper_id=None)  # noqa
-                    curr_ch_1, _ = CustHouse.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=code_2, level=2, upper_id=curr_rtu_2)  # noqa
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=code_3, level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=code_3, level=3, upper_id=curr_ch_2)  # noqa
+                if codes[1] is not None and codes[2] is not None:
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
+                    curr_ch_1, _ = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
+                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
                     if f1 and f2:
                         return (1, curr_1, curr_2)
                     return FAIL
