@@ -83,6 +83,8 @@ class Command(BaseCommand):
             (0, 0, 0) - завершение без записи в обе БД.;
             (1, <объект БД1>, <объект БД2) - завершение c записью в обе БД.
             """
+
+            # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
             FAIL = (0, 0, 0)
             if row[f_number] == '':
                 return FAIL
@@ -100,7 +102,7 @@ class Command(BaseCommand):
 
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
-                # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_1}\'')  # noqa
+                # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
                 curr_1, f1 = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                 curr_2, f2 = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                 if f1 and f2:
