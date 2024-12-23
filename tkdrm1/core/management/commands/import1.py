@@ -80,8 +80,8 @@ class Command(BaseCommand):
         def field_processing(array, row, f_number):
             """Обработка отдельного поля с номером f_number в строке row.
             Возврат:
-            (0, 0, 0) - завершение без записи в обе БД.;
-            (1, <объект БД1>, <объект БД2) - завершение c записью в обе БД.
+            (0, 0, 0) - не найдено в БД и не смогло быть создано в БД.;
+            (1, <объект БД1>, <объект БД2) - найдено или создано в БД.
             """
 
             # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
@@ -103,11 +103,9 @@ class Command(BaseCommand):
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
-                curr_1, f1 = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
-                curr_2, f2 = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                if f1 and f2:
-                    return (1, curr_1, curr_2)
-                return FAIL
+                curr_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                curr_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
+                return (1, curr_1, curr_2)
 
             # Если анализируется объект уровня 2 (таможня)
             elif f_number == 2:
@@ -123,12 +121,9 @@ class Command(BaseCommand):
                 if codes[1] is not None:
                     curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                    curr_1, f1 = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-
-                if f1 and f2:
-                    return (1, curr_1, curr_2)
-                return FAIL
+                    curr_1, _ = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    curr_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                return (1, curr_1, curr_2)
 
             elif f_number == 3:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
@@ -139,40 +134,32 @@ class Command(BaseCommand):
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
                 # Случай 1.
                 if codes[1] is None and codes[2] is None:
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], upper_id=None, upper_level=None)  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], upper_id=None)  # noqa
-                    if f1 and f2:
-                        return (1, curr_1, curr_2)
-                    return FAIL
+                    curr_1, _ = CustPost.objects.get_or_create(title=row[3], code=codes[3], upper_id=None, upper_level=None)  # noqa
+                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], upper_id=None)  # noqa
+                    return (1, curr_1, curr_2)
                 # Случай 2.
                 if codes[1] is None and codes[2] is not None:
                     curr_ch_1, _ = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None, upper_level=None)  # noqa
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None)  # noqa
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    if f1 and f2:
-                        return (1, curr_1, curr_2)
-                    return FAIL
+                    curr_1, _ = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
+                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                    return (1, curr_1, curr_2)
                 # Случай 3.
                 if codes[1] is not None and codes[2] is None:
                     curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_2)  # noqa
-                    if f1 and f2:
-                        return (1, curr_1, curr_2)
-                    return FAIL
+                    curr_1, _ = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_2)  # noqa
+                    return (1, curr_1, curr_2)
                 #  Случай 4.
                 if codes[1] is not None and codes[2] is not None:
                     curr_rtu_1, _ = Rtu.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                     curr_ch_1, _ = CustHouse.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                    curr_1, f1 = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
-                    curr_2, f2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    if f1 and f2:
-                        return (1, curr_1, curr_2)
-                    return FAIL
+                    curr_1, _ = CustPost.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
+                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                    return (1, curr_1, curr_2)
 
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
