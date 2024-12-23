@@ -161,6 +161,8 @@ class Command(BaseCommand):
                     curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
                     return (1, curr_1, curr_2)
 
+            return FAIL
+
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
             x.endswith('.xls') or
