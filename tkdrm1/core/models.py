@@ -49,6 +49,16 @@ class CustPlace(models.Model):
         return self.title
 
 
+
+class Owner(models.Model):
+    """."""
+    pass
+
+    def __str__(self):
+        """."""
+        return self.id
+
+
 class Rtu(models.Model):
     """."""
 
@@ -71,6 +81,11 @@ class Rtu(models.Model):
         MaxValueValidator(3)],
         default=1
         )
+    owner = models.OneToOneField(
+        Owner,  
+        on_delete=models.RESTRICT,
+        null=False
+    ) 
 
     class Meta:
         verbose_name = 'Региональное таможенное управление'
@@ -103,6 +118,11 @@ class CustHouse(models.Model):
         MaxValueValidator(3)],
         default=2,
         )
+    owner = models.OneToOneField(
+        Owner,  
+        on_delete=models.RESTRICT,
+        null=False
+    )
     upper_id = models.ForeignKey(to=Rtu,
                                  null=True,
                                  blank=False,
@@ -147,6 +167,11 @@ class CustPost(models.Model):
         MaxValueValidator(3)],
         default=3
         )
+    owner = models.OneToOneField(
+        Owner,  
+        on_delete=models.RESTRICT,
+        null=False
+    )
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
                                  blank=False,
@@ -168,17 +193,14 @@ class CustPost(models.Model):
         """."""
         return self.title
 
-
-class site_keeper(models.Model):
-    """."""
-    def __str__(self):
-        """."""
-        return self.title
-
-
 class Device(models.Model):
     """."""
-    pass
+    owner = models.ForeignKey(to=Owner,
+                              null=False,
+                              blank=False,
+                              on_delete=models.RESTRICT,
+                              verbose_name='Собственник',
+                              related_name="cust_post_to_cust_house")
 
     def __str__(self):
         """."""

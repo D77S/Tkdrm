@@ -2,7 +2,7 @@ import os
 import sys
 from django.core.management.base import BaseCommand
 import math
-import pandas
+import pandas # type: ignore
 
 from core.models import CustPlace, Rtu, CustHouse, CustPost
 
