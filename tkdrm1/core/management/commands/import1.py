@@ -3,7 +3,7 @@ import sys
 from django.db import models
 from django.core.management.base import BaseCommand
 import math
-import pandas # type: ignore
+import pandas  # type: ignore
 
 from core.models import CustPlace, Rtu, CustHouse, CustPost, Owner
 
@@ -84,11 +84,11 @@ class Command(BaseCommand):
                 return model.objects.get(**kwargs)
             except Exception:
                 new_target = model.objects.create(**kwargs)
-                if isinstance(model, Rtu):
+                if model == Rtu:
                     Owner.objects.create(rtu=new_target)
-                if isinstance(model, CustHouse):
+                if model == CustHouse:
                     Owner.objects.create(custhouse=new_target)
-                if isinstance(model, CustPost):
+                if model == CustPost:
                     Owner.objects.create(custpost=new_target)
                 return new_target
 
@@ -118,7 +118,7 @@ class Command(BaseCommand):
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
-                curr_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)
+                curr_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
                 curr_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                 return (1, curr_1, curr_2)
 
@@ -134,7 +134,7 @@ class Command(BaseCommand):
                     curr_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None)  # noqa
                 # Случай 2.
                 if codes[1] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                     curr_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
                     curr_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
@@ -161,14 +161,14 @@ class Command(BaseCommand):
                     return (1, curr_1, curr_2)
                 # Случай 3.
                 if codes[1] is not None and codes[2] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                     curr_1 = get_or_create_custom(CustPost, title=row[3], code=codes[3], level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
                     curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_2)  # noqa
                     return (1, curr_1, curr_2)
                 #  Случай 4.
                 if codes[1] is not None and codes[2] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
                     curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa

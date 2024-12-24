@@ -44,6 +44,7 @@ class CoreCustPostAdmin(CoreRtuAdmin):
 class CoreDeviceAdmin(admin.ModelAdmin):
     pass
 
+
 # @admin.register(CustPlace)
 # class CoreCustPlaceAdmin(admin.ModelAdmin):
 #     list_display = ('title',

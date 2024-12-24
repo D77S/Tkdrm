@@ -168,6 +168,7 @@ class CustPost(models.Model):
         """."""
         return self.title
 
+
 class Owner(models.Model):
     """."""
     rtu = models.OneToOneField(
@@ -179,7 +180,7 @@ class Owner(models.Model):
         default=None
     )
     custhouse = models.OneToOneField(
-        Rtu,
+        CustHouse,
         related_name='custhouses',
         on_delete=models.CASCADE,
         null=True,
@@ -187,7 +188,7 @@ class Owner(models.Model):
         default=None
     )
     custpost = models.OneToOneField(
-        Rtu,
+        CustPost,
         related_name='custposts',
         on_delete=models.CASCADE,
         null=True,
