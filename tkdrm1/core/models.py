@@ -49,16 +49,6 @@ class CustPlace(models.Model):
         return self.title
 
 
-
-class Owner(models.Model):
-    """."""
-    pass
-
-    def __str__(self):
-        """."""
-        return self.id
-
-
 class Rtu(models.Model):
     """."""
 
@@ -81,11 +71,6 @@ class Rtu(models.Model):
         MaxValueValidator(3)],
         default=1
         )
-    owner = models.OneToOneField(
-        Owner,  
-        on_delete=models.RESTRICT,
-        null=False
-    ) 
 
     class Meta:
         verbose_name = 'Региональное таможенное управление'
@@ -118,11 +103,6 @@ class CustHouse(models.Model):
         MaxValueValidator(3)],
         default=2,
         )
-    owner = models.OneToOneField(
-        Owner,  
-        on_delete=models.RESTRICT,
-        null=False
-    )
     upper_id = models.ForeignKey(to=Rtu,
                                  null=True,
                                  blank=False,
@@ -167,11 +147,6 @@ class CustPost(models.Model):
         MaxValueValidator(3)],
         default=3
         )
-    owner = models.OneToOneField(
-        Owner,  
-        on_delete=models.RESTRICT,
-        null=False
-    )
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
                                  blank=False,
@@ -192,6 +167,34 @@ class CustPost(models.Model):
     def __str__(self):
         """."""
         return self.title
+
+class Owner(models.Model):
+    """."""
+    rtu = models.OneToOneField(
+        Rtu,
+        related_name='rtus',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    custhouse = models.OneToOneField(
+        Rtu,
+        related_name='custhouses',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    custpost = models.OneToOneField(
+        Rtu,
+        related_name='custposts',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+
 
 class Device(models.Model):
     """."""
