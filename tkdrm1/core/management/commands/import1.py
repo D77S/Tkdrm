@@ -1,20 +1,23 @@
+"""."""
+import math
 import os
 import sys
-from django.db import models
-from django.core.management.base import BaseCommand
-import math
-import pandas  # type: ignore
 
-from core.models import CustPlace, Rtu, CustHouse, CustPost, Owner
+import pandas  # type: ignore
+from core.models import CustHouse, CustPlace, CustPost, Owner, Rtu
+from django.core.management.base import BaseCommand
+from django.db import models
 
 
 class Command(BaseCommand):
+    """."""
 
     def handle(self, *args, **options):
+        """."""
 
         def rtu_replace(list_in):
             """."""
-            PATTERN = {
+            PATTERN = {  # noqa
                 'ДВТУ': 'Дальневосточное таможенное управление',
                 'ПТУ': 'Приволжское таможенное управление',
                 'СТУ': 'Сибирское таможенное управление',
@@ -34,7 +37,9 @@ class Command(BaseCommand):
             return list_out
 
         def code_finder(array, row, f_number):
-            """Принимает список всех строк, одну (очередрую анализируемую)
+            """Кодефайндер.
+
+            Принимает список всех строк, одну (очередрую анализируемую)
             из него же, и номер поля в ней.
             В этом списке возможно есть строки, в которых в поле 4 есть код.
             Из строки row извлекается поле номер f_number,
@@ -71,36 +76,38 @@ class Command(BaseCommand):
             if len(code) == 1:
                 # print(f'code_finder: найден код для поля уровня \'{f_number}\' со значением \'{row[f_number]}\': \'{code[0]}\'')  # noqa
                 return code[0]
-            elif len(code) > 1:
+            if len(code) > 1:
                 print(f'Внимание!! code_finder: найдено кодов для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' больше одного, а именно: {code}')  # noqa
                 return 'found many'
-            else:
-                # print(f'code_finder: для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' код так и не был найден')  # noqa
-                return 'not found'
+            # print(f'code_finder: для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' код так и не был найден')  # noqa
+            return 'not found'
 
         def get_or_create_custom(model: models.Model, **kwargs):
             """."""
             try:
                 return model.objects.get(**kwargs)
             except Exception:
-                new_target = model.objects.create(**kwargs)
                 if model == Rtu:
+                    new_target = model.objects.create(**kwargs)
                     Owner.objects.create(rtu=new_target)
                 if model == CustHouse:
+                    new_target = model.objects.create(**kwargs)
                     Owner.objects.create(custhouse=new_target)
                 if model == CustPost:
+                    new_target = model.objects.create(**kwargs)
                     Owner.objects.create(custpost=new_target)
                 return new_target
 
         def field_processing(array, row, f_number):
-            """Обработка отдельного поля с номером f_number в строке row.
+            """Филдпроцессинг.
+
+            Обработка отдельного поля с номером f_number в строке row.
             Возврат:
             (0, 0, 0) - не найдено в БД и не смогло быть создано в БД.;
             (1, <объект БД1>, <объект БД2) - найдено или создано в БД.
             """
-
             # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
-            FAIL = (0, 0, 0)
+            FAIL = (0, 0, 0)  # noqa
             if row[f_number] == '':
                 return FAIL
 
@@ -108,41 +115,53 @@ class Command(BaseCommand):
 
             for i in range(1, 3 + 1):
                 codes.append(code_finder(array, row, i))
-                # Для всех уровней от 1 до текущего вкл-но проверка на not found и found many  # noqa
+                # Для всех уровней от 1 до текущего вкл-но проверка на (не None, но not found либо found many)  # noqa
                 if i <= f_number and (codes[i] == 'not found' or codes[i] == 'found many'):  # noqa
                     return FAIL
-            # для текущего уровня проверка на None (не пуст, но не найден)
-            if codes[f_number] is None:
+            # для текущего уровня, кроме первого, проверка на None (не пуст, но не найден)  # noqa
+            if f_number > 1 and codes[f_number] is None:
                 return FAIL
 
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
-                curr_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
-                curr_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                return (1, curr_1, curr_2)
+                # Надо обработать два случая:
+                # 1. codes[1] is None     (что-то нижестоящее ТНП)
+                # 2. codes[1] is not None (РТУ)
+                if codes[1] is None:
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
+                    curr_rtu_2 = CustPlace.objects.get_or_create(title='ТНП')
+                if codes[1] is not None:
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                return (1, curr_rtu_1, curr_rtu_2)
 
             # Если анализируется объект уровня 2 (таможня)
-            elif f_number == 2:
-                # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_2}\'')  # noqa
-                # Над обработать два случая:
-                # 1. codes[1] is None,     codes[2] is not None (таможня ТНП)
+            if f_number == 2:
+                # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
+                # Надо обработать два случая:
+                # 1. codes[1] is None,     codes[2] id not None (таможня ТНП)
                 # 2. codes[1] is not None, codes[2] is not None (таможня не ТНП)  # noqa
-                # Случай 1.
                 if codes[1] is None:
-                    curr_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], level=2, upper_id=None, upper_level=None)  # noqa
-                    curr_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None)  # noqa
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title='ТНП', level=1)  # noqa
+                    curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
                 # Случай 2.
                 if codes[1] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
-                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                    curr_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                return (1, curr_1, curr_2)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, code=codes[1])
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                return (1, curr_ch_1, curr_ch_2)
 
-            elif f_number == 3:
+            # !!!!!!!!!!!!!!!!!!!!!!!
+            return FAIL
+            # !!!!!!!!!!!!!!!!!!!!!!!
+
+            if f_number == 3:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
-                # Над обработать четыре случая:
+                # Надо обработать четыре случая:
                 # 1. codes[1] is None,     codes[2] is None,     codes[3] is not None (пост ТНП)  # noqa
                 # 2. codes[1] is None,     codes[2] is not None, codes[3] is not None (пост таможни ТНП)  # noqa
                 # 3. codes[1] is not None, codes[2] is None,     codes[3] is not None (пост РТУ)  # noqa
@@ -204,10 +223,17 @@ class Command(BaseCommand):
             del_flag = input('Удолять в БД проекта таблицы таможенных органов (y/n)?')  # noqa
 
         if del_flag == 'y':
-            CustPlace.objects.all().delete()
+            # БД1
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
+            tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
+            CustHouse.objects.create(title=None, code=None, upper_id=tnp_obj_1)  # noqa
+
+            # БД2
+            CustPlace.objects.all().delete()
+            tnp_obj_2 = CustPlace.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
+            CustPlace.objects.create(title=None, code=None, level=2, upper_id=tnp_obj_2)  # noqa
 
         for i in clean_data_second:
 
@@ -222,5 +248,5 @@ class Command(BaseCommand):
                     # print(f'Главный цикл. Строка \'{i[0]}\', обработка поля уровня \'{j}\', равного \'{i[j]}\'')  # noqa
                     field_processing(clean_data_second, i, j)
 
-            # if i[0] == '1':
+            # if i[0] == '10':
             #     sys.exit()

@@ -1,10 +1,6 @@
 """."""
 # from django.core.exceptions import ValidationError
-from django.core.validators import (
-    MinValueValidator,
-    MaxValueValidator,
-    RegexValidator
-)
+from django.core.validators import RegexValidator
 from django.db import models
 
 CUSTCHOICES = (('1', 'РТУ'), ('2', 'Таможня'), ('3', 'Пост'))
@@ -16,13 +12,13 @@ class CustPlace(models.Model):
     title = models.CharField(
         max_length=255,
         unique=False,  # !!!!!!
-        null=False,
+        null=True,
         verbose_name='Название'
     )
     code = models.CharField(
        max_length=8,
        unique=True,
-       null=False,
+       null=True,
        blank=False,
        validators=[RegexValidator(regex=r'^1\d{7}$')],
        verbose_name='Код т.органа'
@@ -41,6 +37,8 @@ class CustPlace(models.Model):
                                  related_name="to_upper_level")
 
     class Meta:
+        """."""
+
         verbose_name = 'Таможенный орган'
         verbose_name_plural = 'Таможенные органы'
 
@@ -56,23 +54,21 @@ class Rtu(models.Model):
         max_length=255,
         unique=True,
         null=False,
+        blank=False,
         verbose_name='Название'
     )
     code = models.CharField(
         max_length=8,
         unique=True,
-        null=False,
+        null=True,
         blank=False,
         validators=[RegexValidator(regex=r'^1\d{2}00000$')],
         verbose_name='Код т.органа'
     )
-    level = models.IntegerField(validators=[
-        MinValueValidator(1),
-        MaxValueValidator(3)],
-        default=1
-        )
 
     class Meta:
+        """."""
+
         verbose_name = 'Региональное таможенное управление'
         verbose_name_plural = 'Региональные таможенные управления'
 
@@ -87,36 +83,28 @@ class CustHouse(models.Model):
     title = models.CharField(
         max_length=255,
         unique=True,
-        null=False,
+        null=True,
+        blank=False,
         verbose_name='Название'
     )
     code = models.CharField(
         max_length=8,
         unique=True,
-        null=False,
+        null=True,
         blank=False,
         validators=[RegexValidator(regex=r'^1\d{5}000$')],
         verbose_name='Код т.органа'
     )
-    level = models.IntegerField(validators=[
-        MinValueValidator(1),
-        MaxValueValidator(3)],
-        default=2,
-        )
     upper_id = models.ForeignKey(to=Rtu,
-                                 null=True,
+                                 null=False,
                                  blank=False,
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_house_to_rtu")
-    upper_level = models.CharField(choices=CUSTCHOICES,
-                                   verbose_name='Уровень вышестоящего т.органа',  # noqa
-                                   max_length=1,
-                                   null=True,
-                                   blank=False,
-                                   )
 
     class Meta:
+        """."""
+
         verbose_name = 'Таможня'
         verbose_name_plural = 'Таможни'
 
@@ -142,25 +130,16 @@ class CustPost(models.Model):
         validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
     )
-    level = models.IntegerField(validators=[
-        MinValueValidator(1),
-        MaxValueValidator(3)],
-        default=3
-        )
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
                                  blank=False,
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_post_to_cust_house")
-    upper_level = models.CharField(choices=CUSTCHOICES,
-                                   verbose_name='Уровень вышестоящего т.органа',  # noqa
-                                   max_length=1,
-                                   null=True,
-                                   blank=False,
-                                   )
 
     class Meta:
+        """."""
+
         verbose_name = 'Таможенный пост'
         verbose_name_plural = 'Таможенные посты'
 
@@ -171,6 +150,7 @@ class CustPost(models.Model):
 
 class Owner(models.Model):
     """."""
+
     rtu = models.OneToOneField(
         Rtu,
         related_name='rtus',
@@ -199,6 +179,7 @@ class Owner(models.Model):
 
 class Device(models.Model):
     """."""
+
     owner = models.ForeignKey(to=Owner,
                               null=False,
                               blank=False,
