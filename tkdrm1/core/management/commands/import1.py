@@ -155,10 +155,6 @@ class Command(BaseCommand):
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
                 return (1, curr_ch_1, curr_ch_2)
 
-            # !!!!!!!!!!!!!!!!!!!!!!!
-            return FAIL
-            # !!!!!!!!!!!!!!!!!!!!!!!
-
             if f_number == 3:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
                 # Надо обработать четыре случая:
@@ -168,6 +164,7 @@ class Command(BaseCommand):
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
                 # Случай 1.
                 if codes[1] is None and codes[2] is None:
+                    # !!!!!!!!!!!!!! дальше отредактировать!!!!!!!!!!!!!
                     curr_1 = get_or_create_custom(CustPost, title=row[3], code=codes[3], upper_id=None, upper_level=None)  # noqa
                     curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], upper_id=None)  # noqa
                     return (1, curr_1, curr_2)
@@ -228,12 +225,12 @@ class Command(BaseCommand):
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
             tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
-            CustHouse.objects.create(title=None, code=None, upper_id=tnp_obj_1)  # noqa
+            CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
 
             # БД2
             CustPlace.objects.all().delete()
             tnp_obj_2 = CustPlace.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
-            CustPlace.objects.create(title=None, code=None, level=2, upper_id=tnp_obj_2)  # noqa
+            CustPlace.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
 
         for i in clean_data_second:
 
