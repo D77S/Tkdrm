@@ -145,13 +145,13 @@ class Command(BaseCommand):
                 if codes[1] is None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title='ТНП', level=1)  # noqa
-                    curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
+                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
                 # Случай 2.
                 if codes[1] is not None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, code=codes[1])
                     curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
-                    curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
+                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
                 return (1, curr_ch_1, curr_ch_2)
 
@@ -164,33 +164,40 @@ class Command(BaseCommand):
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
                 # Случай 1.
                 if codes[1] is None and codes[2] is None:
-                    # !!!!!!!!!!!!!! дальше отредактировать!!!!!!!!!!!!!
-                    curr_1 = get_or_create_custom(CustPost, title=row[3], code=codes[3], upper_id=None, upper_level=None)  # noqa
-                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], upper_id=None)  # noqa
-                    return (1, curr_1, curr_2)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title='ТНП', level=1)  # noqa
+                    curr_ch_1 = get_or_create_custom(model=CustHouse, title='ТНП')  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title='ТНП', level=2)  # noqa
+                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
+                    curr_post_2 = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                    return (1, curr_post_1, curr_post_2)
                 # Случай 2.
                 if codes[1] is None and codes[2] is not None:
-                    curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], level=2, upper_id=None, upper_level=None)  # noqa
-                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=None)  # noqa
-                    curr_1 = get_or_create_custom(CustPost, title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
-                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    return (1, curr_1, curr_2)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title='ТНП', level=1)  # noqa
+                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
+                    curr_post_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                    return (1, curr_post_1, curr_post_2)
                 # Случай 3.
                 if codes[1] is not None and codes[2] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
-                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                    curr_1 = get_or_create_custom(CustPost, title=row[3], code=codes[3], level=3, upper_id=curr_rtu_1, upper_level='1')  # noqa
-                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_rtu_2)  # noqa
-                    return (1, curr_1, curr_2)
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_ch_1 = get_or_create_custom(model=CustHouse, title='ТНП')  # noqa
+                    curr_ch_2, _ = CustPlace.objects.get_or_create(title='ТНП', level=2)  # noqa
+                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
+                    curr_post_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                    return (1, curr_post_1, curr_post_2)
                 #  Случай 4.
                 if codes[1] is not None and codes[2] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1], level=1)  # noqa
-                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1, upper_id=None)  # noqa
-                    curr_ch_1 = get_or_create_custom(CustHouse, title=row[2], code=codes[2], level=2, upper_id=curr_rtu_1, upper_level='1')  # noqa
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
+                    curr_rtu_2, _ = CustPlace.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
                     curr_ch_2, _ = CustPlace.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                    curr_1 = get_or_create_custom(CustPost, title=row[3], code=codes[3], level=3, upper_id=curr_ch_1, upper_level='2')  # noqa
-                    curr_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    return (1, curr_1, curr_2)
+                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
+                    curr_post_2, _ = CustPlace.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                    return (1, curr_post_1, curr_post_2)
 
             return FAIL
 
