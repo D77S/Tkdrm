@@ -4,7 +4,14 @@ import os
 import sys
 
 import pandas  # type: ignore
-from core.models import CustHouse, CustPlace, CustPost, Owner, Rtu
+from core.models import (
+    CustHouse,
+    CustPlace,
+    CustPost,
+    # Owner,
+    Rtu,
+    Device
+)
 from django.core.management.base import BaseCommand
 from django.db import models
 
@@ -89,13 +96,10 @@ class Command(BaseCommand):
             except Exception:
                 if model == Rtu:
                     new_target = model.objects.create(**kwargs)
-                    Owner.objects.create(rtu=new_target)
                 if model == CustHouse:
                     new_target = model.objects.create(**kwargs)
-                    Owner.objects.create(custhouse=new_target)
                 if model == CustPost:
                     new_target = model.objects.create(**kwargs)
-                    Owner.objects.create(custpost=new_target)
                 return new_target
 
         def field_processing(array, row, f_number):
@@ -162,6 +166,7 @@ class Command(BaseCommand):
                 # 2. codes[1] is None,     codes[2] is not None, codes[3] is not None (пост таможни ТНП)  # noqa
                 # 3. codes[1] is not None, codes[2] is None,     codes[3] is not None (пост РТУ)  # noqa
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
+                # Честно: оптимизировать дальше лень.
                 # Случай 1.
                 if codes[1] is None and codes[2] is None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
@@ -227,6 +232,7 @@ class Command(BaseCommand):
             del_flag = input('Удолять в БД проекта таблицы таможенных органов (y/n)?')  # noqa
 
         if del_flag == 'y':
+            Device.objects.all().delete()
             # БД1
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()

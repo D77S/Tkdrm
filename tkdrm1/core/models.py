@@ -1,5 +1,6 @@
 """."""
-# from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError
+# from django.db.models import CheckConstraint, Q
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -39,8 +40,8 @@ class CustPlace(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Таможенный орган'
-        verbose_name_plural = 'Таможенные органы'
+        verbose_name = 'Обобщенный собственник второго типа'
+        verbose_name_plural = 'Обобщенные собственники второго типа'
 
     def __str__(self):
         """."""
@@ -65,6 +66,11 @@ class Rtu(models.Model):
         validators=[RegexValidator(regex=r'^1\d{2}00000$')],
         verbose_name='Код т.органа'
     )
+
+    def save(self, *args, **kwargs):
+        temp = super().save(*args, **kwargs)
+        Owner.objects.create(rtu=self, custhouse=None, custpost=None)
+        return temp
 
     class Meta:
         """."""
@@ -92,15 +98,20 @@ class CustHouse(models.Model):
         unique=True,
         null=True,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{5}000$')],
+        validators=[RegexValidator(regex=r'^1\d{4}000$')],
         verbose_name='Код т.органа'
     )
     upper_id = models.ForeignKey(to=Rtu,
                                  null=False,
                                  blank=False,
-                                 on_delete=models.RESTRICT,
+                                 on_delete=models.PROTECT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_house_to_rtu")
+
+    def save(self, *args, **kwargs):
+        temp = super().save(*args, **kwargs)
+        Owner.objects.create(rtu=None, custhouse=self, custpost=None)
+        return temp
 
     class Meta:
         """."""
@@ -133,9 +144,14 @@ class CustPost(models.Model):
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
                                  blank=False,
-                                 on_delete=models.RESTRICT,
+                                 on_delete=models.PROTECT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="cust_post_to_cust_house")
+
+    def save(self, *args, **kwargs):
+        temp = super().save(*args, **kwargs)
+        Owner.objects.create(rtu=None, custhouse=None, custpost=self)
+        return temp
 
     class Meta:
         """."""
@@ -153,6 +169,7 @@ class Owner(models.Model):
 
     rtu = models.OneToOneField(
         Rtu,
+        verbose_name='Название РТУ',
         related_name='rtus',
         on_delete=models.CASCADE,
         null=True,
@@ -161,6 +178,7 @@ class Owner(models.Model):
     )
     custhouse = models.OneToOneField(
         CustHouse,
+        verbose_name='Название таможни',
         related_name='custhouses',
         on_delete=models.CASCADE,
         null=True,
@@ -169,6 +187,7 @@ class Owner(models.Model):
     )
     custpost = models.OneToOneField(
         CustPost,
+        verbose_name='Название поста',
         related_name='custposts',
         on_delete=models.CASCADE,
         null=True,
@@ -176,16 +195,73 @@ class Owner(models.Model):
         default=None
     )
 
+    def delete(self, *args, **kwargs):
+        temp = super().delete(*args, **kwargs)
+        curr_rtu: Rtu = self.rtu
+        curr_ch: CustHouse = self.custhouse
+        curr_post: CustPost = self.custpost
+
+        if curr_rtu is not None:
+            curr_down_chs = CustHouse.objects.filter(upper_id=curr_rtu.id)
+            if curr_down_chs.exists():
+                for curr_down_ch in curr_down_chs:
+                    curr_down_posts = CustPost.objects.filter(upper_id=curr_down_ch.id)
+                    if curr_down_posts.exists():
+                        curr_down_posts.delete()
+                curr_down_chs.delete()
+            Rtu.objects.get(id=curr_rtu.id).delete()
+        if curr_ch is not None:
+            curr_down_posts = CustPost.objects.filter(upper_id=curr_ch.id)
+            if curr_down_posts.exists():
+                curr_down_posts.delete()
+            CustHouse.objects.get(id=curr_ch.id).delete()
+        if curr_post is not None:
+            CustPost.objects.get(id=curr_post.id).delete()
+        return temp
+
+    def clean(self):
+        super().clean()
+        check = (((self.rtu is None) and (self.custhouse is None) and (self.custpost is not None)) or  # noqa
+                 ((self.rtu is None) and (self.custhouse is not None) and (self.custpost is None)) or  # noqa
+                 ((self.rtu is not None) and (self.custhouse is None) and (self.custpost is None)))  # noqa
+        if not check:
+            raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Обобщенный собственник первого типа'
+        verbose_name_plural = 'Обобщенные собственники первого типа'
+
+    def __str__(self):
+        if self.rtu is not None:
+            return self.rtu.title
+        if self.custhouse is not None:
+            return self.custhouse.title
+        return self.custpost.title
+
 
 class Device(models.Model):
     """."""
 
-    owner = models.ForeignKey(to=Owner,
-                              null=False,
-                              blank=False,
-                              on_delete=models.RESTRICT,
-                              verbose_name='Собственник',
-                              related_name="cust_post_to_cust_house")
+    owner1 = models.ForeignKey(to=Owner,
+                               null=False,
+                               blank=False,
+                               on_delete=models.RESTRICT,
+                               verbose_name='Собственник первого типа',
+                               related_name='device_to_owner1')
+    owner2 = models.ForeignKey(to=CustPlace,
+                               null=False,
+                               blank=False,
+                               on_delete=models.RESTRICT,
+                               verbose_name='Собственник второго типа',
+                               related_name='device_to_owner2')
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Техническое средство'
+        verbose_name_plural = 'Технические средства'
 
     def __str__(self):
         """."""
