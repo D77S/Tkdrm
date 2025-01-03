@@ -277,12 +277,12 @@ class OtherTypes(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект источника собственности'
-        verbose_name_plural = 'Объекты источника собственности'
+        verbose_name = 'Иной источник собственности'
+        verbose_name_plural = 'Иные источники собственности'
 
     def __str__(self):
         """."""
-        return f'объект источника собственности, являющийся: {self.title}'
+        return f'источник собственности, являющийся: {self.title}'
 
 
 class Owner(models.Model):
@@ -338,7 +338,13 @@ class Owner(models.Model):
             OtherTypes.objects.get(id=curr_other.id).delete()
         return temp
 
-    # вставить def clean валидатор, с учетом что первые два поля идут парой
+    def clean(self):
+        super().clean()
+        check = (((self.custplace1 is None) and (self.custplace2 is None) and (self.other is not None)) or  # noqa
+                 ((self.custplace1 is None) and (self.custplace2 is not None) and (self.other is None)) or  # noqa
+                 ((self.custplace1 is not None) and (self.custplace2 is None) and (self.other is None)))  # noqa
+        if not check:
+            raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
 
     class Meta:
         """."""

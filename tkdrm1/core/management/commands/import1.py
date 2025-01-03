@@ -2,6 +2,7 @@
 import math
 import os
 import sys
+from tqdm import tqdm
 
 import pandas  # type: ignore
 from core.models import (
@@ -230,7 +231,7 @@ class Command(BaseCommand):
 
         del_flag = 't'
         while not (del_flag == 'y' or del_flag == 'n'):
-            del_flag = input('Удолять в БД проекта таблицы таможенных органов (y/n)?')  # noqa
+            del_flag = input('Очищать таблицы в БД (y/n)?')  # noqa
 
         if del_flag == 'y':
             # delete
@@ -245,11 +246,14 @@ class Command(BaseCommand):
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
-            OtherTypes.objects.create(title='по договору передачи в пользование')  # noqa
-            OtherTypes.objects.create(title='по акту передачи в пользование')  # noqa
-            OtherTypes.objects.create(title='по факту, без документа-основания')  # noqa
+            OtherTypes.objects.create(title='Росгранстрой по договору передачи в пользование')  # noqa
+            OtherTypes.objects.create(title='Росгранстрой по акту передачи в пользование')  # noqa
+            OtherTypes.objects.create(title='Росгранстрой по факту, без документа-основания')  # noqa
+            OtherTypes.objects.create(title='иной владелец по договору передачи в пользование')  # noqa
+            OtherTypes.objects.create(title='иной владелец по акту передачи в пользование')  # noqa
+            OtherTypes.objects.create(title='иной владелец по факту, без документа-основания')  # noqa
 
-        for i in clean_data_second:
+        for i in tqdm(clean_data_second):
 
             if i[8] not in ['1', '2', '3', '4']:
                 print(f'Строка {i[0]}, невалидный столбец "тип объекта".')
