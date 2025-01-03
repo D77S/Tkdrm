@@ -6,6 +6,8 @@ from .models import (
     CustPlace1,
     CustPlace2,
     Device,
+    OtherTypes,
+    Owner
 )
 
 admin.site.empty_value_display = 'Не задано'
@@ -45,14 +47,14 @@ class CoreCustPostAdmin(admin.ModelAdmin):
 
 
 @admin.register(CustPlace1)
-class CoreOwnerAdmin(admin.ModelAdmin):
+class CoreCustPlase1Admin(admin.ModelAdmin):
     ordering = ('id',)
     list_per_page = 14
     list_filter = ('rtu', 'custhouse', 'custpost')
 
 
 @admin.register(CustPlace2)
-class CoreCustPlaceAdmin(admin.ModelAdmin):
+class CoreCustPlace2Admin(admin.ModelAdmin):
     list_display = ('title',
                     'code',
                     'upper_id')
@@ -62,6 +64,16 @@ class CoreCustPlaceAdmin(admin.ModelAdmin):
     ordering = ('title',)
     list_filter = ('level',)
     raw_id_fields = ('upper_id',)
+
+
+@admin.register(OtherTypes)
+class CoreOtherTypesAdmin(admin.ModelAdmin):
+    pass
+
+
+@admin.register(Owner)
+class CoreOwnerAdmin(admin.ModelAdmin):
+    list_per_page = 14
 
 
 @admin.register(Device)

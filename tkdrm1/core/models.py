@@ -39,7 +39,7 @@ class Rtu(models.Model):
 
     def __str__(self):
         """."""
-        return self.title
+        return f'РТУ: {self.title}'
 
 
 class CustHouse(models.Model):
@@ -80,7 +80,7 @@ class CustHouse(models.Model):
 
     def __str__(self):
         """."""
-        return self.title
+        return f'таможня: {self.title}'
 
 
 class CustPost(models.Model):
@@ -120,11 +120,11 @@ class CustPost(models.Model):
 
     def __str__(self):
         """."""
-        return self.title
+        return f'пост: {self.title}'
 
 
 class CustPlace1(models.Model):
-    """Модель обобщенного объекта т.органа первого типа.
+    """Модель объекта т.органа первого типа.
     Для каждой записи (строки) строго одно поле д. быть ненулевым.
     Иначе говоря, перечень валидных сочетаний полей ограничен таким:
     foo1, null, null;
@@ -159,6 +159,11 @@ class CustPlace1(models.Model):
         blank=True,
         default=None
     )
+
+    def save(self, *args, **kwargs):
+        temp = super().save(*args, **kwargs)
+        Owner.objects.create(custplace1=self)
+        return temp
 
     def delete(self, *args, **kwargs):
         temp = super().delete(*args, **kwargs)
@@ -195,19 +200,21 @@ class CustPlace1(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Обобщенный собственник первого типа'
-        verbose_name_plural = 'Обобщенные собственники первого типа'
+        verbose_name = 'Объект т.органа первого типа'
+        verbose_name_plural = 'Объекты т.органа первого типа'
 
     def __str__(self):
+        """."""
+        temp = 'объект таможенного органа 1-го типа, являющийся: {curr}'
         if self.rtu is not None:
-            return self.rtu.title
+            return temp.format(curr=self.rtu)
         if self.custhouse is not None:
-            return self.custhouse.title
-        return self.custpost.title
+            return temp.format(curr=self.custhouse)
+        return temp.format(curr=self.custpost)
 
 
 class CustPlace2(models.Model):
-    """Модель обобщенного объекта т.органа второго типа."""
+    """Модель объекта т.органа второго типа."""
 
     title = models.CharField(
         max_length=255,
@@ -236,26 +243,50 @@ class CustPlace2(models.Model):
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="to_upper_level")
 
+    def save(self, *args, **kwargs):
+        temp = super().save(*args, **kwargs)
+        Owner.objects.create(custplace2=self)
+        return temp
+
     class Meta:
         """."""
 
-        verbose_name = 'Обобщенный объект т.органа второго типа'
-        verbose_name_plural = 'Обобщенные объекты т.органа второго типа'
+        verbose_name = 'Объект т.органа второго типа'
+        verbose_name_plural = 'Объекты т.органа второго типа'
 
     def __str__(self):
         """."""
-        return self.title
+        return f'объект таможенного органа 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
 
 
-class RosgrTypes(models.Model):
-    """Модель типов собственничества Росгранстроя."""
+class OtherTypes(models.Model):
+    """Модель иных типов источников собственности."""
 
-    pass
+    title = models.CharField(
+        max_length=255,
+        unique=True,
+        null=False,
+        verbose_name='Тип источника собственности'
+    )
+
+    def save(self, *args, **kwargs):
+        temp = super().save(*args, **kwargs)
+        Owner.objects.create(other=self)
+        return temp
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект источника собственности'
+        verbose_name_plural = 'Объекты источника собственности'
+
+    def __str__(self):
+        """."""
+        return f'объект источника собственности, являющийся: {self.title}'
 
 
 class Owner(models.Model):
-    """Модель обобщенных объектов
-    источников собственности.
+    """Модель объектов источников собственности.
     Для каждой записи (строки):
     строго одно поле должно быть ненулевым.
     Первые два поля идут 'единой парой' на период отладки
@@ -284,42 +315,51 @@ class Owner(models.Model):
         blank=True,
         default=None
     )
-    rosgranstroy = models.ForeignKey(
-        RosgrTypes,
-        verbose_name='Собственник типа <Росгранстрой какого-то типа передачи>',  # noqa
-        related_name='rosgrs',
+    other = models.OneToOneField(
+        OtherTypes,
+        verbose_name='Собственник типа <иной тип>',  # noqa
+        related_name='others',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
         default=None
     )
 
+    def delete(self, *args, **kwargs):
+        temp = super().delete(*args, **kwargs)
+        curr_custplace1 = self.custplace1
+        curr_custplace2 = self.custplace2
+        curr_other = self.other
+        if curr_custplace1 is not None:
+            CustPlace1.objects.get(id=curr_custplace1.id).delete()
+        if curr_custplace2 is not None:
+            CustPlace2.objects.get(id=curr_custplace2.id).delete()
+        if curr_other is not None:
+            OtherTypes.objects.get(id=curr_other.id).delete()
+        return temp
+
+    # вставить def clean валидатор, с учетом что первые два поля идут парой
+
     class Meta:
         """."""
 
-        verbose_name = 'Обобщенный объект собственника'
-        verbose_name_plural = 'Обобщенные объекты собственника'
+        verbose_name = 'Объект собственника'
+        verbose_name_plural = 'Объекты собственника'
 
     def __str__(self):
         """."""
-        return self.title
+        temp = 'объект собственника, являющийся: {curr}'
+        if self.custplace1 is not None:
+            return temp.format(curr=self.custplace1)
+        if self.custplace2 is not None:
+            return temp.format(curr=self.custplace2)
+        return temp.format(curr=self.other)
 
 
 class Device(models.Model):
     """."""
 
-    owner1 = models.ForeignKey(to=CustPlace1,
-                               null=False,
-                               blank=False,
-                               on_delete=models.RESTRICT,
-                               verbose_name='Собственник первого типа',
-                               related_name='device_to_owner1')
-    owner2 = models.ForeignKey(to=CustPlace2,
-                               null=False,
-                               blank=False,
-                               on_delete=models.RESTRICT,
-                               verbose_name='Собственник второго типа',
-                               related_name='device_to_owner2')
+    pass
 
     class Meta:
         """."""

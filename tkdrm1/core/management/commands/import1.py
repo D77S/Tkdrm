@@ -9,6 +9,8 @@ from core.models import (
     CustHouse,
     CustPost,
     CustPlace2,
+    OtherTypes,
+    # Owner,
     Device
 )
 from django.core.management.base import BaseCommand
@@ -231,18 +233,21 @@ class Command(BaseCommand):
             del_flag = input('Удолять в БД проекта таблицы таможенных органов (y/n)?')  # noqa
 
         if del_flag == 'y':
+            # delete
             Device.objects.all().delete()
-            # БД1
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
+            CustPlace2.objects.all().delete()
+            OtherTypes.objects.all().delete()
+            # create initial
             tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
-
-            # БД2
-            CustPlace2.objects.all().delete()
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
+            OtherTypes.objects.create(title='по договору передачи в пользование')  # noqa
+            OtherTypes.objects.create(title='по акту передачи в пользование')  # noqa
+            OtherTypes.objects.create(title='по факту, без документа-основания')  # noqa
 
         for i in clean_data_second:
 
@@ -259,10 +264,8 @@ class Command(BaseCommand):
                 if i[j] != '':
                     # print(f'Главный цикл. Строка \'{i[0]}\', обработка поля уровня \'{j}\', равного \'{i[j]}\'')  # noqa
                     temp_cust_place = field_processing(clean_data_second, i, j)
-                    print(f'temp_cust_place={temp_cust_place}')
                     if temp_cust_place[0] == 1:
                         curr_cust_place = temp_cust_place
-            print(f'Строка номер {i[0]}, последняя заполненная клетка из первых трех: {curr_cust_place}')  # noqa
 
-            if i[0] == '952':
-                sys.exit()
+            # if i[0] == '952':
+            #     sys.exit()
