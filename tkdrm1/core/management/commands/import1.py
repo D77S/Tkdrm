@@ -109,11 +109,14 @@ class Command(BaseCommand):
 
             Обработка отдельного поля с номером f_number в строке row.
             Возврат:
-            (0, 0, 0) - не найдено в БД и не смогло быть создано в БД.;
-            (1, <объект БД1>, <объект БД2) - найдено или создано в БД.
+            (0, 0, 0, 0, 0) - не найдено в БД и не смогло быть создано в БД.;
+            (1, <объект БД1_1>, <объект БД1_2>, <объект БД2_1, <объект БД2_2>) - найдено или создано в БД.
+            где объект _1 - реально найденный или созданный в БД,
+            объект _2 - он же, либо принудительно повышенный до таможни, если _1 был пост.
             """
+            FAIL = (0, 0, 0, 0, 0)  # noqa
+
             # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
-            FAIL = (0, 0, 0)  # noqa
             if row[f_number] == '':
                 return FAIL
 
@@ -140,7 +143,7 @@ class Command(BaseCommand):
                 if codes[1] is not None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
-                return (1, curr_rtu_1, curr_rtu_2)
+                return (1, curr_rtu_1, curr_rtu_1, curr_rtu_2, curr_rtu_2)
 
             # Если анализируется объект уровня 2 (таможня)
             if f_number == 2:
@@ -159,7 +162,7 @@ class Command(BaseCommand):
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                     curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                return (1, curr_ch_1, curr_ch_2)
+                return (1, curr_ch_1, curr_ch_1, curr_ch_2, curr_ch_2)
 
             if f_number == 3:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
@@ -177,7 +180,6 @@ class Command(BaseCommand):
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=2)  # noqa
                     curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
                     curr_post_2 = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    return (1, curr_post_1, curr_post_2)
                 # Случай 2.
                 if codes[1] is None and codes[2] is not None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
@@ -186,7 +188,6 @@ class Command(BaseCommand):
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
                     curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
                     curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    return (1, curr_post_1, curr_post_2)
                 # Случай 3.
                 if codes[1] is not None and codes[2] is None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
@@ -195,7 +196,6 @@ class Command(BaseCommand):
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=2)  # noqa
                     curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
                     curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    return (1, curr_post_1, curr_post_2)
                 #  Случай 4.
                 if codes[1] is not None and codes[2] is not None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
@@ -204,9 +204,46 @@ class Command(BaseCommand):
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
                     curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
                     curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                    return (1, curr_post_1, curr_post_2)
+
+                return (1, curr_post_1, curr_ch_1, curr_post_2, curr_ch_2)
 
             return FAIL
+
+        def pre_valid_tests(row):
+            """."""
+            if row[7] not in ['', 'А', 'В', 'Ж', 'М', 'ММПО', 'ОЭЗ', 'П', 'Р', 'С']:  # noqa
+                print(f'Строка {row[0]}, \'тип п/п\' не из валидных вариантов, строка не будет обработана.')  # noqa
+                return False
+            if row[8] not in ['1', '2', '3', '4']:
+                print(f'Строка {row[0]}, \'тип объекта\' не из вариантов \'1\', \'2\', \'3\', \'4\', строка не будет обработана.')  # noqa
+                return False
+            if row[11] not in ['основная', 'служебная']:
+                print(f'Строка {row[0]}, \'статус строки\' не из вариантов \'основная\', \'служебная\', строка не будет обработана')  # noqa
+                return False
+            if row[14] not in ['', 'Там.орган', 'Росгранстрой-договор', 'Росгранстрой-акт', 'Росгранстрой-факт.пред.',  # noqa
+                'Иной владелец-договор', 'Иной владелец-акт', 'Иной владелец-факт.пред.', '?']:  # noqa
+                print(f'Строка {row[0]}, \'Собственник\' не из валидных вариантов, строка не будет обработана')  # noqa
+                return False
+            if row[8] == '1' and (row[5] == '' or row[7] == ''):
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 5, 7, 8, строка не будет обработана')  # noqa
+                return False
+            if row[7] == 'В' and row[6] != '':
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 6, 7, строка не будет обработана')  # noqa
+                return False
+            if (not ((row[11] == 'основная' and row[8] != '1' and row[4] != '') or  # noqa
+                     (row[11] == 'основная' and row[8] == '1' and row[4] == '') or  # noqa
+                     (row[11] == 'служебная' and row[4] == ''))):  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 4, 8 и 11, строка не будет обработана')  # noqa
+                return False
+            if not ((row[11] == 'служебная' and row[12] != '') or (row[11] == 'основная' and row[12] == '')):  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 11 и 12, строка не будет обработана')  # noqa
+                return False
+            if not ((row[11] == 'служебная' and row[14] != '') or (row[11] == 'основная' and row[14] == '')):  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 11 и 14, строка не будет обработана')  # noqa
+                return False
+            return True
+
+        # Main begin
 
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
@@ -223,7 +260,7 @@ class Command(BaseCommand):
                                  # nrows=2,
                                  header=None,
                                  sheet_name='Новая база2',
-                                 usecols=range(0, 17),
+                                 # usecols=range(0, 17),
                                  )
 
         clean_data_first = [['' if isinstance(j, float) and math.isnan(j) else str(j) for j in i] for i in data.values if isinstance(i[0], int)]  # noqa
@@ -246,30 +283,34 @@ class Command(BaseCommand):
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
-            OtherTypes.objects.create(title='Росгранстрой по договору передачи в пользование')  # noqa
-            OtherTypes.objects.create(title='Росгранстрой по акту передачи в пользование')  # noqa
-            OtherTypes.objects.create(title='Росгранстрой по факту, без документа-основания')  # noqa
-            OtherTypes.objects.create(title='иной владелец по договору передачи в пользование')  # noqa
-            OtherTypes.objects.create(title='иной владелец по акту передачи в пользование')  # noqa
-            OtherTypes.objects.create(title='иной владелец по факту, без документа-основания')  # noqa
+            OtherTypes.objects.create(title='Росгранстрой (по договору передачи в пользование)')  # noqa
+            OtherTypes.objects.create(title='Росгранстрой (по акту передачи в пользование)')  # noqa
+            OtherTypes.objects.create(title='Росгранстрой (по факту, без документа-основания)')  # noqa
+            OtherTypes.objects.create(title='иной владелец (по договору передачи в пользование)')  # noqa
+            OtherTypes.objects.create(title='иной владелец (по акту передачи в пользование)')  # noqa
+            OtherTypes.objects.create(title='иной владелец (по факту, без документа-основания)')  # noqa
 
         for i in tqdm(clean_data_second):
 
-            if i[8] not in ['1', '2', '3', '4']:
-                print(f'Строка {i[0]}, невалидный столбец "тип объекта".')
+            if not pre_valid_tests(i):
                 continue
 
             # валидная строка
             # Обработка первых трех полей.
-            # Если будет удачна (завершится кортежем (1, foo1, foo2)), то пополнится БД таможенных органов.  # noqa
-            # Это будущие объекты собственничества и пользования для "технических средств".  # noqa
-            curr_cust_place = ()
+            # Если будет удачна (завершится кортежем (1, foo1_1, foo1_2, foo2_1, foo2_2)), то пополнится БД таможенных органов.  # noqa
+            # Это будущие ссылки собственничества и пользования для "технических средств".  # noqa
+            curr_cust_place = (0, 0, 0, 0, 0)
             for j in range(1, 3 + 1):
                 if i[j] != '':
-                    # print(f'Главный цикл. Строка \'{i[0]}\', обработка поля уровня \'{j}\', равного \'{i[j]}\'')  # noqa
+                    # print(f'Строка номер \'{i[0]}\', обработка поля номер \'{j}\', равного \'{i[j]}\'')  # noqa
                     temp_cust_place = field_processing(clean_data_second, i, j)
                     if temp_cust_place[0] == 1:
                         curr_cust_place = temp_cust_place
+            if curr_cust_place == (0, 0, 0, 0, 0):
+                print(f'Строка {i[0]}, первые три поля не дали валидный т.орган, строка не будет обработана')  # noqa
+                continue
 
-            # if i[0] == '952':
-            #     sys.exit()
+            print(curr_cust_place)
+
+            if i[0] == '2':
+                sys.exit()

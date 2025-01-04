@@ -200,12 +200,12 @@ class CustPlace1(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект т.органа первого типа'
-        verbose_name_plural = 'Объекты т.органа первого типа'
+        verbose_name = 'Т.орган первого типа'
+        verbose_name_plural = 'Т.органы первого типа'
 
     def __str__(self):
         """."""
-        temp = 'объект таможенного органа 1-го типа, являющийся: {curr}'
+        temp = 'таможенный орган 1-го типа, являющийся: {curr}'
         if self.rtu is not None:
             return temp.format(curr=self.rtu)
         if self.custhouse is not None:
@@ -251,22 +251,22 @@ class CustPlace2(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект т.органа второго типа'
-        verbose_name_plural = 'Объекты т.органа второго типа'
+        verbose_name = 'Т.орган второго типа'
+        verbose_name_plural = 'Т.органы второго типа'
 
     def __str__(self):
         """."""
-        return f'объект таможенного органа 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
+        return f'таможенный орган 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
 
 
 class OtherTypes(models.Model):
-    """Модель иных типов источников собственности."""
+    """Модель иных типов источников имущества."""
 
     title = models.CharField(
         max_length=255,
         unique=True,
         null=False,
-        verbose_name='Тип источника собственности'
+        verbose_name='Тип источника имущества'
     )
 
     def save(self, *args, **kwargs):
@@ -277,16 +277,16 @@ class OtherTypes(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Иной источник собственности'
-        verbose_name_plural = 'Иные источники собственности'
+        verbose_name = 'Иной источник получения имущества'
+        verbose_name_plural = 'Иные источники получения имущества'
 
     def __str__(self):
         """."""
-        return f'источник собственности, являющийся: {self.title}'
+        return f'иной источник, являющийся: {self.title}'
 
 
 class Owner(models.Model):
-    """Модель объектов источников собственности.
+    """Модель субъектов учета т.с.
     Для каждой записи (строки):
     строго одно поле должно быть ненулевым.
     Первые два поля идут 'единой парой' на период отладки
@@ -299,7 +299,7 @@ class Owner(models.Model):
 
     custplace1 = models.OneToOneField(
         CustPlace1,
-        verbose_name='Собственник типа <т.орган первого типа>',
+        verbose_name='Субъект учета типа <т.орган первого типа>',
         related_name='custplaces1',
         on_delete=models.CASCADE,
         null=True,
@@ -308,7 +308,7 @@ class Owner(models.Model):
     )
     custplace2 = models.OneToOneField(
         CustPlace2,
-        verbose_name='Собственник типа <т.орган второго типа>',
+        verbose_name='Субъект учета типа <т.орган второго типа>',
         related_name='custplaces2',
         on_delete=models.CASCADE,
         null=True,
@@ -317,7 +317,7 @@ class Owner(models.Model):
     )
     other = models.OneToOneField(
         OtherTypes,
-        verbose_name='Собственник типа <иной тип>',  # noqa
+        verbose_name='Субъект учета типа <иной тип>',  # noqa
         related_name='others',
         on_delete=models.CASCADE,
         null=True,
@@ -341,20 +341,19 @@ class Owner(models.Model):
     def clean(self):
         super().clean()
         check = (((self.custplace1 is None) and (self.custplace2 is None) and (self.other is not None)) or  # noqa
-                 ((self.custplace1 is None) and (self.custplace2 is not None) and (self.other is None)) or  # noqa
-                 ((self.custplace1 is not None) and (self.custplace2 is None) and (self.other is None)))  # noqa
+                 ((self.custplace1 is not None) and (self.custplace2 is not None) and (self.other is None)))  # noqa
         if not check:
-            raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
+            raise ValidationError('Ненулевое поле должно быть либо только последнее, либо только два первых.')  # noqa
 
     class Meta:
         """."""
 
-        verbose_name = 'Объект собственника'
-        verbose_name_plural = 'Объекты собственника'
+        verbose_name = 'Субъект учета т.с.'
+        verbose_name_plural = 'Субъект учета т.с.'
 
     def __str__(self):
         """."""
-        temp = 'объект собственника, являющийся: {curr}'
+        temp = 'субъект учета т.с., являющийся: {curr}'
         if self.custplace1 is not None:
             return temp.format(curr=self.custplace1)
         if self.custplace2 is not None:
