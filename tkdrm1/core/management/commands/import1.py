@@ -9,6 +9,7 @@ from core.models import (
     Rtu,
     CustHouse,
     CustPost,
+    Ppr,
     CustPlace2,
     OtherTypes,
     # Owner,
@@ -24,9 +25,9 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """."""
 
-        def rtu_replace(list_in):
+        def replace_to_clean(list_in):
             """."""
-            PATTERN = {  # noqa
+            PATTERN1 = {
                 'ДВТУ': 'Дальневосточное таможенное управление',
                 'ПТУ': 'Приволжское таможенное управление',
                 'СТУ': 'Сибирское таможенное управление',
@@ -37,18 +38,29 @@ class Command(BaseCommand):
                 'СКТУ': 'Северо-Кавказское таможенное управление',
                 'ТНП': ''
             }
+            PATTERN2 = {
+                'А': 'АПП',
+                'В': 'ВПП',
+                'Ж': 'ЖДПП',
+                'М': 'МПП',
+                'П': 'ППП',
+                'Р': 'РПП',
+                'С': 'СПП'
+            }
             list_out = []
             for i in list_in:
                 data_row = i
-                if data_row[1] in PATTERN.keys():
-                    data_row[1] = PATTERN.get(data_row[1])
+                if data_row[1] in PATTERN1.keys():
+                    data_row[1] = PATTERN1.get(data_row[1])
+                if data_row[7] in PATTERN2.keys():
+                    data_row[7] = PATTERN2.get(data_row[7])
                 list_out.append(data_row)
             return list_out
 
-        def code_finder(array, row, f_number):
+        def code_finder(array: list[str], row, f_number):
             """Кодефайндер.
 
-            Принимает список всех строк, одну (очередрую анализируемую)
+            Принимает список всех строк, одну (очередную анализируемую)
             из него же, и номер поля в ней.
             В этом списке возможно есть строки, в которых в поле 4 есть код.
             Из строки row извлекается поле номер f_number,
@@ -65,22 +77,18 @@ class Command(BaseCommand):
             Если не найдено - возвращается 'not found'.
             Если найдено более одной такой - возвращается 'found many'.
             """
-            # print(f'code_finder: обработка поля уровня \'{f_number}\', ищем в массиве значение \'{row[f_number]}\'')  # noqa
+            # print(f'code_finder: строка \'{row}\', обработка поля уровня \'{f_number}\', ищем в массиве значение \'{row[f_number]}\'')  # noqa
+
             if (f_number not in [1, 2, 3]) or row[f_number] == '':
                 return None
             code = []
-            temp_row = []
-            for j in range(1, 3 + 1):
-                if j <= f_number:
-                    temp_row.append(row[j])
-                else:
-                    temp_row.append('')
+            temp_row = row[1:f_number + 1] + ['' for i in range(0, 3 - f_number)]  # noqa
 
             for i in array:
                 if i[11] != 'основная':
                     continue
                 if i[1:4] == temp_row and (f_number + int(i[8]) == 5):
-                    code.append(i[4])
+                    code.append(i[4].strip().split('.')[0])
 
             if len(code) == 1:
                 # print(f'code_finder: найден код для поля уровня \'{f_number}\' со значением \'{row[f_number]}\': \'{code[0]}\'')  # noqa
@@ -104,32 +112,39 @@ class Command(BaseCommand):
                     new_target = model.objects.create(**kwargs)
                 return new_target
 
-        def field_processing(array, row, f_number):
-            """Филдпроцессинг.
+        def get_or_create_pp(row):
+            """."""
+            country = row[1] if row[1] != '' else None
+            try:
+                return Ppr.objects.get(pptype=row[2], title=row[0], tow_country=country)  # noqa
+            except Exception:
+                return Ppr.objects.create(pptype=row[2], title=row[0], tow_country=country)  # noqa
+
+        def field_processing_1(array, row, f_number):
+            """Парсер полей строки с 1 по 3.
 
             Обработка отдельного поля с номером f_number в строке row.
             Возврат:
-            (0, 0, 0, 0, 0) - не найдено в БД и не смогло быть создано в БД.;
-            (1, <объект БД1_1>, <объект БД1_2>, <объект БД2_1, <объект БД2_2>) - найдено или создано в БД.
+            None - не найдено в БД и не смогло быть создано в БД;
+            (<объект БД1_1>, <объект БД1_2>, <объект БД2_1, <объект БД2_2>) - найдено или создано в БД.  # noqa
             где объект _1 - реально найденный или созданный в БД,
             объект _2 - он же, либо принудительно повышенный до таможни, если _1 был пост.
             """
-            FAIL = (0, 0, 0, 0, 0)  # noqa
-
-            # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
             if row[f_number] == '':
-                return FAIL
+                return None
 
             codes = [None,]
 
-            for i in range(1, 3 + 1):
+            for i in range(1, f_number + 1):
                 codes.append(code_finder(array, row, i))
                 # Для всех уровней от 1 до текущего вкл-но проверка на (не None, но not found либо found many)  # noqa
                 if i <= f_number and (codes[i] == 'not found' or codes[i] == 'found many'):  # noqa
-                    return FAIL
+                    return None
             # для текущего уровня, кроме первого, проверка на None (не пуст, но не найден)  # noqa
             if f_number > 1 and codes[f_number] is None:
-                return FAIL
+                return None
+
+            # print(f'Парсер № 1 группы полей строки: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{codes[f_number]}\'')  # noqa
 
             # Если анализируется объект уровня 1 (РТУ)
             if f_number == 1:
@@ -143,7 +158,7 @@ class Command(BaseCommand):
                 if codes[1] is not None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
-                return (1, curr_rtu_1, curr_rtu_1, curr_rtu_2, curr_rtu_2)
+                return (curr_rtu_1, curr_rtu_1, curr_rtu_2, curr_rtu_2)
 
             # Если анализируется объект уровня 2 (таможня)
             if f_number == 2:
@@ -162,7 +177,7 @@ class Command(BaseCommand):
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
                     curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                return (1, curr_ch_1, curr_ch_1, curr_ch_2, curr_ch_2)
+                return (curr_ch_1, curr_ch_1, curr_ch_2, curr_ch_2)
 
             if f_number == 3:
                 # print(f'field_processing: обработка поля уровня \'{f_number}\', значения \'{row[f_number]}\', с кодом \'{code_3}\'')  # noqa
@@ -171,49 +186,54 @@ class Command(BaseCommand):
                 # 2. codes[1] is None,     codes[2] is not None, codes[3] is not None (пост таможни ТНП)  # noqa
                 # 3. codes[1] is not None, codes[2] is None,     codes[3] is not None (пост РТУ)  # noqa
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
-                # Честно: оптимизировать дальше лень.
-                # Случай 1.
-                if codes[1] is None and codes[2] is None:
+                if codes[1] is None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=1)  # noqa
-                    curr_ch_1 = get_or_create_custom(model=CustHouse, title='ТНП')  # noqa
-                    curr_ch_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=2)  # noqa
-                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
-                    curr_post_2 = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                # Случай 2.
-                if codes[1] is None and codes[2] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=1)  # noqa
-                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
-                    curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
-                    curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                # Случай 3.
-                if codes[1] is not None and codes[2] is None:
+                else:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+
+                if codes[2] is None:
                     curr_ch_1 = get_or_create_custom(model=CustHouse, title='ТНП')  # noqa
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=2)  # noqa
-                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
-                    curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
-                #  Случай 4.
-                if codes[1] is not None and codes[2] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                else:
                     curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
                     curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
-                    curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
-                    curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
 
-                return (1, curr_post_1, curr_ch_1, curr_post_2, curr_ch_2)
+                curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
+                curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
 
-            return FAIL
+                return (curr_post_1, curr_ch_1, curr_post_2, curr_ch_2)
+
+            return None
+
+        def field_processing_2(row):
+            """Парсер полей строки 5-8.
+
+            Возврат:
+            None - не найдено в БД и не смогло быть создано в БД;
+            <объект БД> - найдено или создано в БД.
+            """
+            temp_row = row[5:9]
+            # print(f'Парсер № 2 группы полей строки 2. row[5:8]={temp_row}')
+            if temp_row[3] != '1':
+                return None
+            if temp_row[2] not in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ММПО', 'ОЭЗ', 'ППП', 'РПП', 'СПП']:  # noqa
+                print(f'Строка {row[0]}, \'тип п/п\' не из валидных вариантов, строка не будет обработана.')  # noqa
+                return None
+            if temp_row[2] in ['ВПП', 'МПП', 'ММПО', 'ОЭЗ'] and temp_row[1] != '':  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов \'тип п/п\' и \'сопредельное гос-во\', строка не будет обработана.')  # noqa
+                return None
+            if temp_row[2] in ['АПП', 'ЖДПП', 'ППП', 'РПП', 'СПП'] and temp_row[1] == '':  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов \'тип п/п\' и \'сопредельное гос-во\', строка не будет обработана.')  # noqa
+                return None
+            # Сочетание полей валидно.
+            if temp_row[2] in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП', 'СПП']:  # noqa
+                return get_or_create_pp(temp_row)
+            return None
 
         def pre_valid_tests(row):
             """."""
-            if row[7] not in ['', 'А', 'В', 'Ж', 'М', 'ММПО', 'ОЭЗ', 'П', 'Р', 'С']:  # noqa
-                print(f'Строка {row[0]}, \'тип п/п\' не из валидных вариантов, строка не будет обработана.')  # noqa
-                return False
             if row[8] not in ['1', '2', '3', '4']:
                 print(f'Строка {row[0]}, \'тип объекта\' не из вариантов \'1\', \'2\', \'3\', \'4\', строка не будет обработана.')  # noqa
                 return False
@@ -226,9 +246,6 @@ class Command(BaseCommand):
                 return False
             if row[8] == '1' and (row[5] == '' or row[7] == ''):
                 print(f'Строка {row[0]}, невалидное сочетание столбцов 5, 7, 8, строка не будет обработана')  # noqa
-                return False
-            if row[7] == 'В' and row[6] != '':
-                print(f'Строка {row[0]}, невалидное сочетание столбцов 6, 7, строка не будет обработана')  # noqa
                 return False
             if (not ((row[11] == 'основная' and row[8] != '1' and row[4] != '') or  # noqa
                      (row[11] == 'основная' and row[8] == '1' and row[4] == '') or  # noqa
@@ -256,15 +273,15 @@ class Command(BaseCommand):
             sys.exit()
 
         data = pandas.read_excel(current_excel_files_list[0],
-                                 # skiprows=0,
-                                 # nrows=2,
+                                 skiprows=7,
+                                 #  nrows=2,
                                  header=None,
                                  sheet_name='Новая база2',
                                  # usecols=range(0, 17),
                                  )
 
         clean_data_first = [['' if isinstance(j, float) and math.isnan(j) else str(j) for j in i] for i in data.values if isinstance(i[0], int)]  # noqa
-        clean_data_second = rtu_replace(clean_data_first)
+        clean_data_second = replace_to_clean(clean_data_first)
 
         del_flag = 't'
         while not (del_flag == 'y' or del_flag == 'n'):
@@ -272,6 +289,7 @@ class Command(BaseCommand):
 
         if del_flag == 'y':
             # delete
+            Ppr.objects.all().delete()
             Device.objects.all().delete()
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
@@ -291,26 +309,39 @@ class Command(BaseCommand):
             OtherTypes.objects.create(title='иной владелец (по факту, без документа-основания)')  # noqa
 
         for i in tqdm(clean_data_second):
+        # for i in clean_data_second:
 
             if not pre_valid_tests(i):
                 continue
 
-            # валидная строка
+            # Валидная строка
+            # print(f'Строка номер {i[0]}')
+
             # Обработка первых трех полей.
-            # Если будет удачна (завершится кортежем (1, foo1_1, foo1_2, foo2_1, foo2_2)), то пополнится БД таможенных органов.  # noqa
-            # Это будущие ссылки собственничества и пользования для "технических средств".  # noqa
-            curr_cust_place = (0, 0, 0, 0, 0)
+            # Если будет удачна (завершится не None, а кортежем (foo1_1, foo1_2, foo2_1, foo2_2)),  # noqa
+            # то в текущей обрабатываемой строке найдены
+            # будущие ссылки собственничества и пользования для "технических средств".  # noqa
+            curr_cust_place = None
             for j in range(1, 3 + 1):
                 if i[j] != '':
-                    # print(f'Строка номер \'{i[0]}\', обработка поля номер \'{j}\', равного \'{i[j]}\'')  # noqa
-                    temp_cust_place = field_processing(clean_data_second, i, j)
-                    if temp_cust_place[0] == 1:
+                    # print(f'Обработка поля номер \'{j}\', равного \'{i[j]}\'')  # noqa
+                    temp_cust_place = field_processing_1(clean_data_second, i, j)  # noqa
+                    if temp_cust_place is not None:
                         curr_cust_place = temp_cust_place
-            if curr_cust_place == (0, 0, 0, 0, 0):
+            if curr_cust_place is None:
                 print(f'Строка {i[0]}, первые три поля не дали валидный т.орган, строка не будет обработана')  # noqa
                 continue
+            # По результатам обработки первых трех полей текущей строки вернулся валидный результат:  # noqa
+            # кортеж четырех объектов ([0], [1], [2], [3])
+            # субъект эксплуатации т.с. (реагирования на срабатывание):
+            #    curr_cust_place[0], curr_cust_place[2]
+            # субъект балансового учета т.с.:
+            #    curr_cust_place[1], curr_cust_place[3]
+            # Справочно: если row[14] == "Там. орган", то объект предоставлен РФ.  # noqa
+            # Иначе - тем, кто в row[14].
 
-            print(curr_cust_place)
+            # print(curr_cust_place)
+            curr_adm_place = field_processing_2(i)
 
-            if i[0] == '2':
-                sys.exit()
+            # if i[0] == '50':
+            #     sys.exit()

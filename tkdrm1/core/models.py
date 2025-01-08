@@ -5,10 +5,13 @@ from django.core.validators import RegexValidator
 from django.db import models
 
 CUSTCHOICES = (('1', 'РТУ'), ('2', 'Таможня'), ('3', 'Пост'))
+PPTYPESCHOICES = (('1', 'АПП'), ('2', 'ВПП'), ('3', 'ЖДПП'),
+                  ('4', 'МПП'), ('5', 'ППП'), ('6', 'РПП'),
+                  ('7', 'СПП'))
 
 
 class Rtu(models.Model):
-    """."""
+    """Модель РТУ."""
 
     title = models.CharField(
         max_length=255,
@@ -43,7 +46,7 @@ class Rtu(models.Model):
 
 
 class CustHouse(models.Model):
-    """."""
+    """Модель таможни."""
 
     title = models.CharField(
         max_length=255,
@@ -84,7 +87,7 @@ class CustHouse(models.Model):
 
 
 class CustPost(models.Model):
-    """."""
+    """Модель таможенного поста."""
 
     title = models.CharField(
         max_length=255,
@@ -121,6 +124,38 @@ class CustPost(models.Model):
     def __str__(self):
         """."""
         return f'пост: {self.title}'
+
+
+class Ppr(models.Model):
+    """Модель пунктов пропуска."""
+    pptype = models.CharField(choices=PPTYPESCHOICES,
+                              verbose_name='Тип п. пропуска',
+                              max_length=1,
+                              null=False,
+                              blank=False
+                              )
+    title = models.CharField(
+        max_length=255,
+        unique=False,  # !!!!!!
+        null=False,
+        verbose_name='Название'
+    )
+    tow_country = models.CharField(
+        max_length=255,
+        unique=False,  # !!!!!!
+        null=True,
+        verbose_name='Сопредельное государство'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Пункт пропуска'
+        verbose_name_plural = 'Пункты пропуска'
+
+    def __str__(self):
+        """."""
+        return f'пункт пропуска: {self.title}'
 
 
 class CustPlace1(models.Model):
