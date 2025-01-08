@@ -308,8 +308,8 @@ class Command(BaseCommand):
             OtherTypes.objects.create(title='иной владелец (по акту передачи в пользование)')  # noqa
             OtherTypes.objects.create(title='иной владелец (по факту, без документа-основания)')  # noqa
 
-        for i in tqdm(clean_data_second):
-        # for i in clean_data_second:
+        for i in tqdm(clean_data_second):  # noqa
+        # for i in clean_data_second:  # noqa
 
             if not pre_valid_tests(i):
                 continue

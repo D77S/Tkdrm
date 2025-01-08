@@ -152,6 +152,12 @@ class Ppr(models.Model):
 
         verbose_name = 'Пункт пропуска'
         verbose_name_plural = 'Пункты пропуска'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['pptype', 'title', 'tow_country'],
+                name='unique_type_title'
+            ),
+        ]
 
     def __str__(self):
         """."""
