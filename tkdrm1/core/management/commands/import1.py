@@ -289,8 +289,8 @@ class Command(BaseCommand):
 
         if del_flag == 'y':
             # delete
-            Ppr.objects.all().delete()
             Device.objects.all().delete()
+            Ppr.objects.all().delete()
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
@@ -318,16 +318,24 @@ class Command(BaseCommand):
             # print(f'Строка номер {i[0]}')
 
             # Обработка первых трех полей.
-            # Если будет удачна (завершится не None, а кортежем (foo1_1, foo1_2, foo2_1, foo2_2)),  # noqa
-            # то в текущей обрабатываемой строке найдены
-            # будущие ссылки собственничества и пользования для "технических средств".  # noqa
+            # Намеренно повторяющийся код, для облегчения понимания логики.
             curr_cust_place = None
-            for j in range(1, 3 + 1):
-                if i[j] != '':
-                    # print(f'Обработка поля номер \'{j}\', равного \'{i[j]}\'')  # noqa
-                    temp_cust_place = field_processing_1(clean_data_second, i, j)  # noqa
-                    if temp_cust_place is not None:
-                        curr_cust_place = temp_cust_place
+            if i[1] != '':
+                # print(f'Обработка поля номер 1, равного \'{i[1]}\'')  # noqa
+                temp_cust_place = field_processing_1(clean_data_second, i, 1)  # noqa
+                if temp_cust_place is not None:
+                    curr_cust_place = temp_cust_place
+            if i[2] != '':
+                # print(f'Обработка поля номер 2, равного \'{i[2]}\'')  # noqa
+                temp_cust_place = field_processing_1(clean_data_second, i, 2)  # noqa
+                if temp_cust_place is not None:
+                    curr_cust_place = temp_cust_place
+            if i[3] != '':
+                # print(f'Обработка поля номер 3, равного \'{i[3]}\'')  # noqa
+                temp_cust_place = field_processing_1(clean_data_second, i, 3)  # noqa
+                if temp_cust_place is not None:
+                    curr_cust_place = temp_cust_place
+
             if curr_cust_place is None:
                 print(f'Строка {i[0]}, первые три поля не дали валидный т.орган, строка не будет обработана')  # noqa
                 continue

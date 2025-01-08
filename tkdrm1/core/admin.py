@@ -6,7 +6,7 @@ from .models import (
     CustPlace1,
     CustPlace2,
     Device,
-    OtherTypes,
+    SourceTypes,
     Owner
 )
 
@@ -66,8 +66,8 @@ class CoreCustPlace2Admin(admin.ModelAdmin):
     raw_id_fields = ('upper_id',)
 
 
-@admin.register(OtherTypes)
-class CoreOtherTypesAdmin(admin.ModelAdmin):
+@admin.register(SourceTypes)
+class CoreSourceTypesAdmin(admin.ModelAdmin):
     pass
 
 

@@ -300,8 +300,8 @@ class CustPlace2(models.Model):
         return f'таможенный орган 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
 
 
-class OtherTypes(models.Model):
-    """Модель иных типов источников имущества."""
+class SourceTypes(models.Model):
+    """Модель типов источников имущества."""
 
     title = models.CharField(
         max_length=255,
@@ -318,12 +318,12 @@ class OtherTypes(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Иной источник получения имущества'
-        verbose_name_plural = 'Иные источники получения имущества'
+        verbose_name = 'Источник получения имущества'
+        verbose_name_plural = 'Источники получения имущества'
 
     def __str__(self):
         """."""
-        return f'иной источник, являющийся: {self.title}'
+        return f'источник, являющийся: {self.title}'
 
 
 class Owner(models.Model):
@@ -357,7 +357,7 @@ class Owner(models.Model):
         default=None
     )
     other = models.OneToOneField(
-        OtherTypes,
+        SourceTypes,
         verbose_name='Субъект учета типа <иной тип>',  # noqa
         related_name='others',
         on_delete=models.CASCADE,
@@ -376,7 +376,7 @@ class Owner(models.Model):
         if curr_custplace2 is not None:
             CustPlace2.objects.get(id=curr_custplace2.id).delete()
         if curr_other is not None:
-            OtherTypes.objects.get(id=curr_other.id).delete()
+            SourceTypes.objects.get(id=curr_other.id).delete()
         return temp
 
     def clean(self):
