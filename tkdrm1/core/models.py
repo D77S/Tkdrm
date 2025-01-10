@@ -30,9 +30,10 @@ class Rtu(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        """."""
         temp = super().save(*args, **kwargs)
         CustPlace1.objects.create(rtu=self, custhouse=None, custpost=None)
-        return temp
+        return temp  # noqa
 
     class Meta:
         """."""
@@ -71,9 +72,10 @@ class CustHouse(models.Model):
                                  related_name="cust_house_to_rtu")
 
     def save(self, *args, **kwargs):
+        """."""
         temp = super().save(*args, **kwargs)
         CustPlace1.objects.create(rtu=None, custhouse=self, custpost=None)
-        return temp
+        return temp  # noqa
 
     class Meta:
         """."""
@@ -111,9 +113,10 @@ class CustPost(models.Model):
                                  related_name="cust_post_to_cust_house")
 
     def save(self, *args, **kwargs):
+        """."""
         temp = super().save(*args, **kwargs)
         CustPlace1.objects.create(rtu=None, custhouse=None, custpost=self)
-        return temp
+        return temp  # noqa
 
     class Meta:
         """."""
@@ -128,6 +131,7 @@ class CustPost(models.Model):
 
 class Ppr(models.Model):
     """Модель пунктов пропуска."""
+
     pptype = models.CharField(choices=PPTYPESCHOICES,
                               verbose_name='Тип п. пропуска',
                               max_length=1,
@@ -166,6 +170,7 @@ class Ppr(models.Model):
 
 class CustPlace1(models.Model):
     """Модель объекта т.органа первого типа.
+
     Для каждой записи (строки) строго одно поле д. быть ненулевым.
     Иначе говоря, перечень валидных сочетаний полей ограничен таким:
     foo1, null, null;
@@ -202,11 +207,13 @@ class CustPlace1(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        """."""
         temp = super().save(*args, **kwargs)
         Owner.objects.create(custplace1=self)
-        return temp
+        return temp  # noqa
 
     def delete(self, *args, **kwargs):
+        """."""
         temp = super().delete(*args, **kwargs)
         curr_rtu: Rtu = self.rtu
         curr_ch: CustHouse = self.custhouse
@@ -228,9 +235,10 @@ class CustPlace1(models.Model):
             CustHouse.objects.get(id=curr_ch.id).delete()
         if curr_post is not None:
             CustPost.objects.get(id=curr_post.id).delete()
-        return temp
+        return temp  # noqa
 
     def clean(self):
+        """."""
         super().clean()
         check = (((self.rtu is None) and (self.custhouse is None) and (self.custpost is not None)) or  # noqa
                  ((self.rtu is None) and (self.custhouse is not None) and (self.custpost is None)) or  # noqa
@@ -252,6 +260,49 @@ class CustPlace1(models.Model):
         if self.custhouse is not None:
             return temp.format(curr=self.custhouse)
         return temp.format(curr=self.custpost)
+
+
+class CustPlace1Acc(models.Model):
+    """Модель объекта учета (балансового либо забалансового).
+
+    Данная: для объектов таможенных органов 1-го типа.
+    Для каждой записи (строки) строго одно поле д. быть ненулевым.
+    Иначе говоря, перечень валидных сочетаний полей ограничен таким:
+    foo1, null, null;
+    null, foo2, null;
+    null, null, foo3.
+
+    При этом, вариант (null, null, foo3) допустим ТОЛЬКО
+    если по объекту foo3 для ОБОИХ уровней его вышестоящих объектов
+    поля title равны "ТНП".
+    """
+    rtu = models.OneToOneField(
+        Rtu,
+        verbose_name='Название РТУ',
+        related_name='rtus1acc',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    custhouse = models.OneToOneField(
+        CustHouse,
+        verbose_name='Название таможни',
+        related_name='cs1acc',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    custpost = models.OneToOneField(
+        CustPost,
+        verbose_name='Название поста',
+        related_name='posts1acc',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
 
 
 class CustPlace2(models.Model):
@@ -285,9 +336,10 @@ class CustPlace2(models.Model):
                                  related_name="to_upper_level")
 
     def save(self, *args, **kwargs):
+        """."""
         temp = super().save(*args, **kwargs)
         Owner.objects.create(custplace2=self)
-        return temp
+        return temp  # noqa
 
     class Meta:
         """."""
@@ -311,9 +363,10 @@ class SourceTypes(models.Model):
     )
 
     def save(self, *args, **kwargs):
+        """."""
         temp = super().save(*args, **kwargs)
         Owner.objects.create(other=self)
-        return temp
+        return temp  # noqa
 
     class Meta:
         """."""
@@ -328,6 +381,7 @@ class SourceTypes(models.Model):
 
 class Owner(models.Model):
     """Модель субъектов учета т.с.
+
     Для каждой записи (строки):
     строго одно поле должно быть ненулевым.
     Первые два поля идут 'единой парой' на период отладки
@@ -367,6 +421,7 @@ class Owner(models.Model):
     )
 
     def delete(self, *args, **kwargs):
+        """."""
         temp = super().delete(*args, **kwargs)
         curr_custplace1 = self.custplace1
         curr_custplace2 = self.custplace2
@@ -377,9 +432,10 @@ class Owner(models.Model):
             CustPlace2.objects.get(id=curr_custplace2.id).delete()
         if curr_other is not None:
             SourceTypes.objects.get(id=curr_other.id).delete()
-        return temp
+        return temp  # noqa
 
     def clean(self):
+        """."""
         super().clean()
         check = (((self.custplace1 is None) and (self.custplace2 is None) and (self.other is not None)) or  # noqa
                  ((self.custplace1 is not None) and (self.custplace2 is not None) and (self.other is None)))  # noqa

@@ -2,21 +2,13 @@
 import math
 import os
 import sys
-from tqdm import tqdm
 
 import pandas  # type: ignore
-from core.models import (
-    Rtu,
-    CustHouse,
-    CustPost,
-    Ppr,
-    CustPlace2,
-    OtherTypes,
-    # Owner,
-    Device
-)
+from core.models import (CustHouse, CustPlace2, CustPost, Device,  # Owner,
+                         Ppr, Rtu, SourceTypes)
 from django.core.management.base import BaseCommand
 from django.db import models
+from tqdm import tqdm  # type: ignore
 
 
 class Command(BaseCommand):
@@ -27,7 +19,7 @@ class Command(BaseCommand):
 
         def replace_to_clean(list_in):
             """."""
-            PATTERN1 = {
+            PATTERN1 = {  # noqa
                 'ДВТУ': 'Дальневосточное таможенное управление',
                 'ПТУ': 'Приволжское таможенное управление',
                 'СТУ': 'Сибирское таможенное управление',
@@ -38,7 +30,7 @@ class Command(BaseCommand):
                 'СКТУ': 'Северо-Кавказское таможенное управление',
                 'ТНП': ''
             }
-            PATTERN2 = {
+            PATTERN2 = {  # noqa
                 'А': 'АПП',
                 'В': 'ВПП',
                 'Ж': 'ЖДПП',
@@ -295,18 +287,18 @@ class Command(BaseCommand):
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
             CustPlace2.objects.all().delete()
-            OtherTypes.objects.all().delete()
+            SourceTypes.objects.all().delete()
             # create initial
             tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
-            OtherTypes.objects.create(title='Росгранстрой (по договору передачи в пользование)')  # noqa
-            OtherTypes.objects.create(title='Росгранстрой (по акту передачи в пользование)')  # noqa
-            OtherTypes.objects.create(title='Росгранстрой (по факту, без документа-основания)')  # noqa
-            OtherTypes.objects.create(title='иной владелец (по договору передачи в пользование)')  # noqa
-            OtherTypes.objects.create(title='иной владелец (по акту передачи в пользование)')  # noqa
-            OtherTypes.objects.create(title='иной владелец (по факту, без документа-основания)')  # noqa
+            SourceTypes.objects.create(title='Росгранстрой (по договору передачи в пользование)')  # noqa
+            SourceTypes.objects.create(title='Росгранстрой (по акту передачи в пользование)')  # noqa
+            SourceTypes.objects.create(title='Росгранстрой (по факту, без документа-основания)')  # noqa
+            SourceTypes.objects.create(title='иной владелец (по договору передачи в пользование)')  # noqa
+            SourceTypes.objects.create(title='иной владелец (по акту передачи в пользование)')  # noqa
+            SourceTypes.objects.create(title='иной владелец (по факту, без документа-основания)')  # noqa
 
         for i in tqdm(clean_data_second):  # noqa
         # for i in clean_data_second:  # noqa
