@@ -293,6 +293,7 @@ class Command(BaseCommand):
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
+            SourceTypes.objects.create(title='РФ')  # noqa
             SourceTypes.objects.create(title='Росгранстрой (по договору передачи в пользование)')  # noqa
             SourceTypes.objects.create(title='Росгранстрой (по акту передачи в пользование)')  # noqa
             SourceTypes.objects.create(title='Росгранстрой (по факту, без документа-основания)')  # noqa

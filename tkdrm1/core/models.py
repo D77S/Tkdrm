@@ -35,6 +35,7 @@ class Rtu(models.Model):
         Для РТУ создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
         CustPlace1Acc.objects.create(rtu=self, custhouse=None, custpost=None)
+        CustPlace1Use.objects.create(rtu=self, custhouse=None, custpost=None)
         return temp  # noqa
 
     class Meta:
@@ -79,6 +80,7 @@ class CustHouse(models.Model):
         Для таможни создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
         CustPlace1Acc.objects.create(rtu=None, custhouse=self, custpost=None)
+        CustPlace1Use.objects.create(rtu=None, custhouse=self, custpost=None)
         return temp  # noqa
 
     class Meta:
@@ -129,6 +131,7 @@ class CustPost(models.Model):
             upper_rtu = upper_ch.upper_id
         if upper_ch and upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
             CustPlace1Acc.objects.create(rtu=None, custhouse=None, custpost=self)  # noqa
+        CustPlace1Use.objects.create(rtu=None, custhouse=None, custpost=self)  # noqa
         return temp  # noqa
 
     class Meta:
@@ -182,9 +185,9 @@ class Ppr(models.Model):
 
 
 class CustPlace1Acc(models.Model):
-    """Модель объекта учета (балансового либо забалансового).
+    """Модель суъекта учета (балансового либо забалансового).
 
-    Данная: для объектов таможенных органов 1-го типа.
+    Для объектов таможенных органов 1-го типа.
     Для каждой записи (строки) строго одно поле д. быть ненулевым.
     Иначе говоря, перечень валидных сочетаний полей ограничен таким:
     foo1, null, null;
@@ -262,7 +265,7 @@ class CustPlace1Acc(models.Model):
         if not check1:
             raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
         if not check2:
-            raise ValidationError('Поле \'пост\' может быть ненулевым только для ТНП-постов')  # noqa
+            raise ValidationError('Поле \'пост\' может быть ненулевым только для ТНП-ТНП-постов')  # noqa
         return temp  # noqa
 
     class Meta:
@@ -274,6 +277,98 @@ class CustPlace1Acc(models.Model):
     def __str__(self):
         """."""
         temp = 'субъект учета для таможенного органа 1-го типа, такого названия: {curr}'  # noqa
+        if self.rtu is not None:
+            return temp.format(curr=self.rtu)
+        if self.custhouse is not None:
+            return temp.format(curr=self.custhouse)
+        return temp.format(curr=self.custpost)
+
+
+class CustPlace1Use(models.Model):
+    """Модель субъекта пользования.
+
+    Для объектов таможенных органов 1-го типа.
+    Для каждой записи (строки) строго одно поле д. быть ненулевым.
+    Иначе говоря, перечень валидных сочетаний полей ограничен таким:
+    foo1, null, null;
+    null, foo2, null;
+    null, null, foo3.
+    """
+    rtu = models.OneToOneField(
+        Rtu,
+        verbose_name='Название РТУ',
+        related_name='rtus1use',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    custhouse = models.OneToOneField(
+        CustHouse,
+        verbose_name='Название таможни',
+        related_name='cs1use',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    custpost = models.OneToOneField(
+        CustPost,
+        verbose_name='Название поста',
+        related_name='posts1use',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+
+    def delete(self, *args, **kwargs):
+        """."""
+        temp = super().delete(*args, **kwargs)
+        curr_rtu: Rtu = self.rtu
+        curr_ch: CustHouse = self.custhouse
+        curr_post: CustPost = self.custpost
+
+        if curr_rtu is not None:
+            curr_down_chs = CustHouse.objects.filter(upper_id=curr_rtu.id)
+            if curr_down_chs.exists():
+                for curr_down_ch in curr_down_chs:
+                    curr_down_posts = CustPost.objects.filter(upper_id=curr_down_ch.id)  # noqa
+                    if curr_down_posts.exists():
+                        curr_down_posts.delete()
+                curr_down_chs.delete()
+            Rtu.objects.get(id=curr_rtu.id).delete()
+        if curr_ch is not None:
+            curr_down_posts = CustPost.objects.filter(upper_id=curr_ch.id)
+            if curr_down_posts.exists():
+                curr_down_posts.delete()
+            CustHouse.objects.get(id=curr_ch.id).delete()
+        if curr_post is not None:
+            CustPost.objects.get(id=curr_post.id).delete()
+        return temp  # noqa
+
+    def clean(self):
+        """."""
+        temp = super().clean()
+        curr_rtu: Rtu = self.rtu
+        curr_ch: CustHouse = self.custhouse
+        curr_post: CustPost = self.custpost
+        check1 = (((curr_rtu is None) and (curr_ch is None) and (curr_post is not None)) or  # noqa
+                 ((curr_rtu is None) and (curr_ch is not None) and (curr_post is None)) or  # noqa
+                 ((curr_rtu is not None) and (curr_ch is None) and (curr_post is None)))  # noqa
+        if not check1:
+            raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
+        return temp  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Субъект эксплуатации для т.органа 1-го типа'
+        verbose_name_plural = 'Субъекты эксплуатации для т.органа 1-го типа'
+
+    def __str__(self):
+        """."""
+        temp = 'субъект эксплуатации для таможенного органа 1-го типа, такого названия: {curr}'  # noqa
         if self.rtu is not None:
             return temp.format(curr=self.rtu)
         if self.custhouse is not None:
@@ -314,7 +409,6 @@ class CustPlace2(models.Model):
     def save(self, *args, **kwargs):
         """."""
         temp = super().save(*args, **kwargs)
-        # Owner.objects.create(custplace2=self)
         return temp  # noqa
 
     class Meta:
@@ -341,7 +435,6 @@ class SourceTypes(models.Model):
     def save(self, *args, **kwargs):
         """."""
         temp = super().save(*args, **kwargs)
-        # Owner.objects.create(other=self)
         return temp  # noqa
 
     class Meta:
@@ -353,75 +446,6 @@ class SourceTypes(models.Model):
     def __str__(self):
         """."""
         return f'источник, являющийся: {self.title}'
-
-
-# class Owner(models.Model):
-#     """Модель субъектов учета т.с.
-
-#     Для каждой записи (строки):
-#     строго одно поле должно быть ненулевым.
-#     Первые два поля идут 'единой парой' на период отладки
-#     и должны быть совместно либо оба нулевые, либо оба нет.
-#     Из них будет потом выбрано только одно какое-то.
-#     Иначе говоря, перечень валидных сочетаний полей ограничен таким:
-#     foo1, foo2, null;
-#     null, null, foo3;
-#     """
-#     custplace2 = models.OneToOneField(
-#         CustPlace2,
-#         verbose_name='Субъект учета типа <т.орган второго типа>',
-#         related_name='custplaces2',
-#         on_delete=models.CASCADE,
-#         null=True,
-#         blank=True,
-#         default=None
-#     )
-#     other = models.OneToOneField(
-#         SourceTypes,
-#         verbose_name='Субъект учета типа <иной тип>',  # noqa
-#         related_name='others',
-#         on_delete=models.CASCADE,
-#         null=True,
-#         blank=True,
-#         default=None
-#     )
-
-#     def delete(self, *args, **kwargs):
-#         """."""
-#         temp = super().delete(*args, **kwargs)
-#         curr_custplace1 = self.custplace1
-#         curr_custplace2 = self.custplace2
-#         curr_other = self.other
-#         if curr_custplace1 is not None:
-#             CustPlace1.objects.get(id=curr_custplace1.id).delete()
-#         if curr_custplace2 is not None:
-#             CustPlace2.objects.get(id=curr_custplace2.id).delete()
-#         if curr_other is not None:
-#             SourceTypes.objects.get(id=curr_other.id).delete()
-#         return temp  # noqa
-
-#     def clean(self):
-#         """."""
-#         super().clean()
-#         check = (((self.custplace1 is None) and (self.custplace2 is None) and (self.other is not None)) or  # noqa
-#                  ((self.custplace1 is not None) and (self.custplace2 is not None) and (self.other is None)))  # noqa
-#         if not check:
-#             raise ValidationError('Ненулевое поле должно быть либо только последнее, либо только два первых.')  # noqa
-
-#     class Meta:
-#         """."""
-
-#         verbose_name = 'Субъект учета т.с.'
-#         verbose_name_plural = 'Субъект учета т.с.'
-
-#     def __str__(self):
-#         """."""
-#         temp = 'субъект учета т.с., являющийся: {curr}'
-#         if self.custplace1 is not None:
-#             return temp.format(curr=self.custplace1)
-#         if self.custplace2 is not None:
-#             return temp.format(curr=self.custplace2)
-#         return temp.format(curr=self.other)
 
 
 class Device(models.Model):
