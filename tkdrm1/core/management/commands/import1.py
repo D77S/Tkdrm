@@ -260,17 +260,21 @@ class Command(BaseCommand):
             x.endswith('.xlsm')
         )]
 
-        if len(current_excel_files_list) == 0:
-            print('Эксель-файлов в текущей папке не найдено.')
+        if len(current_excel_files_list) != 1:
+            print('Эксель-файлов в текущей папке не найдено или найдено больше одного.')  # noqa
             sys.exit()
 
-        data = pandas.read_excel(current_excel_files_list[0],
-                                 skiprows=7,
-                                 #  nrows=2,
-                                 header=None,
-                                 sheet_name='Новая база2',
-                                 # usecols=range(0, 17),
-                                 )
+        try:
+            data = pandas.read_excel(current_excel_files_list[0],
+                                     skiprows=7,
+                                     #  nrows=2,
+                                     header=None,
+                                     sheet_name='Новая база2',
+                                     # usecols=range(0, 17),
+                                     )
+        except Exception:
+            print('Ошибка формата файла.')
+            sys.exit()
 
         clean_data_first = [['' if isinstance(j, float) and math.isnan(j) else str(j) for j in i] for i in data.values if isinstance(i[0], int)]  # noqa
         clean_data_second = replace_to_clean(clean_data_first)

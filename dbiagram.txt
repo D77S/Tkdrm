@@ -2,40 +2,45 @@
 // Docs: https://dbml.dbdiagram.io/docs
 // https://dbdiagram.io/d
 
-enum keeper_levels {
-  rtu_tnp
-  custom_house
-  custom_post
+Table airports{
+  id integer [primary key]
+  title varchar
 }
 
-Table keeper_levels {
+Table post_offices{
   id integer [primary key]
-  level keeper_levels
+  title varchar
 }
 
-Table keeper_level_1 {
+Table Cite_objs_foo1 {
   id integer [primary key]
-  code integer [not null, unique, note: 'Код т. органа']
-  title varchar [not null, unique, note: 'Название РТУ или термин "ТНП"']
+  airport integer [null]
+  post_office integer [null, unique, ref: - post_offices.id]
 }
 
-Table keeper_level_2 {
+Table Cite_objs_foo2 {
   id integer [primary key]
-  code integer [not null, unique, note: 'Код т. органа']
-  title varchar [not null, unique, note: 'Название таможни']
-  keeper_level_1_id integer [not null, ref: > keeper_level_1.id]
+  airport integer [null, unique, ref: - airports.id]
+  post_office integer [null]
 }
 
-Table keeper_level_3 {
+Table Custom_posts {
   id integer [primary key]
-  code integer [not null, unique, note: 'Код т. органа']
-  title varchar [not null, unique, note: 'Название т. поста']
-  keeper_level_2_id integer [not null, ref: > keeper_level_2.id]
 }
 
-
-Table items {
+Table Custom_postsTOcite_objs {
   id integer [primary key]
-  keeper_type integer [ref: > keeper_types.id]
-  keeper_id integer [ref: > keeper_level_1.id]
+  to_c_posts integer [not null, ref: > Custom_posts.id]
+  to_cite_objs integer [not null, ref: > Cite_objs_foo1.id]
+  is_main bool [not null]
+}
+
+Table Device {
+  id integer [primary key]
+}
+
+Table DeviceTOuse {
+  id integer [primary key]
+  to_dev integer [not null, ref: > Device.id]
+  to_relation integer [not null, ref: > Custom_postsTOcite_objs.id]
 }
