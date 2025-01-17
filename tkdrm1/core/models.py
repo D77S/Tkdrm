@@ -32,10 +32,10 @@ class Rtu(models.Model):
     def save(self, *args, **kwargs):
         """Создание нового РТУ.
 
-        Для РТУ создается объект модели 'субъект учета'."""
+        Для него также создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
         CustPlace1Acc.objects.create(rtu=self, custhouse=None, custpost=None)
-        CustPlace1Use.objects.create(rtu=self, custhouse=None, custpost=None)
+        CustPlace1Use.objects.create(rtu=self, custhouse=None, custpost=None, ztk_allowed=False)  # noqa
         return temp  # noqa
 
     class Meta:
@@ -77,10 +77,10 @@ class CustHouse(models.Model):
     def save(self, *args, **kwargs):
         """Создание новой таможня.
 
-        Для таможни создается объект модели 'субъект учета'."""
+        Для нее также создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
         CustPlace1Acc.objects.create(rtu=None, custhouse=self, custpost=None)
-        CustPlace1Use.objects.create(rtu=None, custhouse=self, custpost=None)
+        CustPlace1Use.objects.create(rtu=None, custhouse=self, custpost=None, ztk_allowed=False)  # noqa
         return temp  # noqa
 
     class Meta:
@@ -124,14 +124,15 @@ class CustPost(models.Model):
         В случае, если все условия:
         - вышестоящая таможня поста имеет имя 'ТНП';
         - вышестоящее этой таможне РТУ имеет имя 'ТНП'
-        то только для такого поста создается объект модели 'субъект учета'."""
+        то только для такого поста также создается
+        объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
         upper_ch = self.upper_id
         if upper_ch:
             upper_rtu = upper_ch.upper_id
         if upper_ch and upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
             CustPlace1Acc.objects.create(rtu=None, custhouse=None, custpost=self)  # noqa
-        CustPlace1Use.objects.create(rtu=None, custhouse=None, custpost=self)  # noqa
+        CustPlace1Use.objects.create(rtu=None, custhouse=None, custpost=self, ztk_allowed=False)  # noqa
         return temp  # noqa
 
     class Meta:
@@ -146,7 +147,7 @@ class CustPost(models.Model):
 
 
 class Ppr(models.Model):
-    """Модель пунктов пропуска."""
+    """Модель пункта пропуска."""
 
     pptype = models.CharField(choices=PPTYPESCHOICES,
                               verbose_name='Тип п. пропуска',
@@ -167,11 +168,19 @@ class Ppr(models.Model):
         verbose_name='Сопредельное государство'
     )
 
+    def save(self, *args, **kwargs):
+        """Создание нового пункта пропуска.
+
+        Для него также создается объект модели локации."""
+        temp = super().save(*args, **kwargs)
+        LocationOfUse.objects.create(ppr=self, mmpo=None, oez=None, ztk=None)
+        return temp  # noqa
+
     class Meta:
         """."""
 
-        verbose_name = 'Пункт пропуска'
-        verbose_name_plural = 'Пункты пропуска'
+        verbose_name = 'объект пункта пропуска'
+        verbose_name_plural = 'объекты пунктов пропуска'
         constraints = [
             models.UniqueConstraint(
                 fields=['pptype', 'title', 'tow_country'],
@@ -184,6 +193,204 @@ class Ppr(models.Model):
         return f'пункт пропуска: {self.title}'
 
 
+class Mmpo(models.Model):
+    """Модель ММПО"""
+
+    title = models.CharField(
+        max_length=255,
+        unique=True,  # !!!!!!
+        null=False,
+        verbose_name='Название'
+    )
+
+    def save(self, *args, **kwargs):
+        """Создание нового ММПО.
+
+        Для него также создается объект модели локации."""
+        temp = super().save(*args, **kwargs)
+        LocationOfUse.objects.create(ppr=None, mmpo=self, oez=None, ztk=None)
+        return temp  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект ММПО'
+        verbose_name_plural = 'объекты ММПО'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title',],
+                name='unique_mmpo_title'
+            ),
+        ]
+
+    def __str__(self):
+        """."""
+        return f'ММПО: {self.title}'
+
+
+class Oez(models.Model):
+    """Модель Особой Экономической Зоны"""
+
+    title = models.CharField(
+        max_length=255,
+        unique=True,  # !!!!!!
+        null=False,
+        verbose_name='Название'
+    )
+
+    def save(self, *args, **kwargs):
+        """Создание новой ОЭЗ.
+
+        Для нее также создается объект модели локации."""
+        temp = super().save(*args, **kwargs)
+        LocationOfUse.objects.create(ppr=None, mmpo=None, oez=self, ztk=None)
+        return temp  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект ОЭЗ'
+        verbose_name_plural = 'объекты ОЭЗ'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title',],
+                name='unique_oez_title'
+            ),
+        ]
+
+    def __str__(self):
+        """."""
+        return f'ОЭЗ: {self.title}'
+
+
+class Ztk(models.Model):
+    """Модель Зоны Таможенного Контроля"""
+
+    title = models.CharField(
+        max_length=255,
+        unique=True,  # !!!!!!
+        null=False,
+        verbose_name='Название'
+    )
+
+    def save(self, *args, **kwargs):
+        """Создание новой ЗТК.
+
+        Для нее также создается объект модели локации."""
+        temp = super().save(*args, **kwargs)
+        LocationOfUse.objects.create(ppr=None, mmpo=None, oez=None, ztk=self)
+        return temp  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект ЗТК'
+        verbose_name_plural = 'объекты ЗТК'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title',],
+                name='unique_ztk_title'
+            ),
+        ]
+
+    def __str__(self):
+        """."""
+        return f'ЗТК: {self.title}'
+
+
+class LocationOfUse(models.Model):
+    """Модель локации пользования.
+
+    Для каждой записи (строки) строго одно поле д. быть ненулевым.
+    Иначе говоря, перечень валидных сочетаний полей ограничен таким:
+    foo1, null, null, null;
+    null, foo2, null, null;
+    null, null, foo3, null;
+    null, null, null, foo4.
+    """
+    ppr = models.OneToOneField(
+        Ppr,
+        verbose_name='Название п.пропуска',
+        related_name='pprs',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    mmpo = models.OneToOneField(
+        Mmpo,
+        verbose_name='Название ММПО',
+        related_name='mmpos',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    oez = models.OneToOneField(
+        Oez,
+        verbose_name='Название ОЭЗ',
+        related_name='oezs',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+    ztk = models.OneToOneField(
+        Ztk,
+        verbose_name='Название ЗТК',
+        related_name='ztks',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
+
+    def delete(self, *args, **kwargs):
+        """."""
+        temp = super().delete(*args, **kwargs)
+        if self.ppr:
+            Ppr.objects.get(id=self.ppr.id).delete()
+        if self.mmpo:
+            Mmpo.objects.get(id=self.mmpo.id).delete()
+        if self.oez:
+            Oez.objects.get(id=self.oez.id).delete()
+        if self.ztk:
+            Ztk.objects.get(id=self.ztk.id).delete()
+        return temp  # noqa
+
+    def clean(self):
+        """."""
+        temp = super().clean()
+        curr_ppr: Ppr = self.ppr
+        curr_mmpo: Mmpo = self.mmpo
+        curr_oez: Oez = self.oez
+        curr_ztk: Ztk = self.ztk
+        check = (((curr_ppr is None) and (curr_mmpo is None) and (curr_oez is None) and (curr_ztk is not None)) or  # noqa
+                  ((curr_ppr is None) and (curr_mmpo is None) and (curr_oez is not None) and (curr_ztk is None)) or  # noqa
+                  ((curr_ppr is None) and (curr_mmpo is not None) and (curr_oez is None) and (curr_ztk is None)) or  # noqa
+                  ((curr_ppr is not None) and (curr_mmpo is None) and (curr_oez is None) and (curr_ztk is None)))  # noqa
+        if not check:
+            raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
+        return temp  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект локации'
+        verbose_name_plural = 'объекты локации'
+
+    def __str__(self):
+        """."""
+        temp = 'объект локации такого названия: {curr}'  # noqa
+        if self.ppr is not None:
+            return temp.format(curr=self.ppr)
+        if self.mmpo is not None:
+            return temp.format(curr=self.mmpo)
+        if self.oez is not None:
+            return temp.format(curr=self.oez)
+        return temp.format(curr=self.ztk)
+
+
 class CustPlace1Acc(models.Model):
     """Модель суъекта учета (балансового либо забалансового).
 
@@ -194,9 +401,8 @@ class CustPlace1Acc(models.Model):
     null, foo2, null;
     null, null, foo3.
 
-    При этом, вариант (null, null, foo3) допустим ТОЛЬКО
-    если по объекту foo3 для ОБОИХ уровней его вышестоящих объектов
-    поля title равны "ТНП".
+    Вариант (null, null, foo3) допустим ТОЛЬКО если по объекту foo3
+    для ОБОИХ уровней его вышестоящих объектов поля title равны "ТНП".
     """
     rtu = models.OneToOneField(
         Rtu,
@@ -321,6 +527,15 @@ class CustPlace1Use(models.Model):
         blank=True,
         default=None
     )
+    ztk_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать в ЗТК'
+        # Имеются в виду ЗТК т.н. отдельно-существующие.
+        # Не находящиеся на территории какого-либо
+        # пункта пропуска, ММПО, ОЭЗ.
+    )
 
     def delete(self, *args, **kwargs):
         """."""
@@ -405,6 +620,15 @@ class CustPlace2(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
                                  related_name="to_upper_level")
+    ztk_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать в ЗТК'
+        # Имеются в виду ЗТК т.н. отдельно-существующие.
+        # Не находящиеся на территории какого-либо
+        # пункта пропуска, ММПО, ОЭЗ.
+    )
 
     def save(self, *args, **kwargs):
         """."""
