@@ -5,7 +5,7 @@ import sys
 
 import pandas  # type: ignore
 from core.models import (CustHouse, CustPlace2, CustPost, Device,  # Owner,
-                         Ppr, Rtu, SourceTypes)
+                         Ppr, Mmpo, Oez, Ztk, Rtu, SourceTypes)
 from django.core.management.base import BaseCommand
 from django.db import models
 from tqdm import tqdm  # type: ignore
@@ -111,6 +111,13 @@ class Command(BaseCommand):
                 return Ppr.objects.get(pptype=row[2], title=row[0], tow_country=country)  # noqa
             except Exception:
                 return Ppr.objects.create(pptype=row[2], title=row[0], tow_country=country)  # noqa
+
+        def get_or_create_mmpo_oez_ztk(model, row):
+            """."""
+            try:
+                return model.objects.get(title=row[0])
+            except Exception:
+                return model.objects.create(title=row[0])
 
         def field_processing_1(array, row, f_number):
             """Парсер полей строки с 1 по 3.
@@ -222,6 +229,12 @@ class Command(BaseCommand):
             # Сочетание полей валидно.
             if temp_row[2] in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП', 'СПП']:  # noqa
                 return get_or_create_pp(temp_row)
+            if temp_row[2] == 'ММПО':
+                return get_or_create_mmpo_oez_ztk(model=Mmpo, row=temp_row)
+            if temp_row[2] == 'ОЭЗ':
+                return get_or_create_mmpo_oez_ztk(model=Oez, row=temp_row)
+            if temp_row[2] == 'ЗТК':
+                return get_or_create_mmpo_oez_ztk(model=Ztk, row=temp_row)
             return None
 
         def pre_valid_tests(row):

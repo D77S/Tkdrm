@@ -2,38 +2,97 @@
 // Docs: https://dbml.dbdiagram.io/docs
 // https://dbdiagram.io/d
 
-Table airports{
+Table Rtu{
+  id integer [primary key]
+  title varchar
+  code varchar
+}
+
+Table CustHouse{
+  id integer [primary key]
+  title varchar
+  code varchar
+  upper_id integer [not null, ref: > Rtu.id]
+}
+
+Table CustPost{
+  id integer [primary key]
+  title varchar
+  code varchar
+  upper_id integer [not null, ref: > CustHouse.id]
+}
+
+Table Ppr{
+  id integer [primary key]
+  pptype varchar
+  title varchar
+  tow_country varchar
+}
+
+Table Mmpo{
   id integer [primary key]
   title varchar
 }
 
-Table post_offices{
+Table Oez{
   id integer [primary key]
   title varchar
 }
 
-Table Cite_objs_foo1 {
+
+Table Ztk{
   id integer [primary key]
-  airport integer [null]
-  post_office integer [null, unique, ref: - post_offices.id]
+  title varchar
 }
 
-Table Cite_objs_foo2 {
+Table LocationOfUse{
   id integer [primary key]
-  airport integer [null, unique, ref: - airports.id]
-  post_office integer [null]
+  ppr integer [null, unique, ref: - Ppr.id]
+  mmpo integer [null, unique, ref: - Mmpo.id]
+  oez integer [null, unique, ref: - Oez.id]
+  ztk integer [null, unique, ref: - Ztk.id]
 }
 
-Table Custom_posts {
+Table CustPlace1Acc{
   id integer [primary key]
+  rtu integer [null, unique, ref: - Rtu.id]
+  custhouse integer [null, unique, ref: - CustHouse.id]
+  custpost integer [null, unique, ref: - CustPost.id]
 }
 
-Table Custom_postsTOcite_objs {
+Table CustPlace1Use{
   id integer [primary key]
-  to_c_posts integer [not null, ref: > Custom_posts.id]
-  to_cite_objs integer [not null, ref: > Cite_objs_foo1.id]
-  is_main bool [not null]
+  rtu integer [null, unique, ref: - Rtu.id]
+  custhouse integer [null, unique, ref: - CustHouse.id]
+  custpost integer [null, unique, ref: - CustPost.id]
+  ztk_allowed boolean
 }
+
+Table CustPlace2{
+  id integer [primary key]
+  title varchar
+  code varchar
+  level varchar
+  upper_id integer [not null, ref: > CustPlace2.id]
+  ztk_allowed boolean
+}
+
+Table SourceTypes{
+  id integer [primary key]
+  title varchar
+}
+
+Table CustPlaceToLocation{
+  id integer [primary key]
+  cust_pl1 integer [not null, ref: > CustPlace1Use.id]
+  cust_pl2 integer [not null, ref: > CustPlace2.id]
+  loc integer [not null, ref: > LocationOfUse.id]
+  is_main boolean
+}
+
+
+
+
 
 Table Device {
   id integer [primary key]

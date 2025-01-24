@@ -672,6 +672,52 @@ class SourceTypes(models.Model):
         return f'источник, являющийся: {self.title}'
 
 
+class CustPlaceToLocation(models.Model):
+    """Отношения между 'обобщенным объектом т.органа'
+    и 'обобщенной локацией использования'."""
+    cust_pl1 = models.ForeignKey(to=CustPlace1Use,
+                                 null=False,
+                                 blank=False,
+                                 on_delete=models.RESTRICT,
+                                 verbose_name='т. орган_1',
+                                 related_name='to_cp1')
+    cust_pl2 = models.ForeignKey(to=CustPlace2,
+                                 null=False,
+                                 blank=False,
+                                 on_delete=models.RESTRICT,
+                                 verbose_name='т. орган_2',
+                                 related_name='to_cp2')
+    loc = models.ForeignKey(to=LocationOfUse,
+                            null=False,
+                            blank=False,
+                            on_delete=models.RESTRICT,
+                            verbose_name='локация',
+                            related_name='to_location')
+    is_main = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Флаг приоритетности'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Отношение т.органа к локации эксплуатации'
+        verbose_name_plural = 'Отношения т.органа к локации эксплуатации'
+
+    def __str__(self):
+        """."""
+        temp = 'Отношение т.органа 1-го типа {curr1} и 2-го типа {curr2} к '\
+               'локации эксплуатации {curr3}, с флагом приоритетности, равным {curr4}'  # noqa
+        return temp.format(
+            curr1=self.cust_pl1,
+            curr2=self.cust_pl2,
+            curr3=self.loc,
+            curr4=self.is_main
+        )
+
+
 class Device(models.Model):
     """."""
 
