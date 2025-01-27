@@ -391,7 +391,7 @@ class Command(BaseCommand):
 
             curr_cp_to_loc = None
             if curr_loc:
-                curr_cp_to_loc = CustPlaceToLocation.objects.create(
+                curr_cp_to_loc = CustPlaceToLocation.objects.get_or_create(
                     cust_pl1=curr_cp1_use,
                     cust_pl2=curr_cust_place[2],
                     loc=curr_loc

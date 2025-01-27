@@ -713,6 +713,7 @@ class CustPlaceToLocation(models.Model):
 
         verbose_name = 'Отношение т.органа к локации эксплуатации'
         verbose_name_plural = 'Отношения т.органа к локации эксплуатации'
+        unique_together = (('cust_pl1', 'cust_pl2', 'loc', 'is_main'),)
 
     def __str__(self):
         """."""
