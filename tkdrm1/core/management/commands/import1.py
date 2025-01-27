@@ -4,8 +4,10 @@ import os
 import sys
 
 import pandas  # type: ignore
-from core.models import (CustHouse, CustPlace2, CustPost, Device,  # Owner,
-                         Ppr, Mmpo, Oez, Ztk, Rtu, SourceTypes)
+from core.models import (CustHouse, CustPlace2, CustPost, Device,
+                         LocationOfUse,  Ppr, Mmpo, Oez, Ztk, Rtu,
+                         SourceTypes, CustPlace1Use,
+                         CustPlaceToLocation)
 from django.core.management.base import BaseCommand
 from django.db import models
 from tqdm import tqdm  # type: ignore
@@ -299,6 +301,7 @@ class Command(BaseCommand):
         if del_flag == 'y':
             # delete
             Device.objects.all().delete()
+            CustPlaceToLocation.objects.all().delete()
             Ppr.objects.all().delete()
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
@@ -358,8 +361,43 @@ class Command(BaseCommand):
             # Справочно: если row[14] == "Там. орган", то объект предоставлен РФ.  # noqa
             # Иначе - тем, кто в row[14].
 
-            # print(curr_cust_place)
+            # print(f'curr_cust_place={curr_cust_place}')
+
             curr_adm_place = field_processing_2(i)
 
-            # if i[0] == '50':
+            # print(f'curr_adm_place={curr_adm_place}')
+
+            curr_cp1_use = None
+            if isinstance(curr_cust_place[0], Rtu):
+                curr_cp1_use = CustPlace1Use.objects.get(rtu=curr_cust_place[0])  # noqa
+            if isinstance(curr_cust_place[0], CustHouse):
+                curr_cp1_use = CustPlace1Use.objects.get(custhouse=curr_cust_place[0])  # noqa
+            if isinstance(curr_cust_place[0], CustPost):
+                curr_cp1_use = CustPlace1Use.objects.get(custpost=curr_cust_place[0])  # noqa
+
+            # print(f'curr_cp1_use={curr_cp1_use}, type: {type(curr_cp1_use)}')
+
+            curr_loc = None
+            if isinstance(curr_adm_place, Ppr):
+                curr_loc = LocationOfUse.objects.get(ppr=curr_adm_place)
+            if isinstance(curr_adm_place, Mmpo):
+                curr_loc = LocationOfUse.objects.get(mmpo=curr_adm_place)
+            if isinstance(curr_adm_place, Oez):
+                curr_loc = LocationOfUse.objects.get(oez=curr_adm_place)
+            if isinstance(curr_adm_place, Ztk):
+                curr_loc = LocationOfUse.objects.get(ztk=curr_adm_place)
+
+            # print(f'curr_loc={curr_loc}, type: {type(curr_loc)}')
+
+            curr_cp_to_loc = None
+            if curr_loc:
+                curr_cp_to_loc = CustPlaceToLocation.objects.create(
+                    cust_pl1=curr_cp1_use,
+                    cust_pl2=curr_cust_place[2],
+                    loc=curr_loc
+                    )
+
+            # print(f'curr_cp_to_loc={curr_cp_to_loc}')
+
+            # if i[0] == '7':
             #     sys.exit()
