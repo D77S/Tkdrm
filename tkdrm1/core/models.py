@@ -1,6 +1,5 @@
 """."""
 from django.core.exceptions import ValidationError
-# from django.db.models import CheckConstraint, Q
 from django.core.validators import RegexValidator
 from django.db import models
 
@@ -8,6 +7,9 @@ CUSTCHOICES = (('1', 'РТУ'), ('2', 'Таможня'), ('3', 'Пост'))
 PPTYPESCHOICES = (('1', 'АПП'), ('2', 'ВПП'), ('3', 'ЖДПП'),
                   ('4', 'МПП'), ('5', 'ППП'), ('6', 'РПП'),
                   ('7', 'СПП'))
+SERIAL_NUM_CHOICES = (('1', 'Обязан быть серийный номер'),
+                      ('2', 'Обязан отсутствовать серийный номер'),
+                      ('3', 'Наличие серийного номера возможно'))
 
 
 class Rtu(models.Model):
@@ -15,6 +17,7 @@ class Rtu(models.Model):
 
     title = models.CharField(
         max_length=255,
+        default='Новое РТУ',
         unique=True,
         null=False,
         blank=False,
@@ -54,8 +57,9 @@ class CustHouse(models.Model):
 
     title = models.CharField(
         max_length=255,
+        default='Новая таможня',
         unique=True,
-        null=True,
+        null=False,
         blank=False,
         verbose_name='Название'
     )
@@ -99,6 +103,7 @@ class CustPost(models.Model):
 
     title = models.CharField(
         max_length=255,
+        default='Новый пост',
         unique=False,  # !!!!!!
         null=False,
         verbose_name='Название'
@@ -106,7 +111,7 @@ class CustPost(models.Model):
     code = models.CharField(
         max_length=8,
         unique=True,
-        null=False,
+        null=True,
         blank=False,
         validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
@@ -116,7 +121,7 @@ class CustPost(models.Model):
                                  blank=False,
                                  on_delete=models.PROTECT,
                                  verbose_name='Вышестоящий т. орган',
-                                 related_name="cust_post_to_cust_house")
+                                 related_name='cust_post_to_cust_house')
 
     def save(self, *args, **kwargs):
         """Создание нового поста.
@@ -311,6 +316,7 @@ class CustPlace1Acc(models.Model):
     Вариант (null, null, foo3) допустим ТОЛЬКО если по объекту foo3
     для ОБОИХ уровней его вышестоящих объектов поля title равны "ТНП".
     """
+    # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     rtu = models.OneToOneField(
         Rtu,
         verbose_name='Название РТУ',
@@ -386,6 +392,20 @@ class CustPlace1Acc(models.Model):
 
         verbose_name = 'Субъект учета для т.органа 1-го типа'
         verbose_name_plural = 'Субъекты учета для т.органа 1-го типа'
+        constraints = [
+            models.CheckConstraint(
+                check=(models.Q(rtu__isnull=True) &
+                       models.Q(custhouse__isnull=True) &
+                       ~models.Q(custpost__isnull=True)) |
+                (models.Q(rtu__isnull=True) &
+                 ~models.Q(custhouse__isnull=True) &
+                 models.Q(custpost__isnull=True)) |
+                (~models.Q(rtu__isnull=True) &
+                 models.Q(custhouse__isnull=True) &
+                 models.Q(custpost__isnull=True)),
+                name='CP1AccNullable'
+            ),
+        ]
 
     def __str__(self):
         """."""
@@ -407,6 +427,7 @@ class CustPlace1Use(models.Model):
     null, foo2, null;
     null, null, foo3.
     """
+    # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     rtu = models.OneToOneField(
         Rtu,
         verbose_name='Название РТУ',
@@ -487,6 +508,20 @@ class CustPlace1Use(models.Model):
 
         verbose_name = 'Субъект эксплуатации для т.органа 1-го типа'
         verbose_name_plural = 'Субъекты эксплуатации для т.органа 1-го типа'
+        constraints = [
+            models.CheckConstraint(
+                check=(models.Q(rtu__isnull=True) &
+                       models.Q(custhouse__isnull=True) &
+                       ~models.Q(custpost__isnull=True)) |
+                (models.Q(rtu__isnull=True) &
+                 ~models.Q(custhouse__isnull=True) &
+                 models.Q(custpost__isnull=True)) |
+                (~models.Q(rtu__isnull=True) &
+                 models.Q(custhouse__isnull=True) &
+                 models.Q(custpost__isnull=True)),
+                name='CP1UseNullable'
+            ),
+        ]
 
     def __str__(self):
         """."""
@@ -589,6 +624,7 @@ class LocationOfUse(models.Model):
     null, null, foo3, null;
     null, null, null, foo4.
     """
+    # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     ppr = models.OneToOneField(
         Ppr,
         verbose_name='Название п.пропуска',
@@ -667,6 +703,27 @@ class LocationOfUse(models.Model):
 
         verbose_name = 'объект локации'
         verbose_name_plural = 'объекты локации'
+        constraints = [
+            models.CheckConstraint(
+                check=(models.Q(ppr__isnull=True) &
+                       models.Q(mmpo__isnull=True) &
+                       models.Q(oez__isnull=True) &
+                       ~models.Q(ztk__isnull=True)) |
+                (models.Q(ppr__isnull=True) &
+                 models.Q(mmpo__isnull=True) &
+                 ~models.Q(oez__isnull=True) &
+                 models.Q(ztk__isnull=True)) |
+                (models.Q(ppr__isnull=True) &
+                 ~models.Q(mmpo__isnull=True) &
+                 models.Q(oez__isnull=True) &
+                 models.Q(ztk__isnull=True)) |
+                (~models.Q(ppr__isnull=True) &
+                 models.Q(mmpo__isnull=True) &
+                 models.Q(oez__isnull=True) &
+                 models.Q(ztk__isnull=True)),
+                name='Loc_Nullable'
+            ),
+        ]
 
     def __str__(self):
         """."""
@@ -713,7 +770,12 @@ class CustPlaceToLocation(models.Model):
 
         verbose_name = 'Отношение т.органа к локации эксплуатации'
         verbose_name_plural = 'Отношения т.органа к локации эксплуатации'
-        unique_together = (('cust_pl1', 'cust_pl2', 'loc'),)
+        constraints = [
+            models.UniqueConstraint(
+                fields=['cust_pl1', 'cust_pl2', 'loc'],
+                name='unique_cp1_cp2_loc'
+            )
+        ]
 
     def __str__(self):
         """."""
@@ -727,10 +789,78 @@ class CustPlaceToLocation(models.Model):
         )
 
 
-class Device(models.Model):
-    """."""
+class DevCats(models.Model):
+    """Модель категорий типов приборов."""
+    title = models.CharField(
+        max_length=255,
+        default='Новая категория',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название категории'
+    )
 
-    pass
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект категории типа прибора'
+        verbose_name_plural = 'Объекты категории типов приборов'
+
+    def __str__(self):
+        """."""
+        return f'категория: {self.title}'
+
+
+class DevTypes(models.Model):
+    """Модель типов приборов."""
+
+    title = models.CharField(
+        max_length=255,
+        default='Новый прибор',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название прибора'
+    )
+    category = models.ForeignKey(to=DevCats,
+                                 null=False,
+                                 blank=False,
+                                 on_delete=models.PROTECT,
+                                 verbose_name='Категория прибора',
+                                 related_name='dev_cat_to_dev_type')
+    serial_flag = models.CharField(choices=SERIAL_NUM_CHOICES,
+                                   verbose_name='Тривариантный признак сер.номера',  # noqa
+                                   max_length=1,
+                                   null=False,
+                                   blank=False)
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект типа прибора'
+        verbose_name_plural = 'Объекты типов приборов'
+
+    def __str__(self):
+        """."""
+        return f'прибор: {self.title}'
+
+
+class Device(models.Model):
+    """Модель объекта прибора (технического средства)."""
+
+    type = models.ForeignKey(to=DevTypes,
+                             null=False,
+                             blank=False,
+                             on_delete=models.PROTECT,
+                             verbose_name='Тип прибора',
+                             related_name='dev_type_to_dev_obj')
+    serial = models.CharField(
+         max_length=255,
+         unique=False,
+         null=True,
+         blank=False,
+         verbose_name='Серийный номер'
+    )
 
     class Meta:
         """."""
