@@ -861,13 +861,75 @@ class Device(models.Model):
          blank=False,
          verbose_name='Серийный номер'
     )
+    cp1_acc = models.ForeignKey(to=CustPlace1Acc,
+                                null=False,
+                                blank=False,
+                                on_delete=models.PROTECT,
+                                verbose_name='Учетчик-т.о. 1-го типа',
+                                related_name='cp1acc_to_dev')
+    cp2_acc = models.ForeignKey(to=CustPlace2,
+                                null=False,
+                                blank=False,
+                                on_delete=models.PROTECT,
+                                verbose_name='Учетчик-т.о. 2-го типа',
+                                related_name='cp2acc_to_dev')
+    sour_type = models.ForeignKey(to=SourceTypes,
+                                  null=False,
+                                  blank=False,
+                                  on_delete=models.PROTECT,
+                                  verbose_name='Источник собственности',
+                                  related_name='s_type_to_dev')
+    rels_of_work = models.ManyToManyField(
+        CustPlaceToLocation,
+        through='RelToDev'
+    )
 
     class Meta:
         """."""
 
         verbose_name = 'Техническое средство'
         verbose_name_plural = 'Технические средства'
+        # constraints = [
+        #     models.CheckConstraint(
+        #         check=(models.Q()),
+        #         name='ser_num_valid'
+        #     ),
+        # ]
 
     def __str__(self):
         """."""
         return f'Объект прибора с id={self.id}'
+
+
+class RelToDev(models.Model):
+    """Модель-промежутка, связь M2M между
+    'отношением т. органа и места его работы'
+    и 'девайса'."""
+    to_rel = models.ForeignKey(to=CustPlaceToLocation,
+                               null=False,
+                               blank=False,
+                               on_delete=models.PROTECT,
+                               verbose_name='т.орган и место',  # noqa
+                               related_name='from_relation')
+    to_dev = models.ForeignKey(to=Device,
+                               null=False,
+                               blank=False,
+                               on_delete=models.PROTECT,
+                               verbose_name='прибор',
+                               related_name='from_dev')
+    is_main = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Флаг приоритетности'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект промежутки'
+        verbose_name_plural = 'объекты промежутки'
+
+    def __str__(self):
+        """."""
+        return f'Объект промежутки с id={self.id}'

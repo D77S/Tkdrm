@@ -114,7 +114,7 @@ class Command(BaseCommand):
             except Exception:
                 return Ppr.objects.create(pptype=row[2], title=row[0], tow_country=country)  # noqa
 
-        def get_or_create_mmpo_oez_ztk(model, row):
+        def get_or_create_mmpo_oez_ztk(model: models.Model, row):
             """."""
             try:
                 return model.objects.get(title=row[0])

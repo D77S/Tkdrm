@@ -2,6 +2,7 @@
 // Docs: https://dbml.dbdiagram.io/docs
 // https://dbdiagram.io/d
 
+
 Table Rtu{
   id integer [primary key]
   title varchar
@@ -90,16 +91,22 @@ Table CustPlaceToLocation{
   is_main boolean
 }
 
-
-
-
-
-Table Device {
+Table DevCats{
   id integer [primary key]
+  title varchar
 }
 
-Table DeviceTOuse {
+Table DevTypes{
   id integer [primary key]
-  to_dev integer [not null, ref: > Device.id]
-  to_relation integer [not null, ref: > Custom_postsTOcite_objs.id]
+  title varchar
+  category integer [not null, ref: > DevCats.id]
+}
+
+Table Device{
+  id integer [primary key]
+  type integer [not null, ref: > DevTypes.id]
+  serial varchar
+  cp1_acc integer [not null, ref: > CustPlace1Acc.id]
+  cp2_acc integer [not null, ref: > CustPlace2.id]
+  sour_type integer [not null, ref: > SourceTypes.id]
 }
