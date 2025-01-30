@@ -3,13 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
-CUSTCHOICES = (('1', 'РТУ'), ('2', 'Таможня'), ('3', 'Пост'))
-PPTYPESCHOICES = (('1', 'АПП'), ('2', 'ВПП'), ('3', 'ЖДПП'),
-                  ('4', 'МПП'), ('5', 'ППП'), ('6', 'РПП'),
-                  ('7', 'СПП'))
-SERIAL_NUM_CHOICES = (('1', 'Обязан быть серийный номер'),
-                      ('2', 'Обязан отсутствовать серийный номер'),
-                      ('3', 'Наличие серийного номера возможно'))
+from core.constants import CUSTCHOICES, PPTYPESCHOICES, SERIAL_NUM_CHOICES
 
 
 class Rtu(models.Model):

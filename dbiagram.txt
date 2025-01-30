@@ -100,6 +100,7 @@ Table DevTypes{
   id integer [primary key]
   title varchar
   category integer [not null, ref: > DevCats.id]
+  serial_flag varchar
 }
 
 Table Device{
@@ -109,4 +110,11 @@ Table Device{
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
   cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
+}
+
+Table RelToDev{
+  id integer [primary key]
+  to_rel integer [not null, ref: > CustPlaceToLocation.id]
+  to_dev integer [not null, ref: > Device.id]
+  is_main boolean
 }

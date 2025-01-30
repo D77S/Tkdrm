@@ -12,6 +12,14 @@ from django.core.management.base import BaseCommand
 from django.db import models
 from tqdm import tqdm  # type: ignore
 
+from core.constants import (
+    PATTERN1,
+    PATTERN2,
+    CUSTCHOICES,
+    PPTYPESCHOICES,
+    # SERIAL_NUM_CHOICES
+)
+
 
 class Command(BaseCommand):
     """."""
@@ -21,26 +29,6 @@ class Command(BaseCommand):
 
         def replace_to_clean(list_in):
             """."""
-            PATTERN1 = {  # noqa
-                'ДВТУ': 'Дальневосточное таможенное управление',
-                'ПТУ': 'Приволжское таможенное управление',
-                'СТУ': 'Сибирское таможенное управление',
-                'СЗТУ': 'Северо-Западное таможенное управление',
-                'УТУ': 'Уральское таможенное управление',
-                'ЦТУ': 'Центральное таможенное управление',
-                'ЮТУ': 'Южное таможенное управление',
-                'СКТУ': 'Северо-Кавказское таможенное управление',
-                'ТНП': ''
-            }
-            PATTERN2 = {  # noqa
-                'А': 'АПП',
-                'В': 'ВПП',
-                'Ж': 'ЖДПП',
-                'М': 'МПП',
-                'П': 'ППП',
-                'Р': 'РПП',
-                'С': 'СПП'
-            }
             list_out = []
             for i in list_in:
                 data_row = i
@@ -98,21 +86,16 @@ class Command(BaseCommand):
             try:
                 return model.objects.get(**kwargs)
             except Exception:
-                if model == Rtu:
-                    new_target = model.objects.create(**kwargs)
-                if model == CustHouse:
-                    new_target = model.objects.create(**kwargs)
-                if model == CustPost:
-                    new_target = model.objects.create(**kwargs)
-                return new_target
+                return model.objects.create(**kwargs)
 
         def get_or_create_pp(row):
             """."""
             country = row[1] if row[1] != '' else None
+            pptype = [i for i, item in enumerate(PPTYPESCHOICES, start=1) if item[1] == row[2]][0]  # noqa
             try:
-                return Ppr.objects.get(pptype=row[2], title=row[0], tow_country=country)  # noqa
+                return Ppr.objects.get(pptype=pptype, title=row[0], tow_country=country)  # noqa
             except Exception:
-                return Ppr.objects.create(pptype=row[2], title=row[0], tow_country=country)  # noqa
+                return Ppr.objects.create(pptype=pptype, title=row[0], tow_country=country)  # noqa
 
         def get_or_create_mmpo_oez_ztk(model: models.Model, row):
             """."""
@@ -155,10 +138,26 @@ class Command(BaseCommand):
                 # 2. codes[1] is not None (РТУ)
                 if codes[1] is None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
-                    curr_rtu_2 = CustPlace2.objects.get_or_create(title='ТНП')
+                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                        title='ТНП',
+                        code=None,
+                        level=1,
+                        upper_id=None,
+                        ztk_allowed=False
+                    )
                 if codes[1] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_rtu_1 = get_or_create_custom(
+                        model=Rtu,
+                        title=row[1],
+                        code=codes[1]
+                    )
+                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                        title=row[1],
+                        code=codes[1],
+                        level=1,
+                        upper_id=None,
+                        ztk_allowed=False
+                    )
                 return (curr_rtu_1, curr_rtu_1, curr_rtu_2, curr_rtu_2)
 
             # Если анализируется объект уровня 2 (таможня)
@@ -168,16 +167,49 @@ class Command(BaseCommand):
                 # 1. codes[1] is None,     codes[2] id not None (таможня ТНП)
                 # 2. codes[1] is not None, codes[2] is not None (таможня не ТНП)  # noqa
                 if codes[1] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=1)  # noqa
-                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
-                    curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
+                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                        title='ТНП',
+                        code=None,
+                        level=1,
+                        upper_id=None,
+                        ztk_allowed=False
+                    )
+                    curr_ch_1 = get_or_create_custom(
+                        model=CustHouse,
+                        title=row[2],
+                        code=codes[2],
+                        upper_id=curr_rtu_1
+                    )
+                    curr_ch_2, _ = CustPlace2.objects.get_or_create(
+                        title=row[2],
+                        code=codes[2],
+                        level=2,
+                        upper_id=curr_rtu_2,
+                        ztk_allowed=False
+                    )
                 # Случай 2.
                 if codes[1] is not None:
                     curr_rtu_1 = get_or_create_custom(model=Rtu, code=codes[1])
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
-                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
-                    curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                        title=row[1],
+                        code=codes[1],
+                        level=1,
+                        ztk_allowed=False
+                    )
+                    curr_ch_1 = get_or_create_custom(
+                        model=CustHouse,
+                        title=row[2],
+                        code=codes[2],
+                        upper_id=curr_rtu_1
+                    )
+                    curr_ch_2, _ = CustPlace2.objects.get_or_create(
+                        title=row[2],
+                        code=codes[2],
+                        level=2,
+                        upper_id=curr_rtu_2,
+                        ztk_allowed=False
+                    )
                 return (curr_ch_1, curr_ch_1, curr_ch_2, curr_ch_2)
 
             if f_number == 3:
@@ -188,10 +220,20 @@ class Command(BaseCommand):
                 # 3. codes[1] is not None, codes[2] is None,     codes[3] is not None (пост РТУ)  # noqa
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
                 if codes[1] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')  # noqa
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=1)  # noqa
+                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
+                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                        title='ТНП',
+                        code=None,
+                        level=1,
+                        upper_id=None,
+                        ztk_allowed=False
+                    )
                 else:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title=row[1], code=codes[1])  # noqa
+                    curr_rtu_1 = get_or_create_custom(
+                        model=Rtu,
+                        title=row[1],
+                        code=codes[1]
+                    )
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
 
                 if codes[2] is None:
