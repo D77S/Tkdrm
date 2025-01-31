@@ -234,17 +234,54 @@ class Command(BaseCommand):
                         title=row[1],
                         code=codes[1]
                     )
-                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(title=row[1], code=codes[1], level=1)  # noqa
+                    curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                        title=row[1],
+                        code=codes[1],
+                        level=1,
+                        upper_id=None,
+                        ztk_allowed=False
+                    )
 
                 if codes[2] is None:
-                    curr_ch_1 = get_or_create_custom(model=CustHouse, title='ТНП')  # noqa
-                    curr_ch_2, _ = CustPlace2.objects.get_or_create(title='ТНП', level=2)  # noqa
+                    curr_ch_1 = get_or_create_custom(
+                        model=CustHouse,
+                        title='ТНП',
+                        upper_id=curr_rtu_1,
+                    )
+                    curr_ch_2, _ = CustPlace2.objects.get_or_create(
+                        title='ТНП',
+                        level=2,
+                        upper_id=curr_rtu_2,
+                        ztk_allowed=False
+                    )
                 else:
-                    curr_ch_1 = get_or_create_custom(model=CustHouse, title=row[2], code=codes[2], upper_id=curr_rtu_1)  # noqa
-                    curr_ch_2, _ = CustPlace2.objects.get_or_create(title=row[2], code=codes[2], level=2, upper_id=curr_rtu_2)  # noqa
+                    curr_ch_1 = get_or_create_custom(
+                        model=CustHouse,
+                        title=row[2],
+                        code=codes[2],
+                        upper_id=curr_rtu_1
+                    )
+                    curr_ch_2, _ = CustPlace2.objects.get_or_create(
+                        title=row[2],
+                        code=codes[2],
+                        level=2,
+                        upper_id=curr_rtu_2,
+                        ztk_allowed=False
+                    )
 
-                curr_post_1 = get_or_create_custom(model=CustPost, title=row[3], code=codes[3], upper_id=curr_ch_1)  # noqa
-                curr_post_2, _ = CustPlace2.objects.get_or_create(title=row[3], code=codes[3], level=3, upper_id=curr_ch_2)  # noqa
+                curr_post_1 = get_or_create_custom(
+                    model=CustPost,
+                    title=row[3],
+                    code=codes[3],
+                    upper_id=curr_ch_1
+                )
+                curr_post_2, _ = CustPlace2.objects.get_or_create(
+                    title=row[3],
+                    code=codes[3],
+                    level=3,
+                    upper_id=curr_ch_2,
+                    ztk_allowed=False
+                )
 
                 return (curr_post_1, curr_ch_1, curr_post_2, curr_ch_2)
 
@@ -261,10 +298,10 @@ class Command(BaseCommand):
             # print(f'Парсер № 2 группы полей строки 2. row[5:8]={temp_row}')
             if temp_row[3] != '1':
                 return None
-            if temp_row[2] not in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ММПО', 'ОЭЗ', 'ППП', 'РПП', 'СПП']:  # noqa
+            if temp_row[2] not in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ММПО', 'ОЭЗ', 'ЗТК', 'ППП', 'РПП', 'СПП']:  # noqa
                 print(f'Строка {row[0]}, \'тип п/п\' не из валидных вариантов, строка не будет обработана.')  # noqa
                 return None
-            if temp_row[2] in ['ВПП', 'МПП', 'ММПО', 'ОЭЗ'] and temp_row[1] != '':  # noqa
+            if temp_row[2] in ['ВПП', 'МПП', 'ММПО', 'ОЭЗ', 'ЗТК'] and temp_row[1] != '':  # noqa
                 print(f'Строка {row[0]}, невалидное сочетание столбцов \'тип п/п\' и \'сопредельное гос-во\', строка не будет обработана.')  # noqa
                 return None
             if temp_row[2] in ['АПП', 'ЖДПП', 'ППП', 'РПП', 'СПП'] and temp_row[1] == '':  # noqa
@@ -373,7 +410,6 @@ class Command(BaseCommand):
             # print(f'Строка номер {i[0]}')
 
             # Обработка первых трех полей.
-            # Намеренно повторяющийся код, для облегчения понимания логики.
             curr_cust_place = None
             if i[1] != '':
                 # print(f'Обработка поля номер 1, равного \'{i[1]}\'')  # noqa
