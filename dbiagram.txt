@@ -101,7 +101,7 @@ Table DevTypes{
   title varchar
   category integer [not null, ref: > DevCats.id]
   serial_flag varchar
-  sub_types varchar
+  sub_types JSON
 }
 
 Table Device{
