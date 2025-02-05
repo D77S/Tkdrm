@@ -811,22 +811,33 @@ class DevTypes(models.Model):
     title = models.CharField(
         max_length=255,
         default='Новый прибор',
-        unique=True,
+        unique=False,
         null=False,
         blank=False,
         verbose_name='Название прибора'
     )
-    category = models.ForeignKey(to=DevCats,
-                                 null=False,
-                                 blank=False,
-                                 on_delete=models.PROTECT,
-                                 verbose_name='Категория прибора',
-                                 related_name='dev_cat_to_dev_type')
-    serial_flag = models.CharField(choices=SERIAL_NUM_CHOICES,
-                                   verbose_name='Тривариантный признак сер.номера',  # noqa
-                                   max_length=1,
-                                   null=False,
-                                   blank=False)
+    category = models.ForeignKey(
+        to=DevCats,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Категория прибора',
+        related_name='dev_cat_to_dev_type'
+    )
+    serial_flag = models.CharField(
+        choices=SERIAL_NUM_CHOICES,
+        verbose_name='Тривариантный признак сер.номера',
+        max_length=1,
+        null=False,
+        blank=False
+    )
+    sub_types = models.JSONField(
+        default=list,
+        unique=False,
+        null=True,
+        blank=True,
+        verbose_name='Допустимые подтипы'
+    )
 
     class Meta:
         """."""
@@ -842,12 +853,14 @@ class DevTypes(models.Model):
 class Device(models.Model):
     """Модель объекта прибора (технического средства)."""
 
-    type = models.ForeignKey(to=DevTypes,
-                             null=False,
-                             blank=False,
-                             on_delete=models.PROTECT,
-                             verbose_name='Тип прибора',
-                             related_name='dev_type_to_dev_obj')
+    type = models.ForeignKey(
+        to=DevTypes,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Тип прибора',
+        related_name='dev_type_to_dev_obj'
+    )
     serial = models.CharField(
          max_length=255,
          unique=False,
@@ -855,27 +868,39 @@ class Device(models.Model):
          blank=False,
          verbose_name='Серийный номер'
     )
+    # Субъект учета по (за)балансу, 1-го типа
     cp1_acc = models.ForeignKey(to=CustPlace1Acc,
                                 null=False,
                                 blank=False,
                                 on_delete=models.PROTECT,
                                 verbose_name='Учетчик-т.о. 1-го типа',
                                 related_name='cp1acc_to_dev')
+    # Субъект учета по (за)балансу, 2-го типа
     cp2_acc = models.ForeignKey(to=CustPlace2,
                                 null=False,
                                 blank=False,
                                 on_delete=models.PROTECT,
                                 verbose_name='Учетчик-т.о. 2-го типа',
                                 related_name='cp2acc_to_dev')
+    # Источник собственности
     sour_type = models.ForeignKey(to=SourceTypes,
                                   null=False,
                                   blank=False,
                                   on_delete=models.PROTECT,
                                   verbose_name='Источник собственности',
                                   related_name='s_type_to_dev')
+    # Субъект пользования
     rels_of_work = models.ManyToManyField(
         CustPlaceToLocation,
         through='RelToDev'
+    )
+    sub_type = models.CharField(
+        max_length=255,
+        default=None,
+        unique=True,
+        null=True,
+        blank=False,
+        verbose_name='Подтип'
     )
 
     class Meta:

@@ -1,5 +1,5 @@
 // Use DBML to define your database structure
-// Docs: https://dbml.dbdiagram.io/docs
+// Docs: https://dbdiagram.io/docs
 // https://dbdiagram.io/d
 
 
@@ -46,14 +46,6 @@ Table Ztk{
   title varchar
 }
 
-Table LocationOfUse{
-  id integer [primary key]
-  ppr integer [null, unique, ref: - Ppr.id]
-  mmpo integer [null, unique, ref: - Mmpo.id]
-  oez integer [null, unique, ref: - Oez.id]
-  ztk integer [null, unique, ref: - Ztk.id]
-}
-
 Table CustPlace1Acc{
   id integer [primary key]
   rtu integer [null, unique, ref: - Rtu.id]
@@ -83,6 +75,14 @@ Table SourceTypes{
   title varchar
 }
 
+Table LocationOfUse{
+  id integer [primary key]
+  ppr integer [null, unique, ref: - Ppr.id]
+  mmpo integer [null, unique, ref: - Mmpo.id]
+  oez integer [null, unique, ref: - Oez.id]
+  ztk integer [null, unique, ref: - Ztk.id]
+}
+
 Table CustPlaceToLocation{
   id integer [primary key]
   cust_pl1 integer [not null, ref: > CustPlace1Use.id]
@@ -101,6 +101,7 @@ Table DevTypes{
   title varchar
   category integer [not null, ref: > DevCats.id]
   serial_flag varchar
+  sub_types varchar
 }
 
 Table Device{
@@ -110,6 +111,8 @@ Table Device{
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
   cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
+  sub_type varchar
+  // rel_of_work integer [not null, ref: <> CustPlaceToLocation.id]
 }
 
 Table RelToDev{

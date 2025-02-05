@@ -6,8 +6,9 @@ import sys
 import pandas  # type: ignore
 from core.models import (CustHouse, CustPlace2, CustPost, Device,
                          LocationOfUse,  Ppr, Mmpo, Oez, Ztk, Rtu,
-                         SourceTypes, CustPlace1Use,
-                         CustPlaceToLocation)
+                         SourceTypes, CustPlace1Acc, CustPlace1Use,
+                         CustPlaceToLocation, RelToDev, DevTypes,
+                         DevCats)
 from django.core.management.base import BaseCommand
 from django.db import models
 from tqdm import tqdm  # type: ignore
@@ -38,6 +39,34 @@ class Command(BaseCommand):
                     data_row[7] = PATTERN2.get(data_row[7])
                 list_out.append(data_row)
             return list_out
+
+        def pre_valid_tests(row):
+            """."""
+            if row[8] not in ['1', '2', '3', '4']:
+                print(f'Строка {row[0]}, \'тип объекта\' не из вариантов \'1\', \'2\', \'3\', \'4\', строка не будет обработана.')  # noqa
+                return False
+            if row[11] not in ['основная', 'служебная']:
+                print(f'Строка {row[0]}, \'статус строки\' не из вариантов \'основная\', \'служебная\', строка не будет обработана')  # noqa
+                return False
+            if row[14] not in ['', 'Там.орган', 'Росгранстрой-договор', 'Росгранстрой-акт', 'Росгранстрой-факт.пред.',  # noqa
+                'Иной владелец-договор', 'Иной владелец-акт', 'Иной владелец-факт.пред.', '?']:  # noqa
+                print(f'Строка {row[0]}, \'Собственник\' не из валидных вариантов, строка не будет обработана')  # noqa
+                return False
+            if row[8] == '1' and (row[5] == '' or row[7] == ''):
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 5, 7, 8, строка не будет обработана')  # noqa
+                return False
+            if (not ((row[11] == 'основная' and row[8] != '1' and row[4] != '') or  # noqa
+                     (row[11] == 'основная' and row[8] == '1' and row[4] == '') or  # noqa
+                     (row[11] == 'служебная' and row[4] == ''))):  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 4, 8 и 11, строка не будет обработана')  # noqa
+                return False
+            if not ((row[11] == 'служебная' and row[12] != '') or (row[11] == 'основная' and row[12] == '')):  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 11 и 12, строка не будет обработана')  # noqa
+                return False
+            if not ((row[11] == 'служебная' and row[14] != '') or (row[11] == 'основная' and row[14] == '')):  # noqa
+                print(f'Строка {row[0]}, невалидное сочетание столбцов 11 и 14, строка не будет обработана')  # noqa
+                return False
+            return True
 
         def code_finder(array: list[str], row, f_number):
             """Кодефайндер.
@@ -318,33 +347,69 @@ class Command(BaseCommand):
                 return get_or_create_mmpo_oez_ztk(model=Ztk, row=temp_row)
             return None
 
-        def pre_valid_tests(row):
-            """."""
-            if row[8] not in ['1', '2', '3', '4']:
-                print(f'Строка {row[0]}, \'тип объекта\' не из вариантов \'1\', \'2\', \'3\', \'4\', строка не будет обработана.')  # noqa
-                return False
-            if row[11] not in ['основная', 'служебная']:
-                print(f'Строка {row[0]}, \'статус строки\' не из вариантов \'основная\', \'служебная\', строка не будет обработана')  # noqa
-                return False
-            if row[14] not in ['', 'Там.орган', 'Росгранстрой-договор', 'Росгранстрой-акт', 'Росгранстрой-факт.пред.',  # noqa
-                'Иной владелец-договор', 'Иной владелец-акт', 'Иной владелец-факт.пред.', '?']:  # noqa
-                print(f'Строка {row[0]}, \'Собственник\' не из валидных вариантов, строка не будет обработана')  # noqa
-                return False
-            if row[8] == '1' and (row[5] == '' or row[7] == ''):
-                print(f'Строка {row[0]}, невалидное сочетание столбцов 5, 7, 8, строка не будет обработана')  # noqa
-                return False
-            if (not ((row[11] == 'основная' and row[8] != '1' and row[4] != '') or  # noqa
-                     (row[11] == 'основная' and row[8] == '1' and row[4] == '') or  # noqa
-                     (row[11] == 'служебная' and row[4] == ''))):  # noqa
-                print(f'Строка {row[0]}, невалидное сочетание столбцов 4, 8 и 11, строка не будет обработана')  # noqa
-                return False
-            if not ((row[11] == 'служебная' and row[12] != '') or (row[11] == 'основная' and row[12] == '')):  # noqa
-                print(f'Строка {row[0]}, невалидное сочетание столбцов 11 и 12, строка не будет обработана')  # noqa
-                return False
-            if not ((row[11] == 'служебная' and row[14] != '') or (row[11] == 'основная' and row[14] == '')):  # noqa
-                print(f'Строка {row[0]}, невалидное сочетание столбцов 11 и 14, строка не будет обработана')  # noqa
-                return False
-            return True
+        def get_curr_cust_place(i, data):
+            curr_cust_place = None
+            if i[1] != '':
+                # print(f'Обработка поля номер 1, равного \'{i[1]}\'')  # noqa
+                temp_cust_place = field_processing_1(data, i, 1)  # noqa
+                if temp_cust_place != [] and temp_cust_place is not None:
+                    curr_cust_place = temp_cust_place
+            if i[2] != '':
+                # print(f'Обработка поля номер 2, равного \'{i[2]}\'')  # noqa
+                temp_cust_place = field_processing_1(data, i, 2)  # noqa
+                if temp_cust_place != [] and temp_cust_place is not None:
+                    curr_cust_place = temp_cust_place
+            if i[3] != '':
+                # print(f'Обработка поля номер 3, равного \'{i[3]}\'')  # noqa
+                temp_cust_place = field_processing_1(data, i, 3)  # noqa
+                if temp_cust_place != [] and temp_cust_place is not None:
+                    curr_cust_place = temp_cust_place
+            return curr_cust_place
+
+        def get_curr_pl_1_acc(curr_cust_place):
+            curr_pl_1_acc = None
+            if isinstance(curr_cust_place[1], Rtu):
+                curr_pl_1_acc = CustPlace1Acc.objects.get(rtu=curr_cust_place[1])  # noqa
+            if isinstance(curr_cust_place[1], CustHouse):
+                curr_pl_1_acc = CustPlace1Acc.objects.get(custhouse=curr_cust_place[1])  # noqa
+            if isinstance(curr_cust_place[1], CustPost):
+                curr_pl_1_acc = CustPlace1Acc.objects.get(custpost=curr_cust_place[1])  # noqa
+            return curr_pl_1_acc
+
+        def get_curr_pl_1_use(curr_cust_place):
+            curr_pl_1_use = None
+            if isinstance(curr_cust_place[0], Rtu):
+                curr_pl_1_use = CustPlace1Use.objects.get(rtu=curr_cust_place[0])  # noqa
+            if isinstance(curr_cust_place[0], CustHouse):
+                curr_pl_1_use = CustPlace1Use.objects.get(custhouse=curr_cust_place[0])  # noqa
+            if isinstance(curr_cust_place[0], CustPost):
+                curr_pl_1_use = CustPlace1Use.objects.get(custpost=curr_cust_place[0])  # noqa
+            return curr_pl_1_use
+
+        def get_curr_loc_use(curr_site):
+            curr_loc_use = None
+            if isinstance(curr_site, Ppr):
+                curr_loc_use = LocationOfUse.objects.get(ppr=curr_site)
+            if isinstance(curr_site, Mmpo):
+                curr_loc_use = LocationOfUse.objects.get(mmpo=curr_site)
+            if isinstance(curr_site, Oez):
+                curr_loc_use = LocationOfUse.objects.get(oez=curr_site)
+            if isinstance(curr_site, Ztk):
+                curr_loc_use = LocationOfUse.objects.get(ztk=curr_site)
+            return curr_loc_use
+
+        def get_curr_dev(curr_row):
+            curr_dev_type_subtype = curr_row[13] if curr_row[13] != '' else None  # noqa
+            curr_serial = curr_row[16] if curr_row[16] != '' else None  # noqa
+            try:
+                curr_dev_type = DevTypes.objects.get(
+                    title=curr_row[12],
+                )
+            except Exception:
+                print('В текущей строке прибор, названия которого нет в БД. Не обработан.')  # noqa
+                return None
+            print(f'Текущий объект типа прибора: {curr_dev_type}')
+            return 'ААААААААААА!!!!'
 
         # Main begin
 
@@ -379,7 +444,10 @@ class Command(BaseCommand):
 
         if del_flag == 'y':
             # delete
+            RelToDev.objects.all().delete()
             Device.objects.all().delete()
+            DevTypes.objects.all().delete()
+            DevCats.objects.all().delete()
             CustPlaceToLocation.objects.all().delete()
             Ppr.objects.all().delete()
             CustPost.objects.all().delete()
@@ -392,90 +460,111 @@ class Command(BaseCommand):
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
-            SourceTypes.objects.create(title='РФ')  # noqa
-            SourceTypes.objects.create(title='Росгранстрой (по договору передачи в пользование)')  # noqa
-            SourceTypes.objects.create(title='Росгранстрой (по акту передачи в пользование)')  # noqa
-            SourceTypes.objects.create(title='Росгранстрой (по факту, без документа-основания)')  # noqa
-            SourceTypes.objects.create(title='иной владелец (по договору передачи в пользование)')  # noqa
-            SourceTypes.objects.create(title='иной владелец (по акту передачи в пользование)')  # noqa
-            SourceTypes.objects.create(title='иной владелец (по факту, без документа-основания)')  # noqa
+            source_titles = [
+                'РФ',
+                'Росгранстрой (по договору передачи в пользование)',
+                'Росгранстрой (по акту передачи в пользование)',
+                'Росгранстрой (по факту, без документа-основания)',
+                'иной владелец (по договору передачи в пользование)',
+                'иной владелец (по акту передачи в пользование)',
+                'иной владелец (по факту, без документа-основания)'
+            ]
+            source_objs = [SourceTypes(title=i) for i in source_titles]
+            SourceTypes.objects.bulk_create(objs=source_objs)
+            dev_cats_titles = [
+                'АКДРМ',
+                'дозиметры',
+                'поисковые',
+                'радиометры-спектрометры',
+                'спектрометры',
+                'СИЗ'
+            ]
+            dev_cats_objs = [DevCats(title=i) for i in dev_cats_titles]
+            DevCats.objects.bulk_create(objs=dev_cats_objs)
+            dev_types = [
+                ('Янтарь-1С', 'АКДРМ', '1', None),
+                ('Янтарь-1СН', 'АКДРМ', '1', None),
+                ('Янтарь-2С', 'АКДРМ', '1', None),
+                ('Янтарь-2СН', 'АКДРМ', '1', None),
+                ('ВН-СН', 'АКДРМ', '3', None),
+                ('Янтарь-1А', 'АКДРМ', '1', None),
+                ('Янтарь-2А', 'АКДРМ', '1', None),
+                ('ВН-А', 'АКДРМ', '3', None),
+                ('Янтарь-1П', 'АКДРМ', '1', ['1П1', '1П2', '1П3', '1У']),  # noqa
+                ('Янтарь-2П', 'АКДРМ', '1', ['2П1', '2П2', '2П3']),  # noqa
+                ('ВН-П', 'АКДРМ', '3', None),
+                ('Янтарь-ПБ', 'АКДРМ', '1', None),
+                ('ВН-ПБ', 'АКДРМ', '3', None),
+                ('Янтарь-1Ж', 'АКДРМ', '1', None),
+                ('Янтарь-1Ж2', 'АКДРМ', '1', None),
+                ('Янтарь-2Ж', 'АКДРМ', '1', None),
+                ('Янтарь-2Ж2', 'АКДРМ', '1', None),
+                ('ВН-Ж', 'АКДРМ', '3', None),
+                ('ССД', 'АКДРМ', '3', None),
+                ('АРМ', 'АКДРМ', '3', None),
+                ('ССД/АРМ', 'АКДРМ', '3', None),
+            ]
+            dev_types_objs = [DevTypes(
+                title=i[0],
+                category=DevCats.objects.get(title=i[1]),
+                serial_flag=i[2],
+                sub_types=i[3]
+            ) for i in dev_types]
+            DevTypes.objects.bulk_create(objs=dev_types_objs)
 
         for i in tqdm(clean_data_second):  # noqa
         # for i in clean_data_second:  # noqa
 
             if not pre_valid_tests(i):
+                print('Не прошла валидация строки. Переход к следующей.')
                 continue
 
-            # Валидная строка
-            # print(f'Строка номер {i[0]}')
+            # Предварительно валидная строка
+            print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
 
             # Обработка первых трех полей.
-            curr_cust_place = None
-            if i[1] != '':
-                # print(f'Обработка поля номер 1, равного \'{i[1]}\'')  # noqa
-                temp_cust_place = field_processing_1(clean_data_second, i, 1)  # noqa
-                if temp_cust_place is not None:
-                    curr_cust_place = temp_cust_place
-            if i[2] != '':
-                # print(f'Обработка поля номер 2, равного \'{i[2]}\'')  # noqa
-                temp_cust_place = field_processing_1(clean_data_second, i, 2)  # noqa
-                if temp_cust_place is not None:
-                    curr_cust_place = temp_cust_place
-            if i[3] != '':
-                # print(f'Обработка поля номер 3, равного \'{i[3]}\'')  # noqa
-                temp_cust_place = field_processing_1(clean_data_second, i, 3)  # noqa
-                if temp_cust_place is not None:
-                    curr_cust_place = temp_cust_place
+            curr_cust_place = get_curr_cust_place(
+                i=i,
+                data=clean_data_second
+            )
 
-            if curr_cust_place is None:
+            if curr_cust_place == [] or curr_cust_place is None:
                 print(f'Строка {i[0]}, первые три поля не дали валидный т.орган, строка не будет обработана')  # noqa
                 continue
-            # По результатам обработки первых трех полей текущей строки вернулся валидный результат:  # noqa
-            # кортеж четырех объектов ([0], [1], [2], [3])
-            # субъект эксплуатации т.с. (реагирования на срабатывание):
-            #    curr_cust_place[0], curr_cust_place[2]
-            # субъект балансового учета т.с.:
-            #    curr_cust_place[1], curr_cust_place[3]
-            # Справочно: если row[14] == "Там. орган", то объект предоставлен РФ.  # noqa
-            # Иначе - тем, кто в row[14].
 
-            # print(f'curr_cust_place={curr_cust_place}')
+            print(f'Субъекты т.органов: 1-го типа пользования, 1-го типа баланс, 2-го типа пользователь ,2-го типа баланс={curr_cust_place}\n')  # noqa
 
-            curr_adm_place = field_processing_2(i)
+            # Объект модели "Модель субъекта (за)баланса для объектов т.органа 1-го типа"  # noqa
+            curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place)
+            print(f'Объект модели \'Модель субъекта (за)баланса для объектов т.органа 1-го типа\', CustPlace1Acc: {curr_pl_1_acc}\n')  # noqa
 
-            # print(f'curr_adm_place={curr_adm_place}')
+            # Объект модели "Модель субъекта пользования для объектов т.органа 1-го типа."  # noqa
+            curr_pl_1_use = get_curr_pl_1_use(curr_cust_place)
+            print(f'Объект модели \'Модель субъекта пользования для объектов т.органа 1-го типа\', CustPlace1Use: {curr_pl_1_use}\n')  # noqa
 
-            curr_cp1_use = None
-            if isinstance(curr_cust_place[0], Rtu):
-                curr_cp1_use = CustPlace1Use.objects.get(rtu=curr_cust_place[0])  # noqa
-            if isinstance(curr_cust_place[0], CustHouse):
-                curr_cp1_use = CustPlace1Use.objects.get(custhouse=curr_cust_place[0])  # noqa
-            if isinstance(curr_cust_place[0], CustPost):
-                curr_cp1_use = CustPlace1Use.objects.get(custpost=curr_cust_place[0])  # noqa
+            curr_site = field_processing_2(i)
 
-            # print(f'curr_cp1_use={curr_cp1_use}, type: {type(curr_cp1_use)}')
+            print(f'Субъект пользователя (пункт пропуска, почтамт, и т.п.): {curr_site}\n')  # noqa
 
-            curr_loc = None
-            if isinstance(curr_adm_place, Ppr):
-                curr_loc = LocationOfUse.objects.get(ppr=curr_adm_place)
-            if isinstance(curr_adm_place, Mmpo):
-                curr_loc = LocationOfUse.objects.get(mmpo=curr_adm_place)
-            if isinstance(curr_adm_place, Oez):
-                curr_loc = LocationOfUse.objects.get(oez=curr_adm_place)
-            if isinstance(curr_adm_place, Ztk):
-                curr_loc = LocationOfUse.objects.get(ztk=curr_adm_place)
-
-            # print(f'curr_loc={curr_loc}, type: {type(curr_loc)}')
+            curr_loc_use = get_curr_loc_use(curr_site)
+            print(f'Объект модели \'Модель субъекта пользования\', LocationOfUse={curr_loc_use}\n')  # noqa
 
             curr_cp_to_loc = None
-            if curr_loc:
-                curr_cp_to_loc = CustPlaceToLocation.objects.get_or_create(
-                    cust_pl1=curr_cp1_use,
+            if curr_loc_use:
+                curr_cp_to_loc, _ = CustPlaceToLocation.objects.get_or_create(
+                    cust_pl1=curr_pl_1_use,
                     cust_pl2=curr_cust_place[2],
-                    loc=curr_loc
+                    loc=curr_loc_use,
+                    is_main=False
                     )
 
-            # print(f'curr_cp_to_loc={curr_cp_to_loc}')
+            print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
 
-            # if i[0] == '7':
-            #     sys.exit()
+            if i[11] != 'служебная':
+                print(f'Строка {i[0]} не содержит инф-ции о единице т.с. , переход к следующей')  # noqa
+                continue
+
+            curr_dev = get_curr_dev(i)
+
+            if i[0] >= '1':
+                sys.exit()
