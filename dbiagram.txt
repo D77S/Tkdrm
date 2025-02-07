@@ -7,12 +7,16 @@ Table Rtu{
   id integer [primary key]
   title varchar
   code varchar
+  ztk_allowed boolean
+  standalone_allowed boolean
 }
 
 Table CustHouse{
   id integer [primary key]
   title varchar
   code varchar
+  ztk_allowed boolean
+  standalone_allowed boolean
   upper_id integer [not null, ref: > Rtu.id]
 }
 
@@ -20,6 +24,8 @@ Table CustPost{
   id integer [primary key]
   title varchar
   code varchar
+  ztk_allowed boolean
+  standalone_allowed boolean
   upper_id integer [not null, ref: > CustHouse.id]
 }
 
@@ -68,6 +74,7 @@ Table CustPlace2{
   level varchar
   upper_id integer [not null, ref: > CustPlace2.id]
   ztk_allowed boolean
+  stanalone_allowed boolean
 }
 
 Table SourceTypes{

@@ -25,14 +25,38 @@ class Rtu(models.Model):
         validators=[RegexValidator(regex=r'^1\d{2}00000$')],
         verbose_name='Код т.органа'
     )
+    ztk_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать в ЗТК'
+        # Имеются в виду ЗТК т.н. отдельно-существующие.
+        # Не находящиеся на территории какого-либо
+        # пункта пропуска, ММПО, ОЭЗ.
+    )
+    standalone_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать без локации'
+        # Для т.н. внутренних постов устанавливается в True
+    )
 
     def save(self, *args, **kwargs):
         """Создание нового РТУ.
 
         Для него также создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.create(rtu=self, custhouse=None, custpost=None)
-        CustPlace1Use.objects.create(rtu=self, custhouse=None, custpost=None, ztk_allowed=False)  # noqa
+        CustPlace1Acc.objects.get_or_create(
+            rtu=self,
+            custhouse=None,
+            custpost=None
+        )
+        CustPlace1Use.objects.get_or_create(
+            rtu=self,
+            custhouse=None,
+            custpost=None
+        )
         return temp  # noqa
 
     class Meta:
@@ -65,6 +89,22 @@ class CustHouse(models.Model):
         validators=[RegexValidator(regex=r'^1\d{4}000$')],
         verbose_name='Код т.органа'
     )
+    ztk_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать в ЗТК'
+        # Имеются в виду ЗТК т.н. отдельно-существующие.
+        # Не находящиеся на территории какого-либо
+        # пункта пропуска, ММПО, ОЭЗ.
+    )
+    standalone_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать без локации'
+        # Для т.н. внутренних постов устанавливается в True
+    )
     upper_id = models.ForeignKey(to=Rtu,
                                  null=False,
                                  blank=False,
@@ -77,8 +117,16 @@ class CustHouse(models.Model):
 
         Для нее также создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.create(rtu=None, custhouse=self, custpost=None)
-        CustPlace1Use.objects.create(rtu=None, custhouse=self, custpost=None, ztk_allowed=False)  # noqa
+        CustPlace1Acc.objects.get_or_create(
+            rtu=None,
+            custhouse=self,
+            custpost=None
+        )
+        CustPlace1Use.objects.get_or_create(
+            rtu=None,
+            custhouse=self,
+            custpost=None
+        )
         return temp  # noqa
 
     class Meta:
@@ -110,6 +158,22 @@ class CustPost(models.Model):
         validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
     )
+    ztk_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать в ЗТК'
+        # Имеются в виду ЗТК т.н. отдельно-существующие.
+        # Не находящиеся на территории какого-либо
+        # пункта пропуска, ММПО, ОЭЗ.
+    )
+    standalone_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать без локации'
+        # Для т.н. внутренних постов устанавливается в True
+    )
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
                                  blank=False,
@@ -130,8 +194,16 @@ class CustPost(models.Model):
         if upper_ch:
             upper_rtu = upper_ch.upper_id
         if upper_ch and upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
-            CustPlace1Acc.objects.create(rtu=None, custhouse=None, custpost=self)  # noqa
-        CustPlace1Use.objects.create(rtu=None, custhouse=None, custpost=self, ztk_allowed=False)  # noqa
+            CustPlace1Acc.objects.get_or_create(
+                rtu=None,
+                custhouse=None,
+                custpost=self
+            )
+        CustPlace1Use.objects.get_or_create(
+            rtu=None,
+            custhouse=None,
+            custpost=self
+        )
         return temp  # noqa
 
     class Meta:
@@ -172,7 +244,12 @@ class Ppr(models.Model):
 
         Для него также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.create(ppr=self, mmpo=None, oez=None, ztk=None)
+        LocationOfUse.objects.get_or_create(
+            ppr=self,
+            mmpo=None,
+            oez=None,
+            ztk=None
+        )
         return temp  # noqa
 
     class Meta:
@@ -207,7 +284,12 @@ class Mmpo(models.Model):
 
         Для него также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.create(ppr=None, mmpo=self, oez=None, ztk=None)
+        LocationOfUse.objects.get_or_create(
+            ppr=None,
+            mmpo=self,
+            oez=None,
+            ztk=None
+        )
         return temp  # noqa
 
     class Meta:
@@ -242,7 +324,12 @@ class Oez(models.Model):
 
         Для нее также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.create(ppr=None, mmpo=None, oez=self, ztk=None)
+        LocationOfUse.objects.get_or_create(
+            ppr=None,
+            mmpo=None,
+            oez=self,
+            ztk=None
+        )
         return temp  # noqa
 
     class Meta:
@@ -277,7 +364,12 @@ class Ztk(models.Model):
 
         Для нее также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.create(ppr=None, mmpo=None, oez=None, ztk=self)
+        LocationOfUse.objects.get_or_create(
+            ppr=None,
+            mmpo=None,
+            oez=None,
+            ztk=self
+        )
         return temp  # noqa
 
     class Meta:
@@ -449,15 +541,6 @@ class CustPlace1Use(models.Model):
         blank=True,
         default=None
     )
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
 
     def delete(self, *args, **kwargs):
         """."""
@@ -564,6 +647,13 @@ class CustPlace2(models.Model):
         # Имеются в виду ЗТК т.н. отдельно-существующие.
         # Не находящиеся на территории какого-либо
         # пункта пропуска, ММПО, ОЭЗ.
+    )
+    standalone_allowed = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Признак разрешения работать без локации'
+        # Для т.н. внутренних постов устанавливается в True
     )
 
     def save(self, *args, **kwargs):

@@ -2,6 +2,7 @@
 import math
 import os
 import sys
+from typing import Union
 
 import pandas  # type: ignore
 from core.models import (CustHouse, CustPlace2, CustPost, Device,
@@ -16,7 +17,7 @@ from tqdm import tqdm  # type: ignore
 from core.constants import (
     PATTERN1,
     PATTERN2,
-    CUSTCHOICES,
+    # CUSTCHOICES,
     PPTYPESCHOICES,
     # SERIAL_NUM_CHOICES
 )
@@ -110,21 +111,15 @@ class Command(BaseCommand):
             # print(f'code_finder: для поля уровня \'{f_number}\' со значением \'{row[f_number]}\' код так и не был найден')  # noqa
             return 'not found'
 
-        def get_or_create_custom(model: models.Model, **kwargs):
-            """."""
-            try:
-                return model.objects.get(**kwargs)
-            except Exception:
-                return model.objects.create(**kwargs)
-
         def get_or_create_pp(row):
             """."""
             country = row[1] if row[1] != '' else None
             pptype = [i for i, item in enumerate(PPTYPESCHOICES, start=1) if item[1] == row[2]][0]  # noqa
-            try:
-                return Ppr.objects.get(pptype=pptype, title=row[0], tow_country=country)  # noqa
-            except Exception:
-                return Ppr.objects.create(pptype=pptype, title=row[0], tow_country=country)  # noqa
+            return Ppr.objects.get_or_create(
+                pptype=pptype,
+                title=row[0],
+                tow_country=country
+            )[0]
 
         def get_or_create_mmpo_oez_ztk(model: models.Model, row):
             """."""
@@ -166,17 +161,18 @@ class Command(BaseCommand):
                 # 1. codes[1] is None     (что-то нижестоящее ТНП)
                 # 2. codes[1] is not None (РТУ)
                 if codes[1] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(
+                        title='ТНП',
+                        code=None
+                    )
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                         title='ТНП',
                         code=None,
                         level=1,
                         upper_id=None,
-                        ztk_allowed=False
                     )
                 if codes[1] is not None:
-                    curr_rtu_1 = get_or_create_custom(
-                        model=Rtu,
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(
                         title=row[1],
                         code=codes[1]
                     )
@@ -185,7 +181,6 @@ class Command(BaseCommand):
                         code=codes[1],
                         level=1,
                         upper_id=None,
-                        ztk_allowed=False
                     )
                 return (curr_rtu_1, curr_rtu_1, curr_rtu_2, curr_rtu_2)
 
@@ -196,16 +191,14 @@ class Command(BaseCommand):
                 # 1. codes[1] is None,     codes[2] id not None (таможня ТНП)
                 # 2. codes[1] is not None, codes[2] is not None (таможня не ТНП)  # noqa
                 if codes[1] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(title='ТНП')
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                         title='ТНП',
                         code=None,
                         level=1,
                         upper_id=None,
-                        ztk_allowed=False
                     )
-                    curr_ch_1 = get_or_create_custom(
-                        model=CustHouse,
+                    curr_ch_1, _ = CustHouse.objects.get_or_create(
                         title=row[2],
                         code=codes[2],
                         upper_id=curr_rtu_1
@@ -215,19 +208,16 @@ class Command(BaseCommand):
                         code=codes[2],
                         level=2,
                         upper_id=curr_rtu_2,
-                        ztk_allowed=False
                     )
                 # Случай 2.
                 if codes[1] is not None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, code=codes[1])
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(code=codes[1])
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                         title=row[1],
                         code=codes[1],
                         level=1,
-                        ztk_allowed=False
                     )
-                    curr_ch_1 = get_or_create_custom(
-                        model=CustHouse,
+                    curr_ch_1, _ = CustHouse.objects.get_or_create(
                         title=row[2],
                         code=codes[2],
                         upper_id=curr_rtu_1
@@ -237,7 +227,6 @@ class Command(BaseCommand):
                         code=codes[2],
                         level=2,
                         upper_id=curr_rtu_2,
-                        ztk_allowed=False
                     )
                 return (curr_ch_1, curr_ch_1, curr_ch_2, curr_ch_2)
 
@@ -249,17 +238,15 @@ class Command(BaseCommand):
                 # 3. codes[1] is not None, codes[2] is None,     codes[3] is not None (пост РТУ)  # noqa
                 # 4. codes[1] is not None, codes[2] is not None, codes[3] is not None (пост таможни РТУ)  # noqa
                 if codes[1] is None:
-                    curr_rtu_1 = get_or_create_custom(model=Rtu, title='ТНП')
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(title='ТНП')
                     curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                         title='ТНП',
                         code=None,
                         level=1,
                         upper_id=None,
-                        ztk_allowed=False
                     )
                 else:
-                    curr_rtu_1 = get_or_create_custom(
-                        model=Rtu,
+                    curr_rtu_1, _ = Rtu.objects.get_or_create(
                         title=row[1],
                         code=codes[1]
                     )
@@ -268,12 +255,10 @@ class Command(BaseCommand):
                         code=codes[1],
                         level=1,
                         upper_id=None,
-                        ztk_allowed=False
                     )
 
                 if codes[2] is None:
-                    curr_ch_1 = get_or_create_custom(
-                        model=CustHouse,
+                    curr_ch_1, _ = CustHouse.objects.get_or_create(
                         title='ТНП',
                         upper_id=curr_rtu_1,
                     )
@@ -281,11 +266,9 @@ class Command(BaseCommand):
                         title='ТНП',
                         level=2,
                         upper_id=curr_rtu_2,
-                        ztk_allowed=False
                     )
                 else:
-                    curr_ch_1 = get_or_create_custom(
-                        model=CustHouse,
+                    curr_ch_1, _ = CustHouse.objects.get_or_create(
                         title=row[2],
                         code=codes[2],
                         upper_id=curr_rtu_1
@@ -295,11 +278,9 @@ class Command(BaseCommand):
                         code=codes[2],
                         level=2,
                         upper_id=curr_rtu_2,
-                        ztk_allowed=False
                     )
 
-                curr_post_1 = get_or_create_custom(
-                    model=CustPost,
+                curr_post_1, _ = CustPost.objects.get_or_create(
                     title=row[3],
                     code=codes[3],
                     upper_id=curr_ch_1
@@ -309,7 +290,6 @@ class Command(BaseCommand):
                     code=codes[3],
                     level=3,
                     upper_id=curr_ch_2,
-                    ztk_allowed=False
                 )
 
                 return (curr_post_1, curr_ch_1, curr_post_2, curr_ch_2)
@@ -398,6 +378,37 @@ class Command(BaseCommand):
                 curr_loc_use = LocationOfUse.objects.get(ztk=curr_site)
             return curr_loc_use
 
+        def Bd_some_flags_update(curr_cust_place: tuple[Union[Rtu,
+                                                              CustHouse,
+                                                              CustPost,
+                                                              CustPlace2]]):
+            STANDALONES_CODES = [
+                '10703000',
+                '10227000',
+                '10207000',
+                '10209110',
+                '10210000',
+                '10802040',
+                '10802050',
+                '10802060',
+                '10803010',
+                '10605040',
+                '10606130',
+                '10606000',
+                '10002000',
+                '10014000',
+                '10104120',
+                '10309000',
+                '10317020',
+                '10313230',
+                '10300000'
+            ]
+            for i in curr_cust_place:
+                if i.code in STANDALONES_CODES and i.standalone_allowed == False:  # noqa
+                    i.standalone_allowed = True
+                    i.save()
+            return curr_cust_place
+
         def get_curr_dev(curr_row):
             curr_dev_type_subtype = curr_row[13] if curr_row[13] != '' else None  # noqa
             curr_serial = curr_row[16] if curr_row[16] != '' else None  # noqa
@@ -408,7 +419,7 @@ class Command(BaseCommand):
             except Exception:
                 print('В текущей строке прибор, названия которого нет в БД. Не обработан.')  # noqa
                 return None
-            print(f'Текущий объект типа прибора: {curr_dev_type}')
+            # print(f'Текущий объект типа прибора: {curr_dev_type}')
             return 'ААААААААААА!!!!'
 
         # Main begin
@@ -520,7 +531,7 @@ class Command(BaseCommand):
                 continue
 
             # Предварительно валидная строка
-            print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
+            # print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
 
             # Обработка первых трех полей.
             curr_cust_place = get_curr_cust_place(
@@ -528,26 +539,40 @@ class Command(BaseCommand):
                 data=clean_data_second
             )
 
+            # Апдейт в ручном режиме некоторых флагов standalone_allowed и/или ztk_allowed  # noqa
+            curr_cust_place = Bd_some_flags_update(curr_cust_place)
+
             if curr_cust_place == [] or curr_cust_place is None:
                 print(f'Строка {i[0]}, первые три поля не дали валидный т.орган, строка не будет обработана')  # noqa
                 continue
 
-            print(f'Субъекты т.органов: 1-го типа пользования, 1-го типа баланс, 2-го типа пользователь ,2-го типа баланс={curr_cust_place}\n')  # noqa
+            # print(f'Субъекты т.органов: 1-го типа пользования, 1-го типа баланс, 2-го типа пользователь ,2-го типа баланс={curr_cust_place}\n')  # noqa
 
             # Объект модели "Модель субъекта (за)баланса для объектов т.органа 1-го типа"  # noqa
             curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place)
-            print(f'Объект модели \'Модель субъекта (за)баланса для объектов т.органа 1-го типа\', CustPlace1Acc: {curr_pl_1_acc}\n')  # noqa
+            # print(f'Объект модели \'Модель субъекта (за)баланса для объектов т.органа 1-го типа\', CustPlace1Acc: {curr_pl_1_acc}\n')  # noqa
 
             # Объект модели "Модель субъекта пользования для объектов т.органа 1-го типа."  # noqa
             curr_pl_1_use = get_curr_pl_1_use(curr_cust_place)
-            print(f'Объект модели \'Модель субъекта пользования для объектов т.органа 1-го типа\', CustPlace1Use: {curr_pl_1_use}\n')  # noqa
+            # print(f'Объект модели \'Модель субъекта пользования для объектов т.органа 1-го типа\', CustPlace1Use: {curr_pl_1_use}\n')  # noqa
 
             curr_site = field_processing_2(i)
 
-            print(f'Субъект пользователя (пункт пропуска, почтамт, и т.п.): {curr_site}\n')  # noqa
+            # print(f'Субъект пользователя (пункт пропуска, почтамт, и т.п.): {curr_site}\n')  # noqa
 
             curr_loc_use = get_curr_loc_use(curr_site)
-            print(f'Объект модели \'Модель субъекта пользования\', LocationOfUse={curr_loc_use}\n')  # noqa
+            # print(f'Объект модели \'Модель субъекта пользования\', LocationOfUse={curr_loc_use}\n')  # noqa
+
+            if i[11] != 'служебная':
+                # print(f'Строка {i[0]} не содержит инф-ции о единице т.с. , переход к следующей')  # noqa
+                continue
+
+            if curr_cust_place[0].standalone_allowed == False and curr_loc_use is None:  # noqa
+                print(f'Строка {i[0]}. Некорректное сочетаение флага standalone_allowed и наличия субъекта эксплуатации. Строка будет пропущена.')  # noqa
+                continue
+            if curr_cust_place[0].ztk_allowed == False and isinstance(curr_site, Ztk):  # noqa
+                print('Некорректное сочетание флага ztk_allowed и типа субъекта эксплуатации. Строка будет пропущена.')  # noqa
+                continue
 
             curr_cp_to_loc = None
             if curr_loc_use:
@@ -558,13 +583,9 @@ class Command(BaseCommand):
                     is_main=False
                     )
 
-            print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
-
-            if i[11] != 'служебная':
-                print(f'Строка {i[0]} не содержит инф-ции о единице т.с. , переход к следующей')  # noqa
-                continue
+            # print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
 
             curr_dev = get_curr_dev(i)
 
-            if i[0] >= '1':
-                sys.exit()
+            # if int(i[0]) >= 705:
+            #     sys.exit()
