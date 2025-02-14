@@ -531,7 +531,7 @@ class Command(BaseCommand):
                 continue
 
             # Предварительно валидная строка
-            # print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
+            print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
 
             # Обработка первых трех полей.
             curr_cust_place = get_curr_cust_place(

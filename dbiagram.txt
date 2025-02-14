@@ -57,6 +57,8 @@ Table CustPlace1Acc{
   rtu integer [null, unique, ref: - Rtu.id]
   custhouse integer [null, unique, ref: - CustHouse.id]
   custpost integer [null, unique, ref: - CustPost.id]
+  ztk_allowed boolean
+  stanalone_allowed boolean
 }
 
 Table CustPlace1Use{
@@ -65,6 +67,7 @@ Table CustPlace1Use{
   custhouse integer [null, unique, ref: - CustHouse.id]
   custpost integer [null, unique, ref: - CustPost.id]
   ztk_allowed boolean
+  stanalone_allowed boolean
 }
 
 Table CustPlace2{
@@ -88,6 +91,7 @@ Table LocationOfUse{
   mmpo integer [null, unique, ref: - Mmpo.id]
   oez integer [null, unique, ref: - Oez.id]
   ztk integer [null, unique, ref: - Ztk.id]
+  is_ztk boolean
 }
 
 Table CustPlaceToLocation{

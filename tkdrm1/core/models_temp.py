@@ -1,9 +1,6 @@
-"""."""
-from django.core.exceptions import ValidationError
-from django.core.validators import RegexValidator
 from django.db import models
-
-from core.constants import CUSTCHOICES, PPTYPESCHOICES, SERIAL_NUM_CHOICES
+from django.core.exceptions import ValidationError
+from core.constants import PPTYPESCHOICES
 
 
 class Rtu(models.Model):
@@ -14,14 +11,14 @@ class Rtu(models.Model):
         default='Новое РТУ',
         unique=True,
         null=False,
-        blank=False,        verbose_name='Название'
+        blank=False,
+        verbose_name='Название'
     )
     code = models.CharField(
         max_length=8,
         unique=True,
         null=True,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{2}00000$')],
         verbose_name='Код т.органа'
     )
     ztk_allowed = models.BooleanField(
@@ -29,16 +26,12 @@ class Rtu(models.Model):
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
     )
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
     )
 
     def save(self, *args, **kwargs):
@@ -46,19 +39,10 @@ class Rtu(models.Model):
 
         Для него также создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.get_or_create(
-            rtu=self,
-            custhouse=None,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
-        )
         CustPlace1Use.objects.get_or_create(
             rtu=self,
             custhouse=None,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            custpost=None
         )
         return temp  # noqa
 
@@ -89,7 +73,6 @@ class CustHouse(models.Model):
         unique=True,
         null=True,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{4}000$')],
         verbose_name='Код т.органа'
     )
     ztk_allowed = models.BooleanField(
@@ -97,16 +80,12 @@ class CustHouse(models.Model):
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
     )
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
     )
     upper_id = models.ForeignKey(to=Rtu,
                                  null=False,
@@ -120,19 +99,10 @@ class CustHouse(models.Model):
 
         Для нее также создается объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.get_or_create(
-            rtu=None,
-            custhouse=self,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
-        )
         CustPlace1Use.objects.get_or_create(
             rtu=None,
             custhouse=self,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            custpost=None
         )
         return temp  # noqa
 
@@ -162,7 +132,6 @@ class CustPost(models.Model):
         unique=True,
         null=True,
         blank=False,
-        validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
     )
     ztk_allowed = models.BooleanField(
@@ -170,16 +139,12 @@ class CustPost(models.Model):
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
     )
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
     )
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
@@ -197,23 +162,10 @@ class CustPost(models.Model):
         то только для такого поста также создается
         объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        upper_ch = self.upper_id
-        if upper_ch:
-            upper_rtu = upper_ch.upper_id
-        if upper_ch and upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
-            CustPlace1Acc.objects.get_or_create(
-                rtu=None,
-                custhouse=None,
-                custpost=self,
-                ztk_allowed=self.ztk_allowed,
-                standalone_allowed=self.standalone_allowed
-            )
         CustPlace1Use.objects.get_or_create(
             rtu=None,
             custhouse=None,
-            custpost=self,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            custpost=self
         )
         return temp  # noqa
 
@@ -259,8 +211,7 @@ class Ppr(models.Model):
             ppr=self,
             mmpo=None,
             oez=None,
-            ztk=None,
-            is_ztk=False
+            ztk=None
         )
         return temp  # noqa
 
@@ -300,8 +251,7 @@ class Mmpo(models.Model):
             ppr=None,
             mmpo=self,
             oez=None,
-            ztk=None,
-            is_ztk=False
+            ztk=None
         )
         return temp  # noqa
 
@@ -341,8 +291,7 @@ class Oez(models.Model):
             ppr=None,
             mmpo=None,
             oez=self,
-            ztk=None,
-            is_ztk=False
+            ztk=None
         )
         return temp  # noqa
 
@@ -382,8 +331,7 @@ class Ztk(models.Model):
             ppr=None,
             mmpo=None,
             oez=None,
-            ztk=self,
-            is_ztk=True
+            ztk=self
         )
         return temp  # noqa
 
@@ -402,136 +350,6 @@ class Ztk(models.Model):
     def __str__(self):
         """."""
         return f'ЗТК: {self.title}'
-
-
-class CustPlace1Acc(models.Model):
-    """Модель суъекта учета (балансового либо забалансового).
-
-    Для объектов таможенных органов 1-го типа.
-    Для каждой записи (строки) строго одно поле д. быть ненулевым.
-    Иначе говоря, перечень валидных сочетаний полей ограничен таким:
-    foo1, null, null;
-    null, foo2, null;
-    null, null, foo3.
-
-    Вариант (null, null, foo3) допустим ТОЛЬКО если по объекту foo3
-    для ОБОИХ уровней его вышестоящих объектов поля title равны "ТНП".
-    """
-    # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
-    rtu = models.OneToOneField(
-        Rtu,
-        verbose_name='Название РТУ',
-        related_name='rtus1acc',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        default=None
-    )
-    custhouse = models.OneToOneField(
-        CustHouse,
-        verbose_name='Название таможни',
-        related_name='cs1acc',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        default=None
-    )
-    custpost = models.OneToOneField(
-        CustPost,
-        verbose_name='Название поста',
-        related_name='posts1acc',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True,
-        default=None
-    )
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
-    )
-
-    def delete(self, *args, **kwargs):
-        """."""
-        temp = super().delete(*args, **kwargs)
-        curr_rtu: Rtu = self.rtu
-        curr_ch: CustHouse = self.custhouse
-        curr_post: CustPost = self.custpost
-
-        if curr_rtu is not None:
-            curr_down_chs = CustHouse.objects.filter(upper_id=curr_rtu.id)
-            if curr_down_chs.exists():
-                for curr_down_ch in curr_down_chs:
-                    curr_down_posts = CustPost.objects.filter(upper_id=curr_down_ch.id)  # noqa
-                    if curr_down_posts.exists():
-                        curr_down_posts.delete()
-                curr_down_chs.delete()
-            Rtu.objects.get(id=curr_rtu.id).delete()
-        if curr_ch is not None:
-            curr_down_posts = CustPost.objects.filter(upper_id=curr_ch.id)
-            if curr_down_posts.exists():
-                curr_down_posts.delete()
-            CustHouse.objects.get(id=curr_ch.id).delete()
-        if curr_post is not None:
-            CustPost.objects.get(id=curr_post.id).delete()
-        return temp  # noqa
-
-    def clean(self):
-        """."""
-        temp = super().clean()
-        curr_rtu: Rtu = self.rtu
-        curr_ch: CustHouse = self.custhouse
-        curr_post: CustPost = self.custpost
-        check1 = (((curr_rtu is None) and (curr_ch is None) and (curr_post is not None)) or  # noqa
-                 ((curr_rtu is None) and (curr_ch is not None) and (curr_post is None)) or  # noqa
-                 ((curr_rtu is not None) and (curr_ch is None) and (curr_post is None)))  # noqa
-        check2 = ((curr_post is None) or
-                 ((curr_post is not None) and (curr_ch.title == 'ТНП') and (curr_rtu.title == 'ТНП')))  # noqa
-        if not check1:
-            raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
-        if not check2:
-            raise ValidationError('Поле \'пост\' может быть ненулевым только для ТНП-ТНП-постов')  # noqa
-        return temp  # noqa
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Субъект учета для т.органа 1-го типа'
-        verbose_name_plural = 'Субъекты учета для т.органа 1-го типа'
-        constraints = [
-            models.CheckConstraint(
-                check=(models.Q(rtu__isnull=True) &
-                       models.Q(custhouse__isnull=True) &
-                       ~models.Q(custpost__isnull=True)) |
-                (models.Q(rtu__isnull=True) &
-                 ~models.Q(custhouse__isnull=True) &
-                 models.Q(custpost__isnull=True)) |
-                (~models.Q(rtu__isnull=True) &
-                 models.Q(custhouse__isnull=True) &
-                 models.Q(custpost__isnull=True)),
-                name='CP1AccNullable'
-            ),
-        ]
-
-    def __str__(self):
-        """."""
-        temp = 'субъект учета для таможенного органа 1-го типа, такого названия: {curr}'  # noqa
-        if self.rtu is not None:
-            return temp.format(curr=self.rtu)
-        if self.custhouse is not None:
-            return temp.format(curr=self.custhouse)
-        return temp.format(curr=self.custpost)
 
 
 class CustPlace1Use(models.Model):
@@ -571,22 +389,6 @@ class CustPlace1Use(models.Model):
         null=True,
         blank=True,
         default=None
-    )
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
     )
 
     def delete(self, *args, **kwargs):
@@ -657,94 +459,6 @@ class CustPlace1Use(models.Model):
         return temp.format(curr=self.custpost)
 
 
-class CustPlace2(models.Model):
-    """Модель объекта т.органа второго типа."""
-
-    title = models.CharField(
-        max_length=255,
-        unique=False,  # !!!!!!
-        null=True,
-        verbose_name='Название'
-    )
-    code = models.CharField(
-       max_length=8,
-       unique=True,
-       null=True,
-       blank=False,
-       validators=[RegexValidator(regex=r'^1\d{7}$')],
-       verbose_name='Код т.органа'
-    )
-    level = models.CharField(choices=CUSTCHOICES,
-                             verbose_name='Уровень т.органа',
-                             max_length=1,
-                             null=False,
-                             blank=False
-                             )
-    upper_id = models.ForeignKey(to="CustPlace2",
-                                 null=True,
-                                 blank=True,
-                                 on_delete=models.RESTRICT,
-                                 verbose_name='Вышестоящий т. орган',
-                                 related_name="to_upper_level")
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
-    )
-
-    def save(self, *args, **kwargs):
-        """."""
-        temp = super().save(*args, **kwargs)
-        return temp  # noqa
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Т.орган второго типа'
-        verbose_name_plural = 'Т.органы второго типа'
-
-    def __str__(self):
-        """."""
-        return f'таможенный орган 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
-
-
-class SourceTypes(models.Model):
-    """Модель типов источников имущества."""
-
-    title = models.CharField(
-        max_length=255,
-        unique=True,
-        null=False,
-        verbose_name='Тип источника имущества'
-    )
-
-    def save(self, *args, **kwargs):
-        """."""
-        temp = super().save(*args, **kwargs)
-        return temp  # noqa
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Источник получения имущества'
-        verbose_name_plural = 'Источники получения имущества'
-
-    def __str__(self):
-        """."""
-        return f'источник, являющийся: {self.title}'
-
-
 class LocationOfUse(models.Model):
     """Модель локации пользования.
 
@@ -792,17 +506,7 @@ class LocationOfUse(models.Model):
         blank=True,
         default=None
     )
-    is_ztk = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Является ли ЗТК'
-    )
-    #  !!!!!!!!!
-    #  M2M только на т.орган первого типа!!!
-    #  Если в прод пойдет отсылка к т.органу второго типа,
-    #  то исправить тут поле.
-    custplaces = models.ManyToManyField(
+    custplaces = models.ManyToManyField(  # !!!!!!!!!!!!!!!!!!!!!
         CustPlace1Use,
         through='CustPlaceToLocation'
     )
@@ -883,12 +587,6 @@ class CustPlaceToLocation(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='т. орган_1',
                                  related_name='to_cp1')
-    cust_pl2 = models.ForeignKey(to=CustPlace2,
-                                 null=False,
-                                 blank=False,
-                                 on_delete=models.RESTRICT,
-                                 verbose_name='т. орган_2',
-                                 related_name='to_cp2')
     loc = models.ForeignKey(to=LocationOfUse,
                             null=False,
                             blank=False,
@@ -912,186 +610,25 @@ class CustPlaceToLocation(models.Model):
                 fields=['cust_pl1', 'cust_pl2', 'loc'],
                 name='unique_cp1_cp2_loc'
             ),
+            # !!!!!!!!!!!!!!!!! сюда надо констрейт
+            #  Он должен разрешать создавать объект данной модели,
+            #  только в том случае, если верно условие:
+            #      ЕСЛИ поле loc ссылается на объект модели LocationOfUse,
+            #          в котором поле ztk не является Null и ссылается на какой-то любой объект модели Ztk,  # noqa
+            #      И ПРИ ЭТОМ поле cust_pl1 ссылается на объект модели CustPlace1Use,  # noqa
+            #          в котором одно (и оно всего только одно) из полей rtu, customhouse, custompost  # noqa
+            #          ссылается на какой-то любой объект одной из моделей (Rtu, CustomHouse, CustomPost),  # noqa
+            #          в котором поле ztk_allowed == False,
+            #      ТО ЗАПРЕТИТЬ СОЗДАНИЕ НОВОГО ОБЪЕКТА ДАННОЙ МОДЕЛИ CustPlaceToLocation  # noqa
         ]
 
     def __str__(self):
         """."""
-        temp = 'Отношение т.органа 1-го типа {curr1} и 2-го типа {curr2} к '\
+        temp = 'Отношение т.органа 1-го типа {curr1} к '\
                'локации эксплуатации {curr3}, с флагом приоритетности, равным {curr4}'  # noqa
         return temp.format(
             curr1=self.cust_pl1,
-            curr2=self.cust_pl2,
+
             curr3=self.loc,
             curr4=self.is_main
         )
-
-
-class DevCats(models.Model):
-    """Модель категорий типов приборов."""
-    title = models.CharField(
-        max_length=255,
-        default='Новая категория',
-        unique=True,
-        null=False,
-        blank=False,
-        verbose_name='Название категории'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект категории типа прибора'
-        verbose_name_plural = 'Объекты категории типов приборов'
-
-    def __str__(self):
-        """."""
-        return f'категория: {self.title}'
-
-
-class DevTypes(models.Model):
-    """Модель типов приборов."""
-
-    title = models.CharField(
-        max_length=255,
-        default='Новый прибор',
-        unique=False,
-        null=False,
-        blank=False,
-        verbose_name='Название прибора'
-    )
-    category = models.ForeignKey(
-        to=DevCats,
-        null=False,
-        blank=False,
-        on_delete=models.PROTECT,
-        verbose_name='Категория прибора',
-        related_name='dev_cat_to_dev_type'
-    )
-    serial_flag = models.CharField(
-        choices=SERIAL_NUM_CHOICES,
-        verbose_name='Тривариантный признак сер.номера',
-        max_length=1,
-        null=False,
-        blank=False
-    )
-    sub_types = models.JSONField(
-        default=list,
-        unique=False,
-        null=True,
-        blank=True,
-        verbose_name='Допустимые подтипы'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект типа прибора'
-        verbose_name_plural = 'Объекты типов приборов'
-
-    def __str__(self):
-        """."""
-        return f'прибор: {self.title}'
-
-
-class Device(models.Model):
-    """Модель объекта прибора (технического средства)."""
-
-    type = models.ForeignKey(
-        to=DevTypes,
-        null=False,
-        blank=False,
-        on_delete=models.PROTECT,
-        verbose_name='Тип прибора',
-        related_name='dev_type_to_dev_obj'
-    )
-    serial = models.CharField(
-         max_length=255,
-         unique=False,
-         null=True,
-         blank=False,
-         verbose_name='Серийный номер'
-    )
-    # Субъект учета по (за)балансу, 1-го типа
-    cp1_acc = models.ForeignKey(to=CustPlace1Acc,
-                                null=False,
-                                blank=False,
-                                on_delete=models.PROTECT,
-                                verbose_name='Учетчик-т.о. 1-го типа',
-                                related_name='cp1acc_to_dev')
-    # Субъект учета по (за)балансу, 2-го типа
-    cp2_acc = models.ForeignKey(to=CustPlace2,
-                                null=False,
-                                blank=False,
-                                on_delete=models.PROTECT,
-                                verbose_name='Учетчик-т.о. 2-го типа',
-                                related_name='cp2acc_to_dev')
-    # Источник собственности
-    sour_type = models.ForeignKey(to=SourceTypes,
-                                  null=False,
-                                  blank=False,
-                                  on_delete=models.PROTECT,
-                                  verbose_name='Источник собственности',
-                                  related_name='s_type_to_dev')
-    # Субъект пользования
-    rels_of_work = models.ManyToManyField(
-        CustPlaceToLocation,
-        through='RelToDev'
-    )
-    sub_type = models.CharField(
-        max_length=255,
-        default=None,
-        unique=True,
-        null=True,
-        blank=False,
-        verbose_name='Подтип'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Техническое средство'
-        verbose_name_plural = 'Технические средства'
-        # constraints = [
-        #     models.CheckConstraint(
-        #         check=(models.Q()),
-        #         name='ser_num_valid'
-        #     ),
-        # ]
-
-    def __str__(self):
-        """."""
-        return f'Объект прибора с id={self.id}'
-
-
-class RelToDev(models.Model):
-    """Модель-промежутка, связь M2M между
-    'отношением т. органа и места его работы'
-    и 'девайса'."""
-    to_rel = models.ForeignKey(to=CustPlaceToLocation,
-                               null=False,
-                               blank=False,
-                               on_delete=models.PROTECT,
-                               verbose_name='т.орган и место',  # noqa
-                               related_name='from_relation')
-    to_dev = models.ForeignKey(to=Device,
-                               null=False,
-                               blank=False,
-                               on_delete=models.PROTECT,
-                               verbose_name='прибор',
-                               related_name='from_dev')
-    is_main = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Флаг приоритетности'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'объект промежутки'
-        verbose_name_plural = 'объекты промежутки'
-
-    def __str__(self):
-        """."""
-        return f'Объект промежутки с id={self.id}'
