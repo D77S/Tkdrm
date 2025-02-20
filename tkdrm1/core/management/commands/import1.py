@@ -574,18 +574,18 @@ class Command(BaseCommand):
                 print('Некорректное сочетание флага ztk_allowed и типа субъекта эксплуатации. Строка будет пропущена.')  # noqa
                 continue
 
-            curr_cp_to_loc = None
-            if curr_loc_use:
-                curr_cp_to_loc, _ = CustPlaceToLocation.objects.get_or_create(
-                    cust_pl1=curr_pl_1_use,
-                    cust_pl2=curr_cust_place[2],
-                    loc=curr_loc_use,
-                    is_main=False
-                    )
+            # curr_cp_to_loc = None
+            # if curr_loc_use:
+            #     curr_cp_to_loc, _ = CustPlaceToLocation.objects.get_or_create(
+            #         cust_pl1=curr_pl_1_use,
+            #         cust_pl2=curr_cust_place[2],
+            #         loc=curr_loc_use,
+            #         is_main=False
+            #         )
 
             # print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
 
-            curr_dev = get_curr_dev(i)
+            # curr_dev = get_curr_dev(i)
 
-            # if int(i[0]) >= 705:
-            #     sys.exit()
+            if int(i[0]) >= 595:
+                sys.exit()
