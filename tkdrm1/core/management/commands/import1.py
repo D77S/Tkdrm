@@ -17,6 +17,9 @@ from tqdm import tqdm  # type: ignore
 from core.constants import (
     PATTERN1,
     PATTERN2,
+    PATTERN3,
+    STANDALONE_CODES,
+    SOURCE_TITLES,
     # CUSTCHOICES,
     PPTYPESCHOICES,
     # SERIAL_NUM_CHOICES
@@ -29,17 +32,13 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """."""
 
-        def replace_to_clean(list_in):
+        def replace_to_clean(source: str, pattern: dict):
             """."""
-            list_out = []
-            for i in list_in:
-                data_row = i
-                if data_row[1] in PATTERN1.keys():
-                    data_row[1] = PATTERN1.get(data_row[1])
-                if data_row[7] in PATTERN2.keys():
-                    data_row[7] = PATTERN2.get(data_row[7])
-                list_out.append(data_row)
-            return list_out
+            if source in pattern.keys():
+                to_out = pattern.get(source)
+            else:
+                to_out = source
+            return to_out
 
         def pre_valid_tests(row):
             """."""
@@ -378,49 +377,63 @@ class Command(BaseCommand):
                 curr_loc_use = LocationOfUse.objects.get(ztk=curr_site)
             return curr_loc_use
 
-        def Bd_some_flags_update(curr_cust_place: tuple[Union[Rtu,
+        def bd_some_flags_update(curr_cust_place: tuple[Union[Rtu,
                                                               CustHouse,
                                                               CustPost,
                                                               CustPlace2]]):
-            STANDALONES_CODES = [
-                '10703000',
-                '10227000',
-                '10207000',
-                '10209110',
-                '10210000',
-                '10802040',
-                '10802050',
-                '10802060',
-                '10803010',
-                '10605040',
-                '10606130',
-                '10606000',
-                '10002000',
-                '10014000',
-                '10104120',
-                '10309000',
-                '10317020',
-                '10313230',
-                '10300000'
-            ]
             for i in curr_cust_place:
-                if i.code in STANDALONES_CODES and i.standalone_allowed == False:  # noqa
+                if i.code in STANDALONE_CODES and i.standalone_allowed == False:  # noqa
                     i.standalone_allowed = True
                     i.save()
             return curr_cust_place
 
-        def get_curr_dev(curr_row):
-            curr_dev_type_subtype = curr_row[13] if curr_row[13] != '' else None  # noqa
-            curr_serial = curr_row[16] if curr_row[16] != '' else None  # noqa
+        def get_curr_dev(
+                curr_row,
+                curr_pl_1_acc,
+                curr_pl_2_acc
+                ):
+
+            curr_subtype = curr_row[13] if curr_row[13] != '' else None  # noqa
+
             try:
                 curr_dev_type = DevTypes.objects.get(
-                    title=curr_row[12],
+                    title=curr_row[12]
                 )
             except Exception:
-                print('В текущей строке прибор, названия которого нет в БД. Не обработан.')  # noqa
+                print(f'строка {curr_row[0]}, названия прибора нет в БД. Не обработан.')  # noqa
                 return None
-            # print(f'Текущий объект типа прибора: {curr_dev_type}')
-            return 'ААААААААААА!!!!'
+
+            serial_field = 17 if curr_dev_type.title[:2] == 'ВН' else 16
+
+            if curr_row[serial_field] == '' or curr_row[serial_field] == 'б/н':
+                curr_serial = None
+            else:
+                curr_serial = curr_row[serial_field]
+
+            curr_sour_type_temp = replace_to_clean(
+                source=curr_row[14],
+                pattern=PATTERN3
+            )
+
+            try:
+                curr_sour_type = SourceTypes.objects.get(
+                    title=curr_sour_type_temp
+                )
+            except Exception:
+                print(f'строка {curr_row[0]}, названия собственника нет в БД. Не обработан.')  # noqa
+                return None
+
+            curr_dev = Device.objects.get_or_create(
+                type=curr_dev_type,
+                serial=curr_serial,
+                cp1_acc=curr_pl_1_acc,
+                cp2_acc=curr_pl_2_acc,
+                sour_type=curr_sour_type,
+                sub_type=curr_subtype
+            )
+
+            # print(f'Текущий объект прибора: {curr_dev}')
+            return curr_dev
 
         # Main begin
 
@@ -447,7 +460,29 @@ class Command(BaseCommand):
             sys.exit()
 
         clean_data_first = [['' if isinstance(j, float) and math.isnan(j) else str(j) for j in i] for i in data.values if isinstance(i[0], int)]  # noqa
-        clean_data_second = replace_to_clean(clean_data_first)
+
+        clean_data_second = []
+
+        for row in clean_data_first:
+            temp_row = []
+            for i in range(0, len(row)):
+                if i == 1:
+                    temp_row.append(
+                        replace_to_clean(
+                            source=row[i],
+                            pattern=PATTERN1
+                        )
+                    )
+                elif i == 7:
+                    temp_row.append(
+                        replace_to_clean(
+                            source=row[i],
+                            pattern=PATTERN2
+                        )
+                    )
+                else:
+                    temp_row.append(row[i])
+            clean_data_second.append(temp_row)
 
         del_flag = 't'
         while not (del_flag == 'y' or del_flag == 'n'):
@@ -471,16 +506,7 @@ class Command(BaseCommand):
             CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
             tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
             CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
-            source_titles = [
-                'РФ',
-                'Росгранстрой (по договору передачи в пользование)',
-                'Росгранстрой (по акту передачи в пользование)',
-                'Росгранстрой (по факту, без документа-основания)',
-                'иной владелец (по договору передачи в пользование)',
-                'иной владелец (по акту передачи в пользование)',
-                'иной владелец (по факту, без документа-основания)'
-            ]
-            source_objs = [SourceTypes(title=i) for i in source_titles]
+            source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
             SourceTypes.objects.bulk_create(objs=source_objs)
             dev_cats_titles = [
                 'АКДРМ',
@@ -525,22 +551,23 @@ class Command(BaseCommand):
 
         for i in tqdm(clean_data_second):  # noqa
         # for i in clean_data_second:  # noqa
+            # if int(i[0]) < 594:
+            #     continue
+
+            # print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
 
             if not pre_valid_tests(i):
                 print('Не прошла валидация строки. Переход к следующей.')
                 continue
 
             # Предварительно валидная строка
-            print(f'!!!!!!!!!!!!Строка номер {i[0]}!!!!!!!!!\n')
-
             # Обработка первых трех полей.
             curr_cust_place = get_curr_cust_place(
                 i=i,
                 data=clean_data_second
             )
-
             # Апдейт в ручном режиме некоторых флагов standalone_allowed и/или ztk_allowed  # noqa
-            curr_cust_place = Bd_some_flags_update(curr_cust_place)
+            curr_cust_place = bd_some_flags_update(curr_cust_place)
 
             if curr_cust_place == [] or curr_cust_place is None:
                 print(f'Строка {i[0]}, первые три поля не дали валидный т.орган, строка не будет обработана')  # noqa
@@ -574,18 +601,22 @@ class Command(BaseCommand):
                 print('Некорректное сочетание флага ztk_allowed и типа субъекта эксплуатации. Строка будет пропущена.')  # noqa
                 continue
 
-            # curr_cp_to_loc = None
-            # if curr_loc_use:
-            #     curr_cp_to_loc, _ = CustPlaceToLocation.objects.get_or_create(
-            #         cust_pl1=curr_pl_1_use,
-            #         cust_pl2=curr_cust_place[2],
-            #         loc=curr_loc_use,
-            #         is_main=False
-            #         )
+            curr_cp_to_loc, _ = CustPlaceToLocation.objects.get_or_create(
+                cust_pl1=curr_pl_1_use,
+                cust_pl2=curr_cust_place[2],
+                loc=curr_loc_use,
+                is_main=False
+                )
 
             # print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
 
-            # curr_dev = get_curr_dev(i)
+            curr_dev = get_curr_dev(
+                i,
+                curr_pl_1_acc,
+                curr_cust_place[3]
+            )
 
-            if int(i[0]) >= 595:
-                sys.exit()
+            # print(f'Объект прибора: {curr_dev}')
+
+            # if int(i[0]) > 4:
+            #     sys.exit()

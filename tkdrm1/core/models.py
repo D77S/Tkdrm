@@ -42,23 +42,27 @@ class Rtu(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Создание нового РТУ.
+        """Сохранение нового РТУ.
 
-        Для него также создается объект модели 'субъект учета'."""
+        Для него также создается/апдейтится объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.get_or_create(
+        CustPlace1Acc.objects.update_or_create(
             rtu=self,
-            custhouse=None,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            defaults={
+                'custhouse': None,
+                'custpost': None,
+                'ztk_allowed': self.ztk_allowed,
+                'standalone_allowed': self.standalone_allowed
+            }
         )
-        CustPlace1Use.objects.get_or_create(
+        CustPlace1Use.objects.update_or_create(
             rtu=self,
-            custhouse=None,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            defaults={
+                'custhouse': None,
+                'custpost': None,
+                'ztk_allowed': self.ztk_allowed,
+                'standalone_allowed': self.standalone_allowed
+            }
         )
         return temp  # noqa
 
@@ -116,23 +120,27 @@ class CustHouse(models.Model):
                                  related_name="cust_house_to_rtu")
 
     def save(self, *args, **kwargs):
-        """Создание новой таможня.
+        """Сохранение новой таможни.
 
-        Для нее также создается объект модели 'субъект учета'."""
+        Для нее также создается/апдейтится объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.get_or_create(
-            rtu=None,
+        CustPlace1Acc.objects.update_or_create(
             custhouse=self,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            defaults={
+                'rtu': None,
+                'custpost': None,
+                'ztk_allowed': self.ztk_allowed,
+                'standalone_allowed': self.standalone_allowed
+            }
         )
-        CustPlace1Use.objects.get_or_create(
-            rtu=None,
+        CustPlace1Use.objects.update_or_create(
             custhouse=self,
-            custpost=None,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            defaults={
+                'rtu': None,
+                'custpost': None,
+                'ztk_allowed': self.ztk_allowed,
+                'standalone_allowed': self.standalone_allowed
+            }
         )
         return temp  # noqa
 
@@ -189,31 +197,35 @@ class CustPost(models.Model):
                                  related_name='cust_post_to_cust_house')
 
     def save(self, *args, **kwargs):
-        """Создание нового поста.
+        """Сохранение нового поста.
 
         В случае, если все условия:
         - вышестоящая таможня поста имеет имя 'ТНП';
         - вышестоящее этой таможне РТУ имеет имя 'ТНП'
-        то только для такого поста также создается
+        то только для такого поста также создается/апдейтится
         объект модели 'субъект учета'."""
         temp = super().save(*args, **kwargs)
         upper_ch = self.upper_id
         if upper_ch:
             upper_rtu = upper_ch.upper_id
         if upper_ch and upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
-            CustPlace1Acc.objects.get_or_create(
-                rtu=None,
-                custhouse=None,
+            CustPlace1Acc.objects.update_or_create(
                 custpost=self,
-                ztk_allowed=self.ztk_allowed,
-                standalone_allowed=self.standalone_allowed
+                defaults={
+                    'rtu': None,
+                    'custhouse': None,
+                    'ztk_allowed': self.ztk_allowed,
+                    'standalone_allowed': self.standalone_allowed
+                }
             )
-        CustPlace1Use.objects.get_or_create(
-            rtu=None,
-            custhouse=None,
+        CustPlace1Use.objects.update_or_create(
             custpost=self,
-            ztk_allowed=self.ztk_allowed,
-            standalone_allowed=self.standalone_allowed
+            defaults={
+                'rtu': None,
+                'custhouse': None,
+                'ztk_allowed': self.ztk_allowed,
+                'standalone_allowed': self.standalone_allowed
+            }
         )
         return temp  # noqa
 
@@ -255,12 +267,14 @@ class Ppr(models.Model):
 
         Для него также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.get_or_create(
+        LocationOfUse.objects.update_or_create(
             ppr=self,
-            mmpo=None,
-            oez=None,
-            ztk=None,
-            is_ztk=False
+            defaults={
+                'mmpo': None,
+                'oez': None,
+                'ztk': None,
+                'is_ztk': False
+            }
         )
         return temp  # noqa
 
@@ -296,12 +310,14 @@ class Mmpo(models.Model):
 
         Для него также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.get_or_create(
-            ppr=None,
+        LocationOfUse.objects.update_or_create(
             mmpo=self,
-            oez=None,
-            ztk=None,
-            is_ztk=False
+            defaults={
+                'ppr': None,
+                'oez': None,
+                'ztk': None,
+                'is_ztk': False
+            }
         )
         return temp  # noqa
 
@@ -337,12 +353,14 @@ class Oez(models.Model):
 
         Для нее также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.get_or_create(
-            ppr=None,
-            mmpo=None,
+        LocationOfUse.objects.update_or_create(
             oez=self,
-            ztk=None,
-            is_ztk=False
+            defaults={
+                'ppr': None,
+                'mmpo': None,
+                'ztk': None,
+                'is_ztk': False
+            }
         )
         return temp  # noqa
 
@@ -378,12 +396,14 @@ class Ztk(models.Model):
 
         Для нее также создается объект модели локации."""
         temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.get_or_create(
-            ppr=None,
-            mmpo=None,
-            oez=None,
+        LocationOfUse.objects.update_or_create(
             ztk=self,
-            is_ztk=True
+            defaults={
+                'ppr': None,
+                'mmpo': None,
+                'oez': None,
+                'is_ztk': True
+            }
         )
         return temp  # noqa
 
@@ -890,7 +910,7 @@ class CustPlaceToLocation(models.Model):
                                  verbose_name='т. орган_2',
                                  related_name='to_cp2')
     loc = models.ForeignKey(to=LocationOfUse,
-                            null=False,
+                            null=True,
                             blank=False,
                             on_delete=models.RESTRICT,
                             verbose_name='локация',
@@ -990,7 +1010,7 @@ class DevTypes(models.Model):
 
     def __str__(self):
         """."""
-        return f'прибор: {self.title}'
+        return f'прибор типа {self.title}'
 
 
 class Device(models.Model):
@@ -1040,7 +1060,7 @@ class Device(models.Model):
     sub_type = models.CharField(
         max_length=255,
         default=None,
-        unique=True,
+        unique=False,
         null=True,
         blank=False,
         verbose_name='Подтип'
