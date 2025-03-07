@@ -423,7 +423,7 @@ class Command(BaseCommand):
                 print(f'строка {curr_row[0]}, названия собственника нет в БД. Не обработан.')  # noqa
                 return None
 
-            curr_dev = Device.objects.get_or_create(
+            curr_dev, _ = Device.objects.get_or_create(
                 type=curr_dev_type,
                 serial=curr_serial,
                 cp1_acc=curr_pl_1_acc,
@@ -432,7 +432,6 @@ class Command(BaseCommand):
                 sub_type=curr_subtype
             )
 
-            # print(f'Текущий объект прибора: {curr_dev}')
             return curr_dev
 
         # Main begin
@@ -601,14 +600,15 @@ class Command(BaseCommand):
                 print('Некорректное сочетание флага ztk_allowed и типа субъекта эксплуатации. Строка будет пропущена.')  # noqa
                 continue
 
-            curr_cp_to_loc, _ = CustPlaceToLocation.objects.get_or_create(
+            curr_cp_to_loc, t1 = CustPlaceToLocation.objects.get_or_create(
                 cust_pl1=curr_pl_1_use,
                 cust_pl2=curr_cust_place[2],
                 loc=curr_loc_use,
                 is_main_for_cust=False
                 )
-
-            # print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
+            if t1:
+                curr_cp_to_loc.is_main_for_cust = True
+                curr_cp_to_loc.update()
 
             curr_dev = get_curr_dev(
                 i,
@@ -616,7 +616,15 @@ class Command(BaseCommand):
                 curr_cust_place[3]
             )
 
-            # print(f'Объект прибора: {curr_dev}')
+            print(f'to_rel={curr_cp_to_loc}, to_dev={curr_dev}')
+            curr_rel_to_dev, t1 = RelToDev.objects.get_or_create(
+                to_rel=curr_cp_to_loc,
+                to_dev=curr_dev,
+                is_main_for_dev=False
+            )
+            # if t1:
+            #     curr_rel_to_dev.is_main_for_dev = True
+            #     curr_rel_to_dev.save()
 
             # if int(i[0]) > 4:
             #     sys.exit()
