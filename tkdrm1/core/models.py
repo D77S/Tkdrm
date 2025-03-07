@@ -700,12 +700,12 @@ class CustPlace2(models.Model):
                              null=False,
                              blank=False
                              )
-    upper_id = models.ForeignKey(to="CustPlace2",
+    upper_id = models.ForeignKey(to='CustPlace2',
                                  null=True,
                                  blank=True,
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий т. орган',
-                                 related_name="to_upper_level")
+                                 related_name='to_upper_level')
     ztk_allowed = models.BooleanField(
         null=False,
         blank=False,
@@ -915,7 +915,7 @@ class CustPlaceToLocation(models.Model):
                             on_delete=models.RESTRICT,
                             verbose_name='локация',
                             related_name='to_location')
-    is_main = models.BooleanField(
+    is_main_for_cust = models.BooleanField(
         null=False,
         blank=False,
         default=False,
@@ -942,7 +942,7 @@ class CustPlaceToLocation(models.Model):
             curr1=self.cust_pl1,
             curr2=self.cust_pl2,
             curr3=self.loc,
-            curr4=self.is_main
+            curr4=self.is_main_for_cust
         )
 
 
@@ -993,6 +993,12 @@ class DevTypes(models.Model):
         max_length=1,
         null=False,
         blank=False
+    )
+    upper_dev_flag = models.BooleanField(
+        null=False,
+        default=False,
+        blank=True,
+        verbose_name='Признак наличия вышестоящего девайса'
     )
     sub_types = models.JSONField(
         default=list,
@@ -1065,6 +1071,13 @@ class Device(models.Model):
         blank=False,
         verbose_name='Подтип'
     )
+    upper_id = models.ForeignKey(to='Device',
+                                 null=True,
+                                 blank=True,
+                                 default=None,
+                                 on_delete=models.RESTRICT,
+                                 verbose_name='Вышестоящий девайс',
+                                 related_name='to_upper_level')
 
     class Meta:
         """."""
@@ -1099,7 +1112,7 @@ class RelToDev(models.Model):
                                on_delete=models.PROTECT,
                                verbose_name='прибор',
                                related_name='from_dev')
-    is_main = models.BooleanField(
+    is_main_for_dev = models.BooleanField(
         null=False,
         blank=False,
         default=False,

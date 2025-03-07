@@ -92,6 +92,7 @@ Table LocationOfUse{
   oez integer [null, unique, ref: - Oez.id]
   ztk integer [null, unique, ref: - Ztk.id]
   is_ztk boolean
+  // custplaces integer [not null, ref: <> CustPlaceToLocation.id]
 }
 
 Table CustPlaceToLocation{
@@ -99,7 +100,7 @@ Table CustPlaceToLocation{
   cust_pl1 integer [not null, ref: > CustPlace1Use.id]
   cust_pl2 integer [not null, ref: > CustPlace2.id]
   loc integer [not null, ref: > LocationOfUse.id]
-  is_main boolean
+  is_main_for_cust boolean
 }
 
 Table DevCats{
@@ -112,6 +113,7 @@ Table DevTypes{
   title varchar
   category integer [not null, ref: > DevCats.id]
   serial_flag varchar
+  upper_dev_flag boolean
   sub_types JSON
 }
 
@@ -122,13 +124,14 @@ Table Device{
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
   cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
-  sub_type varchar
   // rel_of_work integer [not null, ref: <> CustPlaceToLocation.id]
+  sub_type varchar
+  upper_id integer [ref: > Device.id]
 }
 
 Table RelToDev{
   id integer [primary key]
   to_rel integer [not null, ref: > CustPlaceToLocation.id]
   to_dev integer [not null, ref: > Device.id]
-  is_main boolean
+  is_main_for_dev boolean
 }
