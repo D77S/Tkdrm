@@ -605,7 +605,7 @@ class Command(BaseCommand):
                 cust_pl1=curr_pl_1_use,
                 cust_pl2=curr_cust_place[2],
                 loc=curr_loc_use,
-                is_main=False
+                is_main_for_cust=False
                 )
 
             # print(f'Объект модели \'Отношение между т.о. и локацией пользования\', CustPlaceToLocation: {curr_cp_to_loc}\n')  # noqa
