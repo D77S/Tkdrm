@@ -387,12 +387,8 @@ class Command(BaseCommand):
                     i.save()
             return curr_cust_place
 
-        def get_curr_dev(
-                curr_row,
-                curr_pl_1_acc,
-                curr_pl_2_acc
-                ):
-
+        def get_curr_dev(curr_row, curr_pl_1_acc, curr_pl_2_acc):
+            """."""
             curr_subtype = curr_row[13] if curr_row[13] != '' else None  # noqa
 
             try:
@@ -400,7 +396,7 @@ class Command(BaseCommand):
                     title=curr_row[12]
                 )
             except Exception:
-                print(f'строка {curr_row[0]}, названия прибора нет в БД. Не обработан.')  # noqa
+                # print(f'строка {curr_row[0]}, названия прибора нет в БД. Не обработан.')  # noqa
                 return None
 
             serial_field = 17 if curr_dev_type.title[:2] == 'ВН' else 16
@@ -420,8 +416,34 @@ class Command(BaseCommand):
                     title=curr_sour_type_temp
                 )
             except Exception:
-                print(f'строка {curr_row[0]}, названия собственника нет в БД. Не обработан.')  # noqa
+                # print(f'строка {curr_row[0]}, названия собственника нет в БД. Не обработан.')  # noqa
                 return None
+
+            if ((curr_serial is not None) and (curr_dev_type.serial_flag == '2')):  # noqa
+                # print(f'строка {curr_row[0]}, наличие серийного номера невалидно. Не обработан.')  # noqa
+                return None
+
+            if ((curr_serial is None) and (curr_dev_type.serial_flag == '1')):
+                # print(f'строка {curr_row[0]}, отсутствие серийного номера невалидно. Не обработан.')  # noqa
+                return None
+
+            if ((curr_subtype is not None) and
+                (curr_dev_type.sub_types is not None) and
+                    (curr_subtype not in curr_dev_type.sub_types)):
+                # print(f'строка {curr_row[0]}, curr_subtype={curr_subtype}, curr_dev_type.sub_types={curr_dev_type.sub_types}')  # noqa
+                # print(f'строка {curr_row[0]}, подтип прибора невалидный. Не обработан.')  # noqa
+                return None
+
+            curr_upper_id = None
+            if curr_dev_type.upper_dev_flag:
+                temp_dev = Device.objects.filter(
+                    type__title__regex=r'Янтарь*',
+                    cp1_acc=curr_pl_1_acc,
+                    cp2_acc=curr_pl_2_acc,
+                    serial=curr_row[16]
+                )
+                if temp_dev.exists():
+                    curr_upper_id = temp_dev.first()
 
             curr_dev, _ = Device.objects.get_or_create(
                 type=curr_dev_type,
@@ -429,7 +451,8 @@ class Command(BaseCommand):
                 cp1_acc=curr_pl_1_acc,
                 cp2_acc=curr_pl_2_acc,
                 sour_type=curr_sour_type,
-                sub_type=curr_subtype
+                sub_type=curr_subtype,
+                upper_id=curr_upper_id
             )
 
             return curr_dev
@@ -518,33 +541,34 @@ class Command(BaseCommand):
             dev_cats_objs = [DevCats(title=i) for i in dev_cats_titles]
             DevCats.objects.bulk_create(objs=dev_cats_objs)
             dev_types = [
-                ('Янтарь-1С', 'АКДРМ', '1', None),
-                ('Янтарь-1СН', 'АКДРМ', '1', None),
-                ('Янтарь-2С', 'АКДРМ', '1', None),
-                ('Янтарь-2СН', 'АКДРМ', '1', None),
-                ('ВН-СН', 'АКДРМ', '3', None),
-                ('Янтарь-1А', 'АКДРМ', '1', None),
-                ('Янтарь-2А', 'АКДРМ', '1', None),
-                ('ВН-А', 'АКДРМ', '3', None),
-                ('Янтарь-1П', 'АКДРМ', '1', ['1П1', '1П2', '1П3', '1У']),  # noqa
-                ('Янтарь-2П', 'АКДРМ', '1', ['2П1', '2П2', '2П3']),  # noqa
-                ('ВН-П', 'АКДРМ', '3', None),
-                ('Янтарь-ПБ', 'АКДРМ', '1', None),
-                ('ВН-ПБ', 'АКДРМ', '3', None),
-                ('Янтарь-1Ж', 'АКДРМ', '1', None),
-                ('Янтарь-1Ж2', 'АКДРМ', '1', None),
-                ('Янтарь-2Ж', 'АКДРМ', '1', None),
-                ('Янтарь-2Ж2', 'АКДРМ', '1', None),
-                ('ВН-Ж', 'АКДРМ', '3', None),
-                ('ССД', 'АКДРМ', '3', None),
-                ('АРМ', 'АКДРМ', '3', None),
-                ('ССД/АРМ', 'АКДРМ', '3', None),
+                ('Янтарь-1С', 'АКДРМ', '1', False, None),
+                ('Янтарь-1СН', 'АКДРМ', '1', False, None),
+                ('Янтарь-2С', 'АКДРМ', '1', False, None),
+                ('Янтарь-2СН', 'АКДРМ', '1', False, None),
+                ('ВН-СН', 'АКДРМ', '3', True, None),
+                ('Янтарь-1А', 'АКДРМ', '1', False, None),
+                ('Янтарь-2А', 'АКДРМ', '1', False, None),
+                ('ВН-А', 'АКДРМ', '3', True, None),
+                ('Янтарь-1П', 'АКДРМ', '1', False, ['1П1', '1П2', '1П3', '1У', 'ПБ']),  # noqa
+                ('Янтарь-2П', 'АКДРМ', '1', False, ['2П1', '2П2', '2П3']),  # noqa
+                ('ВН-П', 'АКДРМ', '3', True, None),
+                ('Янтарь-ПБ', 'АКДРМ', '1', False, None),
+                ('ВН-ПБ', 'АКДРМ', '3', True, None),
+                ('Янтарь-1Ж', 'АКДРМ', '1', False, None),
+                ('Янтарь-1Ж2', 'АКДРМ', '1', False, None),
+                ('Янтарь-2Ж', 'АКДРМ', '1', False, None),
+                ('Янтарь-2Ж2', 'АКДРМ', '1', False, None),
+                ('ВН-Ж', 'АКДРМ', '3', True, None),
+                ('ССД', 'АКДРМ', '3', False, None),
+                ('АРМ', 'АКДРМ', '3', False, None),
+                ('ССД/АРМ', 'АКДРМ', '3', False, None),
             ]
             dev_types_objs = [DevTypes(
                 title=i[0],
                 category=DevCats.objects.get(title=i[1]),
                 serial_flag=i[2],
-                sub_types=i[3]
+                upper_dev_flag=i[3],
+                sub_types=i[4]
             ) for i in dev_types]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
 
@@ -600,15 +624,28 @@ class Command(BaseCommand):
                 print('Некорректное сочетание флага ztk_allowed и типа субъекта эксплуатации. Строка будет пропущена.')  # noqa
                 continue
 
-            curr_cp_to_loc, t1 = CustPlaceToLocation.objects.get_or_create(
+            temp_cp_to_loc = CustPlaceToLocation.objects.filter(
                 cust_pl1=curr_pl_1_use,
-                cust_pl2=curr_cust_place[2],
-                loc=curr_loc_use,
-                is_main_for_cust=False
-                )
-            if t1:
-                curr_cp_to_loc.is_main_for_cust = True
-                curr_cp_to_loc.update()
+                cust_pl2=curr_cust_place[2]
+            )
+            if not temp_cp_to_loc.exists():
+                curr_cp_to_loc = CustPlaceToLocation.objects.create(
+                    cust_pl1=curr_pl_1_use,
+                    cust_pl2=curr_cust_place[2],
+                    loc=curr_loc_use,
+                    is_main_for_cust=True
+                    )
+            else:
+                temp2_cp_to_loc = temp_cp_to_loc.filter(loc=curr_loc_use)
+                if not temp2_cp_to_loc.exists():
+                    curr_cp_to_loc = CustPlaceToLocation.objects.create(
+                        cust_pl1=curr_pl_1_use,
+                        cust_pl2=curr_cust_place[2],
+                        loc=curr_loc_use,
+                        is_main_for_cust=False
+                    )
+                else:
+                    curr_cp_to_loc = temp2_cp_to_loc.first()
 
             curr_dev = get_curr_dev(
                 i,
@@ -616,15 +653,27 @@ class Command(BaseCommand):
                 curr_cust_place[3]
             )
 
-            print(f'to_rel={curr_cp_to_loc}, to_dev={curr_dev}')
-            curr_rel_to_dev, t1 = RelToDev.objects.get_or_create(
-                to_rel=curr_cp_to_loc,
-                to_dev=curr_dev,
-                is_main_for_dev=False
-            )
-            # if t1:
-            #     curr_rel_to_dev.is_main_for_dev = True
-            #     curr_rel_to_dev.save()
+            if curr_dev is None:  # noqa
+                print(f'Строка {i[0]}. Прибор не распознан. Строка будет пропущена.')  # noqa
+                continue
 
-            # if int(i[0]) > 4:
+            temp_rel_to_dev = RelToDev.objects.filter(to_dev=curr_dev)  # noqa
+            if not temp_rel_to_dev.exists():
+                curr_rel_to_dev = RelToDev.objects.create(
+                    to_rel=curr_cp_to_loc,
+                    to_dev=curr_dev,
+                    is_main_for_dev=True
+                )
+            else:
+                temp2_rel_to_dev = temp_rel_to_dev.filter(to_rel=curr_cp_to_loc)  # noqa
+                if not temp2_rel_to_dev.exists():
+                    curr_rel_to_dev = RelToDev.objects.create(
+                        to_rel=curr_cp_to_loc,
+                        to_dev=curr_dev,
+                        is_main_for_dev=False
+                    )
+                else:
+                    curr_rel_to_dev = temp2_rel_to_dev.first()
+
+            # if int(i[0]) > 6:
             #     sys.exit()

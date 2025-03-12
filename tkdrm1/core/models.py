@@ -1124,6 +1124,12 @@ class RelToDev(models.Model):
 
         verbose_name = 'объект промежутки'
         verbose_name_plural = 'объекты промежутки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['to_rel', 'to_dev'],
+                name='unique_to_rel_to_dev'
+            ),
+        ]
 
     def __str__(self):
         """."""
