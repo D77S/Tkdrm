@@ -6,6 +6,38 @@ from django.db import models
 from core.constants import CUSTCHOICES, PPTYPESCHOICES, SERIAL_NUM_CHOICES
 
 
+class Test1(models.Model):
+    """."""
+    title1 = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=False,
+        blank=False,
+        verbose_name='Название1'
+    )
+    title2 = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=False,
+        blank=False,
+        verbose_name='Название2'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект'
+        verbose_name_plural = 'объекты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title1', 'title2',],
+                name='unique_title'
+            ),
+        ]
+
+
 class Rtu(models.Model):
     """Модель РТУ."""
 
@@ -14,7 +46,8 @@ class Rtu(models.Model):
         default='Новое РТУ',
         unique=True,
         null=False,
-        blank=False,        verbose_name='Название'
+        blank=False,
+        verbose_name='Название'
     )
     code = models.CharField(
         max_length=8,
