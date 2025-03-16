@@ -4,8 +4,8 @@ from django.urls import include, path
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('', include('mainpage.urls')),
-    path('all_list/', include('core.urls'))
+    path('', include('mainpage.urls', namespace='mainpage')),
+    path('all_list/', include('core.urls', namespace='core'))
 ]
 
 if settings.DEBUG:

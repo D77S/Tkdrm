@@ -6,38 +6,6 @@ from django.db import models
 from core.constants import CUSTCHOICES, PPTYPESCHOICES, SERIAL_NUM_CHOICES
 
 
-class Test1(models.Model):
-    """."""
-    title1 = models.CharField(
-        max_length=255,
-        default=None,
-        unique=False,
-        null=False,
-        blank=False,
-        verbose_name='Название1'
-    )
-    title2 = models.CharField(
-        max_length=255,
-        default=None,
-        unique=False,
-        null=False,
-        blank=False,
-        verbose_name='Название2'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'объект'
-        verbose_name_plural = 'объекты'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['title1', 'title2',],
-                name='unique_title'
-            ),
-        ]
-
-
 class Rtu(models.Model):
     """Модель РТУ."""
 
@@ -84,8 +52,6 @@ class Rtu(models.Model):
             defaults={
                 'custhouse': None,
                 'custpost': None,
-                'ztk_allowed': self.ztk_allowed,
-                'standalone_allowed': self.standalone_allowed
             }
         )
         CustPlace1Use.objects.update_or_create(
@@ -162,8 +128,6 @@ class CustHouse(models.Model):
             defaults={
                 'rtu': None,
                 'custpost': None,
-                'ztk_allowed': self.ztk_allowed,
-                'standalone_allowed': self.standalone_allowed
             }
         )
         CustPlace1Use.objects.update_or_create(
@@ -247,8 +211,6 @@ class CustPost(models.Model):
                 defaults={
                     'rtu': None,
                     'custhouse': None,
-                    'ztk_allowed': self.ztk_allowed,
-                    'standalone_allowed': self.standalone_allowed
                 }
             )
         CustPlace1Use.objects.update_or_create(
@@ -497,22 +459,6 @@ class CustPlace1Acc(models.Model):
         null=True,
         blank=True,
         default=None
-    )
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
     )
 
     def delete(self, *args, **kwargs):
@@ -955,6 +901,19 @@ class CustPlaceToLocation(models.Model):
         verbose_name='Флаг приоритетности'
     )
 
+    def clean(self):
+        """."""
+        temp = super().clean()
+        check1 = (models.Q(self.cust_pl1.ztk_allowed is False) &
+                  models.Q(self.loc.is_ztk is True))
+        check2 = (models.Q(self.cust_pl1.standalone_allowed is False) &
+                  models.Q(self.loc is None))
+        if check1:
+            raise ValidationError('Данный т.орган не может работать в ЗТК')
+        if check2:
+            raise ValidationError('Данный т.орган не может работать вне какого-либо административного субъекта')  # noqa
+        return temp
+
     class Meta:
         """."""
 
@@ -965,6 +924,11 @@ class CustPlaceToLocation(models.Model):
                 fields=['cust_pl1', 'cust_pl2', 'loc'],
                 name='unique_cp1_cp2_loc'
             ),
+            models.UniqueConstraint(
+                fields=['cust_pl1',],
+                condition=models.Q(is_main_for_cust=True),
+                name='uniq_main_for_cp1'
+            )
         ]
 
     def __str__(self):
@@ -1162,6 +1126,11 @@ class RelToDev(models.Model):
                 fields=['to_rel', 'to_dev'],
                 name='unique_to_rel_to_dev'
             ),
+            models.UniqueConstraint(
+                fields=['to_dev',],
+                condition=models.Q(is_main_for_dev=True),
+                name='uniq_main_for_dev'
+            )
         ]
 
     def __str__(self):

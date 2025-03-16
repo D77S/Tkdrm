@@ -1,4 +1,11 @@
 {% extends "base.html" %}
  {% block content %}
-   <h1>Это страница списка всех приборов!</h1>
+   <h1 class="pb-2 mb-0">Это страница списка всех приборов!</h1>
+     <div class="row">
+       {% for dev in all_dev_list %}
+         <p>
+         Тип: {{ dev.type.title }}, номер: {{ dev.serial }}
+         <p>
+       {% endfor %}
+     </div>
  {% endblock %}

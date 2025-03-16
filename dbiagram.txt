@@ -57,8 +57,6 @@ Table CustPlace1Acc{
   rtu integer [null, unique, ref: - Rtu.id]
   custhouse integer [null, unique, ref: - CustHouse.id]
   custpost integer [null, unique, ref: - CustPost.id]
-  ztk_allowed boolean
-  stanalone_allowed boolean
 }
 
 Table CustPlace1Use{

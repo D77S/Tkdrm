@@ -1,3 +1,13 @@
+{% load static %}
 <header>
-  <p>Шапка страницы</p>
+  <nav>
+    <ul>
+      <li>
+        <a href="{% url 'mainpage:index' %}">Главная</a>  
+      </li>
+      <li>
+        <a href="{% url 'core:all_list' %}">Полный перечень</a>       
+      </li>
+    </ul>
+  </nav>
 </header>
