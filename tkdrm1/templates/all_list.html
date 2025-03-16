@@ -2,10 +2,10 @@
  {% block content %}
    <h1 class="pb-2 mb-0">Это страница списка всех приборов!</h1>
      <div class="row">
-       {% for dev in all_dev_list %}
+       {% for dev in page_obj %}
          <p>
-         Тип: {{ dev.type.title }}, номер: {{ dev.serial }}
-         <p>
+         {% include "includes/dev_detail_small.html" %}
        {% endfor %}
      </div>
+     {% include "includes/paginator.html" %}
  {% endblock %}

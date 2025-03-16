@@ -1,13 +1,23 @@
 {% load static %}
+{% with request.resolver_match.view_name as view_name %}
 <header>
-  <nav>
-    <ul>
-      <li>
-        <a href="{% url 'mainpage:index' %}">Главная</a>  
-      </li>
-      <li>
-        <a href="{% url 'core:all_list' %}">Полный перечень</a>       
-      </li>
-    </ul>
+  <nav class="navbar navbar-light" style="background-color: pink">
+    <div class="container">
+      <ul class="nav  nav-pills">
+        <li class="nav-item">
+          <a class="nav-link {% if view_name  == 'mainpage:index' %}active{% endif %}"
+          href="{% url 'mainpage:index' %}">
+          Главная
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if view_name  == 'core:all_list' %}active{% endif %}"
+          href="{% url 'core:all_list' %}">
+          Полный перечень
+          </a>
+        </li>
+      </ul>
+    </div>
   </nav>
 </header>
+{% endwith %} 
