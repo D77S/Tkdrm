@@ -1,10 +1,11 @@
 """."""
 from django.core.paginator import Paginator
+from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
 from core.models import Device
 
 
-def all_list(request):
+def all_list(request: HttpRequest):
     """."""
     template_name = 'all_list.html'
     # all_dev_list = Device.objects.select_related('type')[:10]
