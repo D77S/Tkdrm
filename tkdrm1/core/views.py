@@ -13,22 +13,32 @@ def all_list(request: HttpRequest):
     # all_dev_list = Device.objects.select_related('type')[:10]
     all_dev_list = Device.objects.select_related(
         'type__category',
-        'cp1_acc__rtu',
-        'cp1_acc__custhouse',
-        'cp1_acc__custpost',
-        'cp2_acc',
         'sour_type',
     ).prefetch_related(
         'from_dev'
     ).order_by('id')
-    temp_dev: Device = all_dev_list.first()
-    temp = temp_dev.from_dev.filter(is_main_for_dev=True)
-    print(temp)
+
     paginator = Paginator(all_dev_list, ALL_DEV_PAG)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
-    context = {'page_obj': page_obj,
-               'all_dev': all_dev_list}
+
+    cust_pl_loc = []
+    for dev in page_obj:
+        temp_cp_to_loc = dev.from_dev.filter(is_main_for_dev=True).first().to_rel  # noqa
+        temp2 = temp_cp_to_loc.cust_pl1
+        if temp2.rtu is not None:
+            temp3 = temp2.rtu
+        elif temp2.custhouse is not None:
+            temp3 = temp2.custhouse
+        elif temp2.custpost is not None:
+            temp3 = temp2.custpost
+        cust_pl_loc.append(temp3)
+    print(cust_pl_loc)
+    context = {
+        # 'all_dev': all_dev_list,
+        'page_obj': page_obj,
+        'cust_pl_loc': cust_pl_loc
+    }
     return render(request, template_name, context)
 
 
