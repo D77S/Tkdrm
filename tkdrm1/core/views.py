@@ -10,34 +10,42 @@ from core.models import Device, RelToDev
 def all_list(request: HttpRequest):
     """."""
     template_name = 'all_list.html'
-    # all_dev_list = Device.objects.select_related('type')[:10]
-    all_dev_list = Device.objects.select_related(
+    all_dev_list = Device.objects.all().order_by('id')
+    paginator = Paginator(all_dev_list, ALL_DEV_PAG)
+    page_number = request.GET.get('page')
+    curr_page_obj = paginator.get_page(page_number)
+    curr_page_ids = []
+    for dev in curr_page_obj.object_list:
+        curr_page_ids.append(dev.id)
+
+    curr_page_dev_list = Device.objects.filter(
+        id__in=curr_page_ids).select_related(
         'type__category',
         'sour_type',
     ).prefetch_related(
         'from_dev'
     ).order_by('id')
 
-    paginator = Paginator(all_dev_list, ALL_DEV_PAG)
-    page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-
-    cust_pl_loc = []
-    for dev in page_obj:
+    curr_extra_page_obj = []
+    offset = (curr_page_obj.number - 1) * ALL_DEV_PAG
+    i = 0
+    for dev in curr_page_dev_list:
+        i += 1
+        ii = offset + i
         temp_cp_to_loc = dev.from_dev.filter(is_main_for_dev=True).first().to_rel  # noqa
         temp2 = temp_cp_to_loc.cust_pl1
         if temp2.rtu is not None:
-            temp3 = temp2.rtu
+            currcp1loc = temp2.rtu
         elif temp2.custhouse is not None:
-            temp3 = temp2.custhouse
+            currcp1loc = temp2.custhouse
         elif temp2.custpost is not None:
-            temp3 = temp2.custpost
-        cust_pl_loc.append(temp3)
-    print(cust_pl_loc)
+            currcp1loc = temp2.custpost
+        curr_extra_page_obj.append([ii, dev, currcp1loc])
+    print(curr_extra_page_obj)
+
     context = {
-        # 'all_dev': all_dev_list,
-        'page_obj': page_obj,
-        'cust_pl_loc': cust_pl_loc
+        'page_obj': curr_page_obj,
+        'extra_page_obj': curr_extra_page_obj
     }
     return render(request, template_name, context)
 
