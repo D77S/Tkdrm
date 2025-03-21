@@ -31,7 +31,6 @@ def all_list(request: HttpRequest):
     i = 0
     for dev in curr_page_dev_list:
         i += 1
-        ii = offset + i
         temp_cp_to_loc = dev.from_dev.filter(is_main_for_dev=True).first().to_rel  # noqa
         temp2 = temp_cp_to_loc.cust_pl1
         if temp2.rtu is not None:
@@ -40,7 +39,7 @@ def all_list(request: HttpRequest):
             currcp1loc = temp2.custhouse
         elif temp2.custpost is not None:
             currcp1loc = temp2.custpost
-        curr_extra_page_obj.append([ii, dev, currcp1loc])
+        curr_extra_page_obj.append([i + offset, dev, currcp1loc])
     print(curr_extra_page_obj)
 
     context = {
