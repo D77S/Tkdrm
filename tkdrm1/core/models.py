@@ -648,12 +648,7 @@ class CustPlace1Use(models.Model):
 
     def __str__(self):
         """."""
-        temp = 'субъект эксплуатации для таможенного органа 1-го типа, такого названия: {curr}'  # noqa
-        if self.rtu is not None:
-            return temp.format(curr=self.rtu)
-        if self.custhouse is not None:
-            return temp.format(curr=self.custhouse)
-        return temp.format(curr=self.custpost)
+        return f'промежутка с id={self.id}'
 
 
 class CustPlace2(models.Model):
@@ -933,14 +928,15 @@ class CustPlaceToLocation(models.Model):
 
     def __str__(self):
         """."""
-        temp = 'Отношение т.органа 1-го типа {curr1} и 2-го типа {curr2} к '\
-               'локации эксплуатации {curr3}, с флагом приоритетности, равным {curr4}'  # noqa
-        return temp.format(
-            curr1=self.cust_pl1,
-            curr2=self.cust_pl2,
-            curr3=self.loc,
-            curr4=self.is_main_for_cust
-        )
+        # temp = 'Отношение т.органа 1-го типа {curr1} и 2-го типа {curr2} к '\
+        #        'локации эксплуатации {curr3}, с флагом приоритетности, равным {curr4}'  # noqa
+        # return temp.format(
+        #     curr1=self.cust_pl1,
+        #     curr2=self.cust_pl2,
+        #     curr3=self.loc,
+        #     curr4=self.is_main_for_cust
+        # )
+        return f'Модель промежутки с id= {self.id}'
 
 
 class DevCats(models.Model):
