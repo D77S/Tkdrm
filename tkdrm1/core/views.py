@@ -45,11 +45,6 @@ def all_list(request: HttpRequest):
 
     print('Конец запроса из БД перечня приборов и преобразование их из кверисета в лист.')  # noqa
 
-    # devs_qset = Device.objects.all().order_by('id')
-    # paginator = Paginator(devs_qset, ALL_DEV_PAG)
-    # page_number = request.GET.get('page')
-    # curr_page_obj = paginator.get_page(page_number)
-
     # curr_page_ids = [i.id for i in curr_page_obj]
     # curr_page_devs_qset = Device.objects.filter(
     #     id__in=curr_page_ids).select_related(
@@ -111,44 +106,44 @@ def all_list(request: HttpRequest):
 
     print('Начало расчета места эксплуатации по каждому.')
 
-    extra_dev_objs_lst = []
+    # extra_dev_objs_lst = []
 
-    for dev in dev_objs_lst:
-        temp = [i for i in reltodevs_objs if i.to_dev == dev]
-        if temp == []:
-            extra_dev_objs_lst.append([dev,
-                                       None,
-                                       None,
-                                       None])
-            continue
-        temp = sorted(temp, key=lambda x: x.is_main_for_dev)
-        temp3 = temp[0].to_rel.cust_pl1
-        if temp3.rtu is not None:
-            extra_dev_objs_lst.append([dev,
-                                       temp3.rtu,
-                                       None,
-                                       None])
-        elif temp3.custhouse is not None:
-            extra_dev_objs_lst.append([dev,
-                                       temp3.custhouse.upper_id,
-                                       temp3.custhouse, None])
-        elif temp3.custpost is not None:
-            extra_dev_objs_lst.append([dev,
-                                       temp3.custpost.upper_id.upper_id,
-                                       temp3.custpost.upper_id,
-                                       temp3.custpost])
-        else:
-            extra_dev_objs_lst.append([dev,
-                                       None,
-                                       None,
-                                       None])
+    # for dev in dev_objs_lst:
+    #     temp = [i for i in reltodevs_objs if i.to_dev == dev]
+    #     if temp == []:
+    #         extra_dev_objs_lst.append([dev,
+    #                                    None,
+    #                                    None,
+    #                                    None])
+    #         continue
+    #     temp = sorted(temp, key=lambda x: x.is_main_for_dev)
+    #     temp3 = temp[0].to_rel.cust_pl1
+    #     if temp3.rtu is not None:
+    #         extra_dev_objs_lst.append([dev,
+    #                                    temp3.rtu,
+    #                                    None,
+    #                                    None])
+    #     elif temp3.custhouse is not None:
+    #         extra_dev_objs_lst.append([dev,
+    #                                    temp3.custhouse.upper_id,
+    #                                    temp3.custhouse, None])
+    #     elif temp3.custpost is not None:
+    #         extra_dev_objs_lst.append([dev,
+    #                                    temp3.custpost.upper_id.upper_id,
+    #                                    temp3.custpost.upper_id,
+    #                                    temp3.custpost])
+    #     else:
+    #         extra_dev_objs_lst.append([dev,
+    #                                    None,
+    #                                    None,
+    #                                    None])
 
     print('Конец расчета мест эксплуатации по каждому.')
 
     # !!!!тут сортировать перечень приборов!!!!!
     # !!!!сортированное пергрузить в dev_qset!!!!
 
-    paginator = Paginator(devs_qset, ALL_DEV_PAG)
+    paginator = Paginator(dev_objs_lst, ALL_DEV_PAG)
     page_number = request.GET.get('page')
     curr_page_obj = paginator.get_page(page_number)
     curr_page_dev_objs_lst = [i for i in curr_page_obj]
