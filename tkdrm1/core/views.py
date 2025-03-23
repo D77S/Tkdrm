@@ -34,31 +34,59 @@ from core.models import (
 def all_list(request: HttpRequest):
     """."""
     template_name = 'all_list.html'
-    all_dev_list = Device.objects.all().order_by('id')
-    paginator = Paginator(all_dev_list, ALL_DEV_PAG)
-    page_number = request.GET.get('page')
-    curr_page_obj = paginator.get_page(page_number)
 
-    curr_page_ids = [i.id for i in curr_page_obj]
-    curr_page_devs_qset = Device.objects.filter(
-        id__in=curr_page_ids).select_related(
+    print('Начало запроса из БД перечня приборов.')
+
+    devs_qset = Device.objects.all().select_related(
         'type__category',
         'sour_type',
     ).order_by('id')
-    curr_page_dev_objs_lst = [i for i in curr_page_devs_qset]
+    dev_objs_lst = [i for i in devs_qset]
 
-    curr_page_reltodevs = RelToDev.objects.filter(
-        to_dev__in=curr_page_ids
-        ).select_related(
+    print('Конец запроса из БД перечня приборов и преобразование их из кверисета в лист.')  # noqa
+
+    # devs_qset = Device.objects.all().order_by('id')
+    # paginator = Paginator(devs_qset, ALL_DEV_PAG)
+    # page_number = request.GET.get('page')
+    # curr_page_obj = paginator.get_page(page_number)
+
+    # curr_page_ids = [i.id for i in curr_page_obj]
+    # curr_page_devs_qset = Device.objects.filter(
+    #     id__in=curr_page_ids).select_related(
+    #     'type__category',
+    #     'sour_type',
+    # ).order_by('id')
+
+    # curr_page_dev_objs_lst = [i for i in curr_page_devs_qset]
+
+    # curr_page_reltodevs = RelToDev.objects.filter(
+    #     to_dev__in=curr_page_ids
+    #     ).select_related(
+    #         'to_dev',
+    #         'to_rel',
+    #         'to_rel__cust_pl1',
+    #         'to_rel__cust_pl1__rtu',
+    #         'to_rel__cust_pl1__custhouse',
+    #         'to_rel__cust_pl1__custpost'
+    #     )
+
+    print('Начало запроса из БД перечня RelToDev.')
+
+    reltodevs = RelToDev.objects.select_related(
             'to_dev',
             'to_rel',
             'to_rel__cust_pl1',
             'to_rel__cust_pl1__rtu',
             'to_rel__cust_pl1__custhouse',
-            'to_rel__cust_pl1__custpost'
+            'to_rel__cust_pl1__custhouse__upper_id',
+            'to_rel__cust_pl1__custpost',
+            'to_rel__cust_pl1__custpost__upper_id',
+            'to_rel__cust_pl1__custpost__upper_id__upper_id'
         )
+    reltodevs_objs = [i for i in reltodevs]
 
-    curr_page_reltodevs_objs = [i for i in curr_page_reltodevs]
+    print('Конец запроса из БД перечня RelToDev и преобразование их из кверисета в лист.')  # noqa
+
     # curr_page_cpltoloc_ids = [i.to_rel_id for i in curr_page_reltodevs_objs]
 
     # curr_page_cpllocs_qset = CustPlaceToLocation.objects.filter(
@@ -88,27 +116,70 @@ def all_list(request: HttpRequest):
     #     elif i.custpost is not None:
     #         curr_page_cpl1s.append(i.custpost)
 
-    curr_extra_page_obj = []
+    print('Начало расчета места эксплуатации по каждому.')
+
+    extra_dev_objs_lst = []
+
+    for dev in dev_objs_lst:
+        temp = [i for i in reltodevs_objs if i.to_dev == dev]
+        if temp == []:
+            extra_dev_objs_lst.append([dev,
+                                       None,
+                                       None,
+                                       None])
+            continue
+        temp = sorted(temp, key=lambda x: x.is_main_for_dev)
+        temp3 = temp[0].to_rel.cust_pl1
+        if temp3.rtu is not None:
+            extra_dev_objs_lst.append([dev,
+                                       temp3.rtu,
+                                       None,
+                                       None])
+        elif temp3.custhouse is not None:
+            extra_dev_objs_lst.append([dev,
+                                       temp3.custhouse.upper_id,
+                                       temp3.custhouse, None])
+        elif temp3.custpost is not None:
+            extra_dev_objs_lst.append([dev,
+                                       temp3.custpost.upper_id.upper_id,
+                                       temp3.custpost.upper_id,
+                                       temp3.custpost])
+        else:
+            extra_dev_objs_lst.append([dev,
+                                       None,
+                                       None,
+                                       None])
+
+    print('Конец расчета мест эксплуатации по каждому.')
+
+    # !!!!тут сортировать перечень приборов!!!!!
+    # !!!!сортированное пергрузить в dev_qset!!!!
+
+    paginator = Paginator(devs_qset, ALL_DEV_PAG)
+    page_number = request.GET.get('page')
+    curr_page_obj = paginator.get_page(page_number)
+    curr_page_dev_objs_lst = [i for i in curr_page_obj]
+
     offset = (curr_page_obj.number - 1) * ALL_DEV_PAG
     i = 0
+    curr_extra_page_obj = []
 
     for dev in curr_page_dev_objs_lst:
         i += 1
-        temp = [i for i in curr_page_reltodevs_objs if (
-            i.to_dev == dev and i.is_main_for_dev is True
-        )]
-        temp = sorted(temp, key=lambda x: x.is_main_for_dev)
+        temp = [i for i in reltodevs_objs if i.to_dev == dev]
         if temp == []:
             curr_extra_page_obj.append([i + offset, dev, None])
             continue
+        temp = sorted(temp, key=lambda x: x.is_main_for_dev)
         temp3 = temp[0].to_rel.cust_pl1
         if temp3.rtu is not None:
-            temp4 = temp3.rtu
+            curr_extra_page_obj.append([i + offset, dev, temp3.rtu])
         elif temp3.custhouse is not None:
-            temp4 = temp3.custhouse
+            curr_extra_page_obj.append([i + offset, dev, temp3.custhouse])
         elif temp3.custpost is not None:
-            temp4 = temp3.custpost
-        curr_extra_page_obj.append([i + offset, dev, temp4])
+            curr_extra_page_obj.append([i + offset, dev, temp3.custpost])
+        else:
+            curr_extra_page_obj.append([i + offset, dev, None])
 
     context = {
         'page_obj': curr_page_obj,
