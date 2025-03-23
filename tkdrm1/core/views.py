@@ -88,26 +88,19 @@ def all_list(request: HttpRequest):
     print('Конец запроса из БД перечня RelToDev и преобразование их из кверисета в лист.')  # noqa
 
     # curr_page_cpltoloc_ids = [i.to_rel_id for i in curr_page_reltodevs_objs]
-
     # curr_page_cpllocs_qset = CustPlaceToLocation.objects.filter(
     #     id__in=curr_page_cpltoloc_ids
     # )
-
     # curr_page_cpllocs_objs = [i for i in curr_page_cpllocs_qset]
-
     # curr_page_cpluses_ids = [i.id for i in curr_page_cpllocs_objs]
-
     # curr_page_cpluses_objs = CustPlace1Use.objects.filter(
     #     id__in=curr_page_cpluses_ids).select_related(
     #         'rtu',
     #         'custhouse',
     #         'custpost'
     #     )
-
     # curr_page_cpluses_list = [i for i in curr_page_cpluses_objs]
-
     # curr_page_cpl1s = []
-
     # for i in curr_page_cpluses_list:
     #     if i.rtu is not None:
     #         curr_page_cpl1s.append(i.rtu)
