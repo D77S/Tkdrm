@@ -1,8 +1,10 @@
 """."""
 # import functools
 # import sys
-# import time
+from sys import getsizeof
+import time
 # from django.db import connection, reset_queries
+from django.db.models import F
 from django.core.paginator import Paginator
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
@@ -13,6 +15,7 @@ from core.models import (
     Device,
     RelToDev
 )
+from tqdm import tqdm
 
 # def query_debugger(func):
 #     @functools.wraps(func)
@@ -35,39 +38,17 @@ def all_list(request: HttpRequest):
     """."""
     template_name = 'all_list.html'
 
-    print('Начало запроса из БД перечня приборов.')
+    start = time.perf_counter()
+    print('Отметка 1. Начало запроса из БД перечня приборов.')
 
     devs_qset = Device.objects.all().select_related(
         'type__category',
         'sour_type',
-    ).order_by('id')
-    dev_objs_lst = [i for i in devs_qset]
+    )
 
-    print('Конец запроса из БД перечня приборов и преобразование их из кверисета в лист.')  # noqa
+    print(f'Отметка 2. Конец запроса из БД перечня приборов. Заняло: {(time.perf_counter() - start):.4f}')  # noqa
 
-    # curr_page_ids = [i.id for i in curr_page_obj]
-    # curr_page_devs_qset = Device.objects.filter(
-    #     id__in=curr_page_ids).select_related(
-    #     'type__category',
-    #     'sour_type',
-    # ).order_by('id')
-
-    # curr_page_dev_objs_lst = [i for i in curr_page_devs_qset]
-
-    # curr_page_reltodevs = RelToDev.objects.filter(
-    #     to_dev__in=curr_page_ids
-    #     ).select_related(
-    #         'to_dev',
-    #         'to_rel',
-    #         'to_rel__cust_pl1',
-    #         'to_rel__cust_pl1__rtu',
-    #         'to_rel__cust_pl1__custhouse',
-    #         'to_rel__cust_pl1__custpost'
-    #     )
-
-    print('Начало запроса из БД перечня RelToDev.')
-
-    reltodevs = RelToDev.objects.select_related(
+    reltodevs = RelToDev.objects.all().select_related(
             'to_dev',
             'to_rel',
             'to_rel__cust_pl1',
@@ -78,33 +59,26 @@ def all_list(request: HttpRequest):
             'to_rel__cust_pl1__custpost__upper_id',
             'to_rel__cust_pl1__custpost__upper_id__upper_id'
         )
-    reltodevs_objs = [i for i in reltodevs]
 
-    print('Конец запроса из БД перечня RelToDev и преобразование их из кверисета в лист.')  # noqa
+    print(f'Отметка 3. Конец запроса из БД перечня reltodevs. Заняло: {(time.perf_counter() - start):.4f}')  # noqa
 
-    # curr_page_cpltoloc_ids = [i.to_rel_id for i in curr_page_reltodevs_objs]
-    # curr_page_cpllocs_qset = CustPlaceToLocation.objects.filter(
-    #     id__in=curr_page_cpltoloc_ids
-    # )
-    # curr_page_cpllocs_objs = [i for i in curr_page_cpllocs_qset]
-    # curr_page_cpluses_ids = [i.id for i in curr_page_cpllocs_objs]
-    # curr_page_cpluses_objs = CustPlace1Use.objects.filter(
-    #     id__in=curr_page_cpluses_ids).select_related(
-    #         'rtu',
-    #         'custhouse',
-    #         'custpost'
-    #     )
-    # curr_page_cpluses_list = [i for i in curr_page_cpluses_objs]
-    # curr_page_cpl1s = []
-    # for i in curr_page_cpluses_list:
-    #     if i.rtu is not None:
-    #         curr_page_cpl1s.append(i.rtu)
-    #     elif i.custhouse is not None:
-    #         curr_page_cpl1s.append(i.custhouse)
-    #     elif i.custpost is not None:
-    #         curr_page_cpl1s.append(i.custpost)
+    for dev in devs_qset:
+        temp = [i for i in reltodevs if i.to_dev == dev]
+        if temp == []:
+            aaa = None
+        else:
+            temp = sorted(temp, key=lambda x: x.is_main_for_dev)
+            temp3 = temp[0].to_rel.cust_pl1
+            if temp3.rtu is not None:
+                aaa = temp3.rtu
+            elif temp3.custhouse is not None:
+                aaa = temp3.custhouse
+            elif temp3.custpost is not None:
+                aaa = temp3.custpost
+            else:
+                aaa = None
 
-    print('Начало расчета места эксплуатации по каждому.')
+    print(f'Отметка 5. Конец расчета всех мест эксплуатации. Заняло: {(time.perf_counter() - start):.4f}')  # noqa
 
     # extra_dev_objs_lst = []
 
@@ -138,12 +112,12 @@ def all_list(request: HttpRequest):
     #                                    None,
     #                                    None])
 
-    print('Конец расчета мест эксплуатации по каждому.')
+    print(f'Конец расчета мест эксплуатации по каждому. Заняло: {(time.perf_counter() - start):.4f}')
 
     # !!!!тут сортировать перечень приборов!!!!!
     # !!!!сортированное пергрузить в dev_qset!!!!
 
-    paginator = Paginator(dev_objs_lst, ALL_DEV_PAG)
+    paginator = Paginator(devs_qset, ALL_DEV_PAG)
     page_number = request.GET.get('page')
     curr_page_obj = paginator.get_page(page_number)
     curr_page_dev_objs_lst = [i for i in curr_page_obj]
@@ -154,7 +128,7 @@ def all_list(request: HttpRequest):
 
     for dev in curr_page_dev_objs_lst:
         i += 1
-        temp = [i for i in reltodevs_objs if i.to_dev == dev]
+        temp = [i for i in reltodevs if i.to_dev == dev]
         if temp == []:
             curr_extra_page_obj.append([i + offset, dev, None])
             continue
