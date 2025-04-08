@@ -1,10 +1,8 @@
 """."""
 # import functools
 # import sys
-from sys import getsizeof
 import time
 # from django.db import connection, reset_queries
-from django.db.models import F
 from django.core.paginator import Paginator
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
@@ -15,7 +13,6 @@ from core.models import (
     Device,
     RelToDev
 )
-from tqdm import tqdm
 
 # def query_debugger(func):
 #     @functools.wraps(func)
@@ -33,21 +30,26 @@ from tqdm import tqdm
 #     return inner_func
 
 
+def time_counter(time_list: list, st: str):
+    stamp = time.perf_counter()
+    time_list.append([stamp, st])
+    curr_delta = time_list[-1:][0][0] - time_list[-2:][0][0]
+    print(f'Отметка {len(time_list)}. {st}. С предыдущей отметки заняло {curr_delta}')  # noqa
+    return time_list
+
+
 # @query_debugger
 def all_list(request: HttpRequest):
     """."""
     template_name = 'all_list.html'
-
-    start = time.perf_counter()
-    print('Отметка 1. Начало запроса из БД перечня приборов.')
-
+    time_list = []
+    time_list = time_counter(time_list, 'Начало запроса из БД перечня приборов.')  # noqa
     devs_qset = Device.objects.all().select_related(
         'type__category',
         'sour_type',
-    )
-
-    print(f'Отметка 2. Конец запроса из БД перечня приборов. Заняло: {(time.perf_counter() - start):.4f}')  # noqa
-
+    ).order_by('id')
+    temp_devs = []
+    time_list = time_counter(time_list, 'Конец запроса из БД перечня приборов.')  # noqa
     reltodevs = RelToDev.objects.all().select_related(
             'to_dev',
             'to_rel',
@@ -59,9 +61,7 @@ def all_list(request: HttpRequest):
             'to_rel__cust_pl1__custpost__upper_id',
             'to_rel__cust_pl1__custpost__upper_id__upper_id'
         )
-
-    print(f'Отметка 3. Конец запроса из БД перечня reltodevs. Заняло: {(time.perf_counter() - start):.4f}')  # noqa
-
+    time_list = time_counter(time_list, 'Конец запроса из БД перечня reltodevs.')  # noqa
     for dev in devs_qset:
         temp = [i for i in reltodevs if i.to_dev == dev]
         if temp == []:
@@ -77,45 +77,25 @@ def all_list(request: HttpRequest):
                 aaa = temp3.custpost
             else:
                 aaa = None
+        temp_devs.append((dev, aaa))
 
-    print(f'Отметка 5. Конец расчета всех мест эксплуатации. Заняло: {(time.perf_counter() - start):.4f}')  # noqa
+    time_list = time_counter(time_list, 'Конец расчета всех мест эксплуатации.')  # noqa
 
-    # extra_dev_objs_lst = []
-
-    # for dev in dev_objs_lst:
-    #     temp = [i for i in reltodevs_objs if i.to_dev == dev]
-    #     if temp == []:
-    #         extra_dev_objs_lst.append([dev,
-    #                                    None,
-    #                                    None,
-    #                                    None])
-    #         continue
-    #     temp = sorted(temp, key=lambda x: x.is_main_for_dev)
-    #     temp3 = temp[0].to_rel.cust_pl1
-    #     if temp3.rtu is not None:
-    #         extra_dev_objs_lst.append([dev,
-    #                                    temp3.rtu,
-    #                                    None,
-    #                                    None])
-    #     elif temp3.custhouse is not None:
-    #         extra_dev_objs_lst.append([dev,
-    #                                    temp3.custhouse.upper_id,
-    #                                    temp3.custhouse, None])
-    #     elif temp3.custpost is not None:
-    #         extra_dev_objs_lst.append([dev,
-    #                                    temp3.custpost.upper_id.upper_id,
-    #                                    temp3.custpost.upper_id,
-    #                                    temp3.custpost])
-    #     else:
-    #         extra_dev_objs_lst.append([dev,
-    #                                    None,
-    #                                    None,
-    #                                    None])
-
-    print(f'Конец расчета мест эксплуатации по каждому. Заняло: {(time.perf_counter() - start):.4f}')
-
-    # !!!!тут сортировать перечень приборов!!!!!
-    # !!!!сортированное пергрузить в dev_qset!!!!
+    #
+    # !!!!!!!
+    # Получили список девайсов, но пока несортированный. В таком виде:
+    # temp_devs = [
+    # (dev1, aaa1),
+    # (dev2, aaa2),
+    # (dev3, aaa3),
+    # ...
+    # ]
+    # Нужно еще дописать сортировку devs1,2,3,... по двум параметрам:
+    # - сначала по aaa,
+    # - потом ещё по dev.id
+    # Результирующий сортированный список загрузить в dev_qset для последующей пагинации. # noqa
+    delta = time_list[-1:][0][0] - time_list[0][0]
+    print(f'Всего заняло {delta}.')
 
     paginator = Paginator(devs_qset, ALL_DEV_PAG)
     page_number = request.GET.get('page')
