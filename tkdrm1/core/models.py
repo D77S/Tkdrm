@@ -1072,9 +1072,6 @@ class Device(models.Model):
                                  verbose_name='Вышестоящий девайс',
                                  related_name='to_upper_level')
 
-    def test2(self):
-        return self.from_dev
-
     class Meta:
         """."""
 

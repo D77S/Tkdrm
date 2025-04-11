@@ -67,7 +67,7 @@ def all_list(request: HttpRequest):
         if temp == []:
             aaa = None
         else:
-            temp = sorted(temp, key=lambda x: x.is_main_for_dev)
+            temp = sorted(temp, key=lambda x: not (x.is_main_for_dev))
             temp3 = temp[0].to_rel.cust_pl1
             if temp3.rtu is not None:
                 aaa = temp3.rtu
@@ -112,7 +112,7 @@ def all_list(request: HttpRequest):
         if temp == []:
             curr_extra_page_obj.append([i + offset, dev, None])
             continue
-        temp = sorted(temp, key=lambda x: x.is_main_for_dev)
+        temp = sorted(temp, key=lambda x: not (x.is_main_for_dev))
         temp3 = temp[0].to_rel.cust_pl1
         if temp3.rtu is not None:
             curr_extra_page_obj.append([i + offset, dev, temp3.rtu])
