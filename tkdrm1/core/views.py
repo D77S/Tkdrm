@@ -1,7 +1,7 @@
 """."""
 # import functools
 # import sys
-import asyncio
+# import asyncio
 import time
 # from django.db import connection, reset_queries
 from django.core.paginator import Paginator
@@ -56,9 +56,9 @@ async def task(dev_id, devs_dict):
     return (devs_dict[dev_id]["dev"], site_of_usage)
 
 
-async def async_execute(devs_dict):
-    tasks = [asyncio.ensure_future(task(dev_id, devs_dict) for dev_id in devs_dict)]  # noqa
-    await asyncio.wait(tasks)
+# async def async_execute(devs_dict):
+#     tasks = [asyncio.ensure_future(task(dev_id, devs_dict) for dev_id in devs_dict)]  # noqa
+#     await asyncio.wait(tasks)
 
 
 # @query_debugger
@@ -93,7 +93,7 @@ def all_list(request: HttpRequest):
 
     temp_devs = []
 
-    asyncio.run(async_execute(devs_dict))
+    # asyncio.run(async_execute(devs_dict))
 
     for dev_id in devs_dict:
         temp = devs_dict[dev_id]["temp"]
