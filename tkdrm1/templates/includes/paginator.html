@@ -1,13 +1,34 @@
-<dic class="paginator">
+<div class="paginator">
   <span class="step-links">
     {% if page_obj.has_previous %}
       <a href="?page={{ page_obj.previous_page_number }}">Предыдущая</a>
+      {% if page_obj.number > 10 %}
+        <a href="?page=1">1</a>
+        {% if page_obj.number > 11 %}
+          ...
+        {% endif %}
+      {% endif %}
     {% endif %}
-    <span class="current">
-      Текущая: {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
-    </span>
+    {% for num in page_obj.paginator.page_range %}
+      {% if page_obj.number == num %}
+        <b>{{ num }}</b>
+      {% elif num > page_obj.number|add:'-10' and num < page_obj.number|add:'10' %}
+        <a href="?page={{ num }}">{{ num }}</a>
+      {% endif %}
+    {% endfor %}
     {% if page_obj.has_next %}
-      <a href="?page={{ page_obj.next_page_number }}">Следующая</a>
+      {% if page_obj.number < page_obj.paginator.num_pages|add:'-10' %}
+        ...
+        <a href="?page={{ page_obj.paginator.num_pages }}">
+        {{ page_obj.paginator.num_pages }}
+        </a>
+      {% elif page_obj.number < page_obj.paginator.num_pages|add:'-9' %}
+        <a href="?page={{ page_obj.paginator.num_pages }}">
+        {{ page_obj.paginator.num_pages }}
+        </a>
+      {% endif %}
+
+    <a href="?page={{ page_obj.next_page_number }}">Следующая</a>
     {% endif %}
   </span>
 </div>

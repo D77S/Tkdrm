@@ -71,4 +71,4 @@ PATTERN3 = {
     'Иной владелец-факт.пред.': SOURCE_TITLES[6]
 }
 
-ALL_DEV_PAG = 15
+ALL_DEV_PAG = 20
