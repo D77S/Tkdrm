@@ -38,25 +38,8 @@ def time_counter(time_list: list, st: str):
     return time_list
 
 
-async def task(dev_id, devs_dict):
-    temp = devs_dict[dev_id]["temp"]
-    if len(temp) == 0:
-        site_of_usage = None
-    else:
-        temp3 = temp[0].to_rel.cust_pl1
-        if temp3.rtu is not None:
-            site_of_usage = temp3.rtu
-        elif temp3.custhouse is not None:
-            site_of_usage = temp3.custhouse
-        elif temp3.custpost is not None:
-            site_of_usage = temp3.custpost
-        else:
-            site_of_usage = None
-    return (devs_dict[dev_id]["dev"], site_of_usage)
-
-
 # @query_debugger
-def all_list(request: HttpRequest):
+def all_list_by_cpl(request: HttpRequest):
     """."""
     template_name = 'all_list.html'
     time_list = []
