@@ -9,15 +9,12 @@
           style="text-align: center"
           class="col-7"
           colspan=3
-          title="У технического средства может быть
-          не один эксплуатирующий таможенный орган.
-          Но, задано логикой, что из них основной -
-          только один. Он и показан в данной таблице.
+          title="У технического средства может быть не один эксплуатирующий таможенный орган.
+          Но, задано логикой, что из них основной - только один. Он и показан в данной таблице.
           Остальные могут быть увидены по ссылке 'Подробнее'."
           >
-            Эксплуатирующий т.орган
-            <br>
-            <div class="small" class="fw-light">
+            Эксплуатирующий т.орган<br>
+            <div class="small">
               (наведите)
             </div>
       </th>
@@ -40,7 +37,7 @@
         <td scope="row">{{ item.2.2.title|default_if_none:"--" }}</td>
         <td scope="row">{{ item.1.type.title|default_if_none:"--" }}</td>
         <td scope="row">{{ item.1.serial|default_if_none:"--" }}</td>
-        <td scope="row"><a class="mt-3 regular-link" href="{% url 'core:dev_detail' item.1.id %}">Подробнее</a> Изменить Удалить</td>
+        <td scope="row"><a class="mt-3 regular-link" href="{% url 'core:dev_detail' item.1.id %}">Подробнее</a> Изменить Удалить Создать</td>
       </tr>
     {% endfor %}
   </tbody>
