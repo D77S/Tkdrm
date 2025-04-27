@@ -3,6 +3,11 @@
 <header>
   <nav class="navbar navbar-light" style="background-color: pink">
     <div class="container">
+      <style>
+        P {
+         line-height: 0.8em;
+        }
+       </style>
       <ul class="nav  nav-pills">
         <li class="nav-item">
           <a class="nav-link {% if view_name  == 'mainpage:index' %}active{% endif %}"
@@ -13,7 +18,7 @@
         <li class="nav-item">
           <a class="nav-link {% if view_name  == 'core:all_list_by_cpl' %}active{% endif %}"
           href="{% url 'core:all_list_by_cpl' %}">
-          Полный перечень
+          <p>Полный перечень<br><small>Сортировка по т.орг.</small></p>
           </a>
         </li>
       </ul>
