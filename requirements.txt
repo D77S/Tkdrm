@@ -4,6 +4,7 @@ attrs==25.3.0
 charset-normalizer==2.1.1
 colorama==0.4.6
 Django==3.2.16
+django-bootstrap5==22.2
 django_debug_toolbar==3.8.1
 et_xmlfile==2.0.0
 frozenlist==1.5.0
