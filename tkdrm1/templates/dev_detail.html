@@ -24,8 +24,15 @@
       </tr>
       <tr>
         <th>Где на учёте по балансу или забалансу</th>
-        <td>{{  dev.cp1_acc.custhouse.title  }}</td>
-        <td></td>
+        <td>
+          {% if dev.cp1_acc.rtu %}
+            {{  dev.cp1_acc.rtu.title  }}
+          {% elif dev.cp1_acc.custhouse %}
+            {{  dev.cp1_acc.custhouse.title  }}
+          {% else %}
+            {{  div.cp1_acc.custpost.title  }}
+          {% endif %}
+        </td>
       </tr>
     </tbody>
   </table>
