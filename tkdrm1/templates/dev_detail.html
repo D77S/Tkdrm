@@ -4,9 +4,9 @@
    <p></p>
    <table class="table-bordered table-sm">
     <thead>
-      <tr>
-        <th scope="col" valign="top" width="3%" cellspacing="0" cellpadding="4" class="col-2">Свойство</th>
-        <th scope="col" valign="top" style="text-align: left" class="col-10" colspan=2>Значение</th>
+      <tr style="border: 3px solid black;">
+        <th scope="col" valign="top" width="3%" cellspacing="0" cellpadding="4" class="col-2" style="border: 3px solid black;">Свойство</th>
+        <th scope="col" valign="top" style="text-align: left" class="col-10" colspan=2 style=>Значение</th>
       </tr>
     </thead>
     <tbody>
@@ -15,15 +15,19 @@
         <td colspan=2>{{  dev.type.title  }}</td>
       </tr>
       <tr>
-        <th>Подтип</th>
+        <th>Подтип (если есть)</th>
         <td colspan=2>{{  dev.sub_type|default_if_none:"Отсутствует"  }}</td>
       </tr>
       <tr>
-        <th>Серийный номер</th>
+        <th>Собственник</th>
+        <td colspan=2>{{  dev.sour_type.title  }}</td>
+      </tr>
+      <tr>
+        <th>Серийный номер (если есть)</th>
         <td colspan=2>{{  dev.serial }}</td>
       </tr>
       <tr>
-        <th>Где на учёте по балансу или забалансу</th>
+        <th>Где стоит на учёте по балансу или забалансу</th>
         <td>
           {% if dev.cp1_acc.rtu %}
             {{  dev.cp1_acc.rtu.title  }}
@@ -33,6 +37,10 @@
             {{  div.cp1_acc.custpost.title  }}
           {% endif %}
         </td>
+      </tr>
+      <tr>
+        <th>Где находится в эксплуатации</th>
+        <td>{{  dev.from_dev.all  }}</td>
       </tr>
     </tbody>
   </table>

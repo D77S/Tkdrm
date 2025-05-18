@@ -130,5 +130,7 @@ def all_list_by_cpl(request: HttpRequest):
 def dev_detail(request, pk):
     """."""
     template_name = 'dev_detail.html'
-    context = {'dev': get_object_or_404(Device, pk=pk)}
+    curr_dev = get_object_or_404(Device, pk=pk)
+    print(curr_dev.from_dev.all())
+    context = {'dev': curr_dev}
     return render(request, template_name, context)
