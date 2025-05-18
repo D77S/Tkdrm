@@ -120,8 +120,6 @@ def all_list_by_cpl(request: HttpRequest):
     page_number = request.GET.get('page')
     curr_page_obj = paginator.get_page(page_number)
 
-    # print(f'curr_page_obj.object_list={curr_page_obj.object_list}')
-
     delta = time_list[-1:][0][0] - time_list[0][0]
     print(f'Всего заняло {delta}.')
 

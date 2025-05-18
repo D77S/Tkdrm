@@ -1,13 +1,45 @@
 {% extends "base.html" %}
  {% block content %}
-   <h1 class="pb-2 mb-0">Это страница отдельного прибора!</h1>
+   <h4 class="pb-2 mb-0">Детализация по выбранному тех.средству</h4>
    <p></p>
-   <h1 class="pb-2 mb-0">Название:{{ dev.type.title }}</h1>
-   <p></p>
+   <table class="table-bordered table-sm">
+    <thead>
+      <tr>
+        <th scope="col" valign="top" width="3%" cellspacing="0" cellpadding="4" class="col-2">Свойство</th>
+        <th scope="col" valign="top" style="text-align: left" class="col-10" colspan=2>Значение</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <th>Тип</th>
+        <td colspan=2>{{  dev.type.title  }}</td>
+      </tr>
+      <tr>
+        <th>Подтип</th>
+        <td colspan=2>{{  dev.sub_type|default_if_none:"Отсутствует"  }}</td>
+      </tr>
+      <tr>
+        <th>Серийный номер</th>
+        <td colspan=2>{{  dev.serial }}</td>
+      </tr>
+      <tr>
+        <th>Где на учёте по балансу или забалансу</th>
+        <td>{{  dev.cp1_acc.custhouse.title  }}</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+        
+
+
+
+
+  <!--
    <div class="row mt-3">
      <div class="col-12 col-md-6">
        <h2>Номер: {{ dev.serial }}</h2>
        <p></p>    
      </div> 
    </div> 
+  -->
  {% endblock %}
