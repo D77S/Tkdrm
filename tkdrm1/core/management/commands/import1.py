@@ -541,27 +541,27 @@ class Command(BaseCommand):
             dev_cats_objs = [DevCats(title=i) for i in dev_cats_titles]
             DevCats.objects.bulk_create(objs=dev_cats_objs)
             dev_types = [
-                ('Янтарь-1С', 'АКДРМ', '1', False, None),
-                ('Янтарь-1СН', 'АКДРМ', '1', False, None),
-                ('Янтарь-2С', 'АКДРМ', '1', False, None),
-                ('Янтарь-2СН', 'АКДРМ', '1', False, None),
-                ('ВН-СН', 'АКДРМ', '3', True, None),
-                ('Янтарь-1А', 'АКДРМ', '1', False, None),
-                ('Янтарь-2А', 'АКДРМ', '1', False, None),
-                ('ВН-А', 'АКДРМ', '3', True, None),
-                ('Янтарь-1П', 'АКДРМ', '1', False, ['1П1', '1П2', '1П3', '1У', 'ПБ']),  # noqa
-                ('Янтарь-2П', 'АКДРМ', '1', False, ['2П1', '2П2', '2П3']),  # noqa
-                ('ВН-П', 'АКДРМ', '3', True, None),
-                ('Янтарь-ПБ', 'АКДРМ', '1', False, None),
-                ('ВН-ПБ', 'АКДРМ', '3', True, None),
-                ('Янтарь-1Ж', 'АКДРМ', '1', False, None),
-                ('Янтарь-1Ж2', 'АКДРМ', '1', False, None),
-                ('Янтарь-2Ж', 'АКДРМ', '1', False, None),
-                ('Янтарь-2Ж2', 'АКДРМ', '1', False, None),
-                ('ВН-Ж', 'АКДРМ', '3', True, None),
-                ('ССД', 'АКДРМ', '3', False, None),
-                ('АРМ', 'АКДРМ', '3', False, None),
-                ('ССД/АРМ', 'АКДРМ', '3', False, None),
+                ('Янтарь-1С', 'АКДРМ', True, False, None),
+                ('Янтарь-1СН', 'АКДРМ', True, False, None),
+                ('Янтарь-2С', 'АКДРМ', True, False, None),
+                ('Янтарь-2СН', 'АКДРМ', True, False, None),
+                ('ВН-СН', 'АКДРМ', None, True, None),
+                ('Янтарь-1А', 'АКДРМ', True, False, None),
+                ('Янтарь-2А', 'АКДРМ', True, False, None),
+                ('ВН-А', 'АКДРМ', None, True, None),
+                ('Янтарь-1П', 'АКДРМ', True, False, ['1П1', '1П2', '1П3', '1У', 'ПБ']),  # noqa
+                ('Янтарь-2П', 'АКДРМ', True, False, ['2П1', '2П2', '2П3']),  # noqa
+                ('ВН-П', 'АКДРМ', None, True, None),
+                ('Янтарь-ПБ', 'АКДРМ', True, False, None),
+                ('ВН-ПБ', 'АКДРМ', None, True, None),
+                ('Янтарь-1Ж', 'АКДРМ', True, False, None),
+                ('Янтарь-1Ж2', 'АКДРМ', True, False, None),
+                ('Янтарь-2Ж', 'АКДРМ', True, False, None),
+                ('Янтарь-2Ж2', 'АКДРМ', True, False, None),
+                ('ВН-Ж', 'АКДРМ', None, True, None),
+                ('ССД', 'АКДРМ', None, False, None),
+                ('АРМ', 'АКДРМ', None, False, None),
+                ('ССД/АРМ', 'АКДРМ', None, False, None),
             ]
             dev_types_objs = [DevTypes(
                 title=i[0],
@@ -659,7 +659,7 @@ class Command(BaseCommand):
 
             temp_rel_to_dev = RelToDev.objects.filter(to_dev=curr_dev)  # noqa
             if not temp_rel_to_dev.exists():
-                curr_rel_to_dev = RelToDev.objects.create(
+                RelToDev.objects.create(
                     to_rel=curr_cp_to_loc,
                     to_dev=curr_dev,
                     is_main_for_dev=True
@@ -667,13 +667,13 @@ class Command(BaseCommand):
             else:
                 temp2_rel_to_dev = temp_rel_to_dev.filter(to_rel=curr_cp_to_loc)  # noqa
                 if not temp2_rel_to_dev.exists():
-                    curr_rel_to_dev = RelToDev.objects.create(
+                    RelToDev.objects.create(
                         to_rel=curr_cp_to_loc,
                         to_dev=curr_dev,
                         is_main_for_dev=False
                     )
-                else:
-                    curr_rel_to_dev = temp2_rel_to_dev.first()
+                # else:
+                #     curr_rel_to_dev = temp2_rel_to_dev.first()
 
             # if int(i[0]) > 6:
             #     sys.exit()

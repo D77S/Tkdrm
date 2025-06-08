@@ -1,0 +1,364 @@
+"""."""
+import math
+import os
+import pandas
+import sys
+# from tqdm import tqdm
+from typing import Union
+from django.core.management.base import BaseCommand
+
+from core.constants import (
+    PATTERN1, PATTERN2, SOURCE_TITLES
+)
+from core.models import (CustHouse,
+                         CustPlace2,
+                         CustPost,
+                         Device,
+                         # LocationOfUse,
+                         Ppr,
+                         # Mmpo,
+                         # Oez,
+                         # Ztk,
+                         Rtu,
+                         SourceTypes,
+                         # CustPlace1Acc,
+                         # CustPlace1Use,
+                         CustPlaceToLocation,
+                         RelToDev,
+                         DevTypes,
+                         DevCats)
+
+
+class Command(BaseCommand):
+    """."""
+
+    def handle(self, *args, **options):
+        """."""
+
+        def replace_to_clean(source: str, pattern: dict):
+            """."""
+            if source in pattern.keys():
+                to_out = pattern.get(source)
+            else:
+                to_out = source
+            return to_out
+
+        def clean_data_second(data_in: list[list[str]]):
+            """."""
+            data_out = []
+            for row in data_in:
+                temp_row = []
+                for i in range(0, len(row)):
+                    if i == 1:
+                        temp_row.append(
+                            replace_to_clean(
+                                source=row[i],
+                                pattern=PATTERN1
+                            )
+                        )
+                    elif i == 4:
+                        temp_row.append(
+                            row[i].split('.')[0]
+                        )
+                    elif i == 7:
+                        temp_row.append(
+                            replace_to_clean(
+                                source=row[i],
+                                pattern=PATTERN2
+                            )
+                        )
+                    else:
+                        temp_row.append(row[i])
+                data_out.append(temp_row)
+            return data_out
+
+        def clear_n_init():
+            """."""
+            # delete
+            RelToDev.objects.all().delete()
+            Device.objects.all().delete()
+            DevTypes.objects.all().delete()
+            DevCats.objects.all().delete()
+            CustPlaceToLocation.objects.all().delete()
+            Ppr.objects.all().delete()
+            CustPost.objects.all().delete()
+            CustHouse.objects.all().delete()
+            Rtu.objects.all().delete()
+            CustPlace2.objects.all().delete()
+            SourceTypes.objects.all().delete()
+            # create initial
+            tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
+            CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
+            tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
+            CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
+            source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
+            SourceTypes.objects.bulk_create(objs=source_objs)
+            dev_cats_titles = [
+                'АКДРМ',
+                'дозиметры',
+                'поисковые',
+                'радиометры-спектрометры',
+                'спектрометры',
+                'СИЗ'
+            ]
+            dev_cats_objs = [DevCats(title=i) for i in dev_cats_titles]
+            DevCats.objects.bulk_create(objs=dev_cats_objs)
+            dev_types = [
+                ('Янтарь-1С', 'АКДРМ', True, False, None),
+                ('Янтарь-1СН', 'АКДРМ', True, False, None),
+                ('Янтарь-2С', 'АКДРМ', True, False, None),
+                ('Янтарь-2СН', 'АКДРМ', True, False, None),
+                ('ВН-СН', 'АКДРМ', None, True, None),
+                ('Янтарь-1А', 'АКДРМ', True, False, None),
+                ('Янтарь-2А', 'АКДРМ', True, False, None),
+                ('ВН-А', 'АКДРМ', None, True, None),
+                ('Янтарь-1П', 'АКДРМ', True, False, [
+                    '1П1',
+                    '1П2',
+                    '1П3',
+                    '1У',
+                    'ПБ'
+                ]),
+                ('Янтарь-2П', 'АКДРМ', True, False, [
+                    '2П1',
+                    '2П2',
+                    '2П3'
+                ]),
+                ('ВН-П', 'АКДРМ', None, True, None),
+                ('Янтарь-ПБ', 'АКДРМ', True, False, None),
+                ('ВН-ПБ', 'АКДРМ', None, True, None),
+                ('Янтарь-1Ж', 'АКДРМ', True, False, None),
+                ('Янтарь-1Ж2', 'АКДРМ', True, False, None),
+                ('Янтарь-2Ж', 'АКДРМ', True, False, None),
+                ('Янтарь-2Ж2', 'АКДРМ', True, False, None),
+                ('ВН-Ж', 'АКДРМ', None, True, None),
+                ('ССД', 'АКДРМ', None, False, None),
+                ('АРМ', 'АКДРМ', None, False, None),
+                ('ССД/АРМ', 'АКДРМ', None, False, None),
+            ]
+            dev_types_objs = [DevTypes(
+                title=i[0],
+                category=DevCats.objects.get(title=i[1]),
+                serial_flag=i[2],
+                upper_dev_flag=i[3],
+                sub_types=i[4]
+            ) for i in dev_types]
+            DevTypes.objects.bulk_create(objs=dev_types_objs)
+
+        def pre_valid_tests(row):
+            """."""
+            ERR_TEXT_1 = 'Строка {}, {} не из валидных вариантов {}, ' \
+                         'строка не будет обработана.'
+            ERR_TEXT_2 = 'Строка {}, невалидное сочетание столбцов {}, ' \
+                         'строка не будет обработана.'
+            if row[11] not in ['основная', 'служебная']:
+                print(ERR_TEXT_1.format(
+                    row[0],
+                    '\'статус строки\'',
+                    '\'основная\', \'служебная\'')
+                )
+                return False
+            if row[8] not in ['1', '2', '3', '4']:
+                print(ERR_TEXT_1.format(
+                    row[0],
+                    '\'тип объекта\'',
+                    '\'1\', \'2\', \'3\', \'4\'')
+                )
+                return False
+            if row[14] not in [
+                '',
+                'Там.орган',
+                'Росгранстрой-договор',
+                'Росгранстрой-акт',
+                'Росгранстрой-факт.пред.',
+                'Иной владелец-договор',
+                'Иной владелец-акт',
+                'Иной владелец-факт.пред.',
+                '?'
+            ]:
+                print(ERR_TEXT_1.format(row[0], '\'Собственник\'', ''))
+                return False
+            if row[8] == '1' and (row[5] == '' or row[7] == ''):
+                print(ERR_TEXT_2.format(row[0], '\'5\', \'7\', \'8\''))
+                return False
+            if (not ((
+                row[11] == 'основная' and
+                row[8] != '1' and
+                row[4] != ''
+                ) or (
+                    row[11] == 'основная' and
+                    row[8] == '1' and
+                    row[4] == ''
+                ) or (
+                    row[11] == 'служебная' and
+                    row[4] == ''
+            ))):
+                print(ERR_TEXT_2.format(row[0], '\'4\', \'8\' и \'11\''))
+                return False
+            if not ((
+                row[11] == 'служебная' and
+                row[12] != ''
+                ) or (
+                    row[11] == 'основная' and
+                    row[12] == ''
+            )):
+                print(ERR_TEXT_2.format({row[0]}, '\'11\' и \'12\''))
+                return False
+            if not ((
+                row[11] == 'служебная' and
+                row[14] != ''
+                ) or (
+                    row[11] == 'основная' and
+                    row[14] == ''
+            )):
+                print(ERR_TEXT_2.format({row[0]}, '\'11\' и \'14\''))
+                return False
+            return True
+
+        def co_uniq_chk(data_in: list[Union[list[str], str]]) -> bool:
+            """Проверка перечня там.органов на их уникальность.
+            Принимает список из:
+            номер_строки_исходных_данных,
+            [список_названий,_даже_если_из_одного_элемента],
+            код т.органа.
+            Проверяет, что нет ни одного дубликата
+            - ни среди [списков_названий]
+            - ни среди кодов.
+            """
+            names_list = [item[1] for item in data_in]
+            codes_list = [item[2] for item in data_in]
+            counts_names_list = [names_list.count(item) for item in names_list]
+            counts_codes_list = [codes_list.count(item) for item in codes_list]
+            for item in zip(data_in, counts_names_list, counts_codes_list):
+                if item[1] != 1:
+                    print(f'Строка {item[0][0]}, \'основная\', '
+                          'имя т.о.органа [если есть, то в сочетании с '
+                          'вышестоящими] неуникально.')
+                    return False
+                if item[2] != 1:
+                    print(f'Строка {item[0][0]}, \'основная\', '
+                          'код т.органа неуникален.')
+                    return False
+            return True
+
+        # Main begin
+        current_excel_files_list = [x for x in os.listdir() if (
+            x.endswith('.xlsx') or
+            x.endswith('.xls') or
+            x.endswith('.xlsm')
+        )]
+
+        if len(current_excel_files_list) != 1:
+            print('Эксель-файлов в текущей папке не найдено или найдено больше одного.')  # noqa
+            sys.exit()
+
+        print('Excel-файл успешно найден и единственный.')
+
+        try:
+            data = pandas.read_excel(current_excel_files_list[0],
+                                     skiprows=7,
+                                     #  nrows=2,
+                                     header=None,
+                                     sheet_name='Новая база2',
+                                     # usecols=range(0, 17),
+                                     )
+        except Exception:
+            print('Ошибка формата файла.')
+            sys.exit()
+
+        data_2 = [
+            [
+                '' if isinstance(j, float) and math.isnan(j) else
+                str(j) for j in i
+                ]
+            for i in data.values]
+
+        data_3 = clean_data_second(data_2)
+
+        del_flag = None
+        while not (del_flag == 'y' or del_flag == 'n'):
+            del_flag = input('Очищать таблицы в БД (y/n)?')  # noqa
+        if del_flag == 'y':
+            clear_n_init()
+
+        print('Pre-valid тесты начаты.')
+        for i in data_3:
+            if not pre_valid_tests(i):
+                print(f'Не прошла валидация строки {i[0]}!')
+                continue
+        print('Pre-valid тесты успешно завершены.')
+
+        print('Начало создания/апдейта перечня РТУ.')
+        rtu_pre_list = [
+            [
+                row[0],
+                [row[1]],
+                row[4]
+            ] for row in data_3 if row[11] == 'основная' and row[8] == '4'
+        ]
+        if not (co_uniq_chk(rtu_pre_list)):
+            print('Ошибка создания перечня РТУ, аварийный выход.')
+            sys.exit()
+        for item in rtu_pre_list:
+            Rtu.objects.get_or_create(
+                title=item[1][0],
+                code=item[2],
+                ztk_allowed=False,
+                standalone_allowed=True
+            )
+            CustPlace2.objects.get_or_create(
+                title=item[1][0],
+                code=item[2],
+                level=1,
+                upper_id=None,
+                ztk_allowed=False,
+                standalone_allowed=True
+            )
+        print('Успешное завершение создания/апдейта перечня РТУ.')
+
+        print('Начало создания/апдейта перечня таможен.')
+        ch_pre_list = [
+            [
+                row[0],
+                [row[1], row[2]],
+                row[4]
+            ] for row in data_3 if row[11] == 'основная' and row[8] == '3'
+        ]
+        if not (co_uniq_chk(ch_pre_list)):
+            print('Ошибка создания перечня РТУ, аварийный выход.')
+            sys.exit()
+        for item in ch_pre_list:
+            if item[1][0] != '':
+                upper_rtu_1_qs = Rtu.objects.filter(title=item[1][0])
+                upper_rtu_2_qs = CustPlace2.objects.filter(
+                    title=item[1][0],
+                    level=1
+                )
+            else:
+                upper_rtu_1_qs = Rtu.objects.filter(title='ТНП')
+                upper_rtu_2_qs = CustPlace2.objects.filter(
+                    title='ТНП',
+                    level=1
+                )
+            if upper_rtu_1_qs.count() != 1 or upper_rtu_2_qs.count() != 1:
+                print('Ошибка создания перечня таможен, '
+                      'на запросе вышестоящего РТУ.')
+                sys.exit()
+            upper_rtu_1 = upper_rtu_1_qs.first()
+            upper_rtu_2 = upper_rtu_2_qs.first()
+            CustHouse.objects.get_or_create(
+                title=item[1][1],
+                code=item[2],
+                ztk_allowed=True,
+                standalone_allowed=True,
+                upper_id=upper_rtu_1
+            )
+            CustPlace2.objects.get_or_create(
+                title=item[1][1],
+                code=item[2],
+                level=2,
+                upper_id=upper_rtu_2,
+                ztk_allowed=True,
+                standalone_allowed=True
+            )
+        print('Успешное завершение создания/апдейта перечня таможен.')
