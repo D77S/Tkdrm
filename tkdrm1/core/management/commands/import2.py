@@ -3,7 +3,7 @@ import math
 import os
 import pandas
 import sys
-# from tqdm import tqdm
+from tqdm import tqdm
 from typing import Union
 from django.core.management.base import BaseCommand
 
@@ -327,7 +327,7 @@ class Command(BaseCommand):
         if not (co_uniq_chk(ch_pre_list)):
             print('Ошибка создания перечня РТУ, аварийный выход.')
             sys.exit()
-        for item in ch_pre_list:
+        for item in tqdm(ch_pre_list):
             if item[1][0] != '':
                 upper_rtu_1_qs = Rtu.objects.filter(title=item[1][0])
                 upper_rtu_2_qs = CustPlace2.objects.filter(
