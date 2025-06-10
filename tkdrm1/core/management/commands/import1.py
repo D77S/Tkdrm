@@ -382,7 +382,7 @@ class Command(BaseCommand):
                                                               CustPost,
                                                               CustPlace2]]):
             for i in curr_cust_place:
-                if i.code in STANDALONE_CODES and i.standalone_allowed == False:  # noqa
+                if i.code in STANDALONE_CODES and i.standalone_allowed is False:  # noqa
                     i.standalone_allowed = True
                     i.save()
             return curr_cust_place

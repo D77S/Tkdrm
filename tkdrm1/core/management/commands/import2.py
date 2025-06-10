@@ -8,7 +8,10 @@ from typing import Union
 from django.core.management.base import BaseCommand
 
 from core.constants import (
-    PATTERN1, PATTERN2, SOURCE_TITLES
+    PATTERN1,
+    PATTERN2,
+    STANDALONE_CODES,
+    SOURCE_TITLES
 )
 from core.models import (CustHouse,
                          CustPlace2,
@@ -241,6 +244,20 @@ class Command(BaseCommand):
                     return False
             return True
 
+        def bd_some_flags_update(curr_cust_place: tuple[Union[Rtu,
+                                                              CustHouse,
+                                                              CustPost,
+                                                              CustPlace2]]):
+            """."""
+            for item in curr_cust_place:
+                if (
+                    item.code in STANDALONE_CODES and
+                    item.standalone_allowed is False
+                ):
+                    item.standalone_allowed = True
+                    item.save()
+            return curr_cust_place
+
         # Main begin
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
@@ -293,27 +310,31 @@ class Command(BaseCommand):
             [
                 row[0],
                 [row[1]],
-                row[4]
+                row[4],
+                row[26]
             ] for row in data_3 if row[11] == 'основная' and row[8] == '4'
         ]
         if not (co_uniq_chk(rtu_pre_list)):
             print('Ошибка создания перечня РТУ, аварийный выход.')
             sys.exit()
         for item in rtu_pre_list:
-            Rtu.objects.get_or_create(
+            curr_rtu_1, _ = Rtu.objects.get_or_create(
                 title=item[1][0],
                 code=item[2],
+                address=item[3],
                 ztk_allowed=False,
                 standalone_allowed=True
             )
-            CustPlace2.objects.get_or_create(
+            curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                 title=item[1][0],
                 code=item[2],
+                address=item[3],
                 level=1,
                 upper_id=None,
                 ztk_allowed=False,
                 standalone_allowed=True
             )
+            _ = bd_some_flags_update((curr_rtu_1, curr_rtu_2))
         print('Успешное завершение создания/апдейта перечня РТУ.')
 
         print('Начало создания/апдейта перечня таможен.')
@@ -321,7 +342,8 @@ class Command(BaseCommand):
             [
                 row[0],
                 [row[1], row[2]],
-                row[4]
+                row[4],
+                row[26]
             ] for row in data_3 if row[11] == 'основная' and row[8] == '3'
         ]
         if not (co_uniq_chk(ch_pre_list)):
@@ -346,19 +368,22 @@ class Command(BaseCommand):
                 sys.exit()
             upper_rtu_1 = upper_rtu_1_qs.first()
             upper_rtu_2 = upper_rtu_2_qs.first()
-            CustHouse.objects.get_or_create(
+            curr_ch_1, _ = CustHouse.objects.get_or_create(
                 title=item[1][1],
                 code=item[2],
+                address=item[3],
                 ztk_allowed=True,
                 standalone_allowed=True,
                 upper_id=upper_rtu_1
             )
-            CustPlace2.objects.get_or_create(
+            curr_ch_2, _ = CustPlace2.objects.get_or_create(
                 title=item[1][1],
                 code=item[2],
                 level=2,
+                address=item[3],
                 upper_id=upper_rtu_2,
                 ztk_allowed=True,
                 standalone_allowed=True
             )
+            _ = bd_some_flags_update((curr_ch_1, curr_ch_2))
         print('Успешное завершение создания/апдейта перечня таможен.')
