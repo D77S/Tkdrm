@@ -3,7 +3,11 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 
-from core.constants import CUSTCHOICES, PPTYPESCHOICES, SERIAL_NUM_CHOICES
+from core.constants import (
+    CUSTCHOICES,
+    PPTYPESCHOICES,
+    # SERIAL_NUM_CHOICES
+)
 
 
 class Rtu(models.Model):
@@ -25,6 +29,14 @@ class Rtu(models.Model):
         validators=[RegexValidator(regex=r'^1\d{2}00000$')],
         verbose_name='Код т.органа'
     )
+    address = models.CharField(
+        max_length=255,
+        default='-',
+        unique=False,
+        null=False,
+        blank=True,
+        verbose_name='Почтовый адрес'
+    )
     ztk_allowed = models.BooleanField(
         null=False,
         blank=False,
@@ -37,10 +49,10 @@ class Rtu(models.Model):
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
-        default=False,
+        default=True,
         verbose_name='Признак разрешения работать без локации'
         # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (Fslse).
+        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (False).
         # Рекомендуется выставить, после создания объекта, в True для:
         # всех РТУ, всех таможен, всех внутренних(!) постов.
     )
@@ -98,6 +110,14 @@ class CustHouse(models.Model):
         validators=[RegexValidator(regex=r'^1\d{4}000$')],
         verbose_name='Код т.органа'
     )
+    address = models.CharField(
+        max_length=255,
+        default='-',
+        unique=False,
+        null=False,
+        blank=True,
+        verbose_name='Почтовый адрес'
+    )
     ztk_allowed = models.BooleanField(
         null=False,
         blank=False,
@@ -110,10 +130,10 @@ class CustHouse(models.Model):
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
-        default=False,
+        default=True,
         verbose_name='Признак разрешения работать без локации'
         # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (Fslse).
+        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (False).
         # Рекомендуется выставить, после создания объекта, в True для:
         # всех РТУ, всех таможен, всех внутренних(!) постов.
     )
@@ -176,6 +196,14 @@ class CustPost(models.Model):
         validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
     )
+    address = models.CharField(
+        max_length=255,
+        default='-',
+        unique=False,
+        null=False,
+        blank=True,
+        verbose_name='Почтовый адрес'
+    )
     ztk_allowed = models.BooleanField(
         null=False,
         blank=False,
@@ -191,7 +219,7 @@ class CustPost(models.Model):
         default=False,
         verbose_name='Признак разрешения работать без локации'
         # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (Fslse).
+        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (False).
         # Рекомендуется выставить, после создания объекта, в True для:
         # всех РТУ, всех таможен, всех внутренних(!) постов.
     )
@@ -677,6 +705,14 @@ class CustPlace2(models.Model):
        validators=[RegexValidator(regex=r'^1\d{7}$')],
        verbose_name='Код т.органа'
     )
+    address = models.CharField(
+        max_length=255,
+        default='-',
+        unique=False,
+        null=False,
+        blank=True,
+        verbose_name='Почтовый адрес'
+    )
     level = models.CharField(choices=CUSTCHOICES,
                              verbose_name='Уровень т.органа',
                              max_length=1,
@@ -701,10 +737,10 @@ class CustPlace2(models.Model):
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
-        default=False,
+        default=True,
         verbose_name='Признак разрешения работать без локации'
         # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (Fslse).
+        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ. По умолчанию запрещено (False).
         # Рекомендуется выставить, после создания объекта, в True для:
         # всех РТУ, всех таможен, всех внутренних(!) постов.
     )
