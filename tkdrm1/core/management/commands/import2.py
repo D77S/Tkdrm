@@ -244,10 +244,12 @@ class Command(BaseCommand):
                     return False
             return True
 
-        def bd_some_flags_update(curr_cust_place: tuple[Union[Rtu,
-                                                              CustHouse,
-                                                              CustPost,
-                                                              CustPlace2]]):
+        def bd_some_flags_update(curr_cust_place: tuple[
+            Union[Rtu,
+                  CustHouse,
+                  CustPost,
+                  CustPlace2]
+        ]) -> None:
             """."""
             for item in curr_cust_place:
                 if (
@@ -256,7 +258,7 @@ class Command(BaseCommand):
                 ):
                     item.standalone_allowed = True
                     item.save()
-            return curr_cust_place
+            return None
 
         def get_upper_rtu(
                 data_in: list[Union[list[str],
@@ -281,13 +283,19 @@ class Command(BaseCommand):
 
         def get_upper_ch(
                 data_in: list[Union[list[str],
-                                    str]]
+                                    str]],
+                upper_rtu_1: Rtu,
+                upper_rtu_2: CustPlace2
         ) -> tuple[Union[CustHouse, CustPlace2]]:
             """."""
             if data_in[1][1] != '':
-                upper_ch_1_qs = CustHouse.objects.filter(title=item[1][1])
+                upper_ch_1_qs = CustHouse.objects.filter(
+                    title=item[1][1],
+                    upper_id=upper_rtu_1
+                )
                 upper_ch_2_qs = CustPlace2.objects.filter(
                     title=item[1][1],
+                    upper_id=upper_rtu_2,
                     level=2
                 )
             else:
@@ -364,16 +372,18 @@ class Command(BaseCommand):
             curr_rtu_1, _ = Rtu.objects.get_or_create(
                 title=item[1][0],
                 code=item[2],
-                address=item[3],
             )
+            curr_rtu_1.address = item[3]
+            curr_rtu_1.save()
             curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                 title=item[1][0],
                 code=item[2],
-                address=item[3],
                 level=1,
                 upper_id=None,
             )
-            _ = bd_some_flags_update((curr_rtu_1, curr_rtu_2))
+            curr_rtu_2.address = item[3]
+            curr_rtu_2.save()
+            bd_some_flags_update((curr_rtu_1, curr_rtu_2))
         print('Успешное завершение создания/апдейта перечня РТУ.')
 
         print('Начало создания/апдейта перечня таможен.')
@@ -398,17 +408,19 @@ class Command(BaseCommand):
             curr_ch_1, _ = CustHouse.objects.get_or_create(
                 title=item[1][1],
                 code=item[2],
-                address=item[3],
                 upper_id=upper_rtu_1
             )
+            curr_ch_1.address = item[3]
+            curr_ch_1.save()
             curr_ch_2, _ = CustPlace2.objects.get_or_create(
                 title=item[1][1],
                 code=item[2],
                 level=2,
-                address=item[3],
                 upper_id=upper_rtu_2,
             )
-            _ = bd_some_flags_update((curr_ch_1, curr_ch_2))
+            curr_ch_2.address = item[3]
+            curr_ch_2.save()
+            bd_some_flags_update((curr_ch_1, curr_ch_2))
         print('Успешное завершение создания/апдейта перечня таможен.')
 
         print('Начало создания/апдейта перечня т.постов.')
@@ -430,7 +442,11 @@ class Command(BaseCommand):
                 print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
                       'на запросе вышестоящего РТУ.')
                 sys.exit()
-            upper_ch_1, upper_ch_2, flag = get_upper_ch(item)
+            upper_ch_1, upper_ch_2, flag = get_upper_ch(
+                item,
+                upper_rtu_1,
+                upper_rtu_2
+            )
             if not flag:
                 print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
                       'на запросе вышестоящей таможни.')
@@ -438,15 +454,17 @@ class Command(BaseCommand):
             curr_cp_1, _ = CustPost.objects.get_or_create(
                 title=item[1][2],
                 code=item[2],
-                address=item[3],
                 upper_id=upper_ch_1
             )
+            curr_cp_1.address = item[3]
+            curr_cp_1.save()
             curr_cp_2, _ = CustPlace2.objects.get_or_create(
                 title=item[1][2],
                 code=item[2],
                 level=2,
-                address=item[3],
                 upper_id=upper_ch_2,
             )
-            _ = bd_some_flags_update((curr_cp_1, curr_cp_2))
+            curr_cp_2.address = item[3]
+            curr_cp_2.save()
+            bd_some_flags_update((curr_cp_1, curr_cp_2))
         print('Успешное завершение создания/апдейта перечня т.постов.')
