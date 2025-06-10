@@ -258,6 +258,48 @@ class Command(BaseCommand):
                     item.save()
             return curr_cust_place
 
+        def get_upper_rtu(
+                data_in: list[Union[list[str],
+                                    str]]
+        ) -> tuple[Union[Rtu, CustPlace2]]:
+            """."""
+            if data_in[1][0] != '':
+                upper_rtu_1_qs = Rtu.objects.filter(title=item[1][0])
+                upper_rtu_2_qs = CustPlace2.objects.filter(
+                    title=item[1][0],
+                    level=1
+                )
+            else:
+                upper_rtu_1_qs = Rtu.objects.filter(title='ТНП')
+                upper_rtu_2_qs = CustPlace2.objects.filter(
+                    title='ТНП',
+                    level=1
+                )
+            if upper_rtu_1_qs.count() != 1 or upper_rtu_2_qs.count() != 1:
+                return (None, None, False)
+            return (upper_rtu_1_qs.first(), upper_rtu_2_qs.first(), True)
+
+        def get_upper_ch(
+                data_in: list[Union[list[str],
+                                    str]]
+        ) -> tuple[Union[CustHouse, CustPlace2]]:
+            """."""
+            if data_in[1][1] != '':
+                upper_ch_1_qs = CustHouse.objects.filter(title=item[1][1])
+                upper_ch_2_qs = CustPlace2.objects.filter(
+                    title=item[1][1],
+                    level=2
+                )
+            else:
+                upper_ch_1_qs = CustHouse.objects.filter(title='ТНП')
+                upper_ch_2_qs = CustPlace2.objects.filter(
+                    title='ТНП',
+                    level=2
+                )
+            if upper_ch_1_qs.count() != 1 or upper_ch_2_qs.count() != 1:
+                return (None, None, False)
+            return (upper_ch_1_qs.first(), upper_ch_2_qs.first(), True)
+
         # Main begin
         current_excel_files_list = [x for x in os.listdir() if (
             x.endswith('.xlsx') or
@@ -315,15 +357,14 @@ class Command(BaseCommand):
             ] for row in data_3 if row[11] == 'основная' and row[8] == '4'
         ]
         if not (co_uniq_chk(rtu_pre_list)):
-            print('Ошибка создания перечня РТУ, аварийный выход.')
+            print('Ошибка создания перечня РТУ по уникальности '
+                  'либо названий, либо кодов, аварийный выход.')
             sys.exit()
         for item in rtu_pre_list:
             curr_rtu_1, _ = Rtu.objects.get_or_create(
                 title=item[1][0],
                 code=item[2],
                 address=item[3],
-                ztk_allowed=False,
-                standalone_allowed=True
             )
             curr_rtu_2, _ = CustPlace2.objects.get_or_create(
                 title=item[1][0],
@@ -331,8 +372,6 @@ class Command(BaseCommand):
                 address=item[3],
                 level=1,
                 upper_id=None,
-                ztk_allowed=False,
-                standalone_allowed=True
             )
             _ = bd_some_flags_update((curr_rtu_1, curr_rtu_2))
         print('Успешное завершение создания/апдейта перечня РТУ.')
@@ -347,33 +386,19 @@ class Command(BaseCommand):
             ] for row in data_3 if row[11] == 'основная' and row[8] == '3'
         ]
         if not (co_uniq_chk(ch_pre_list)):
-            print('Ошибка создания перечня РТУ, аварийный выход.')
+            print('Ошибка создания перечня таможен по уникальности '
+                  'либо названий, либо кодов, аварийный выход.')
             sys.exit()
         for item in tqdm(ch_pre_list):
-            if item[1][0] != '':
-                upper_rtu_1_qs = Rtu.objects.filter(title=item[1][0])
-                upper_rtu_2_qs = CustPlace2.objects.filter(
-                    title=item[1][0],
-                    level=1
-                )
-            else:
-                upper_rtu_1_qs = Rtu.objects.filter(title='ТНП')
-                upper_rtu_2_qs = CustPlace2.objects.filter(
-                    title='ТНП',
-                    level=1
-                )
-            if upper_rtu_1_qs.count() != 1 or upper_rtu_2_qs.count() != 1:
-                print('Ошибка создания перечня таможен, '
+            upper_rtu_1, upper_rtu_2, flag = get_upper_rtu(item)
+            if not flag:
+                print(f'Строка {item[0]}, ошибка создания перечня таможен, '
                       'на запросе вышестоящего РТУ.')
                 sys.exit()
-            upper_rtu_1 = upper_rtu_1_qs.first()
-            upper_rtu_2 = upper_rtu_2_qs.first()
             curr_ch_1, _ = CustHouse.objects.get_or_create(
                 title=item[1][1],
                 code=item[2],
                 address=item[3],
-                ztk_allowed=True,
-                standalone_allowed=True,
                 upper_id=upper_rtu_1
             )
             curr_ch_2, _ = CustPlace2.objects.get_or_create(
@@ -382,8 +407,46 @@ class Command(BaseCommand):
                 level=2,
                 address=item[3],
                 upper_id=upper_rtu_2,
-                ztk_allowed=True,
-                standalone_allowed=True
             )
             _ = bd_some_flags_update((curr_ch_1, curr_ch_2))
         print('Успешное завершение создания/апдейта перечня таможен.')
+
+        print('Начало создания/апдейта перечня т.постов.')
+        cp_pre_list = [
+            [
+                row[0],
+                [row[1], row[2], row[3]],
+                row[4],
+                row[26]
+            ] for row in data_3 if row[11] == 'основная' and row[8] == '2'
+        ]
+        if not (co_uniq_chk(cp_pre_list)):
+            print('Ошибка создания перечня т.постов по уникальности '
+                  'либо названий, либо кодов, аварийный выход.')
+            sys.exit()
+        for item in tqdm(cp_pre_list):
+            upper_rtu_1, upper_rtu_2, flag = get_upper_rtu(item)
+            if not flag:
+                print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
+                      'на запросе вышестоящего РТУ.')
+                sys.exit()
+            upper_ch_1, upper_ch_2, flag = get_upper_ch(item)
+            if not flag:
+                print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
+                      'на запросе вышестоящей таможни.')
+                sys.exit()
+            curr_cp_1, _ = CustPost.objects.get_or_create(
+                title=item[1][2],
+                code=item[2],
+                address=item[3],
+                upper_id=upper_ch_1
+            )
+            curr_cp_2, _ = CustPlace2.objects.get_or_create(
+                title=item[1][2],
+                code=item[2],
+                level=2,
+                address=item[3],
+                upper_id=upper_ch_2,
+            )
+            _ = bd_some_flags_update((curr_cp_1, curr_cp_2))
+        print('Успешное завершение создания/апдейта перечня т.постов.')
