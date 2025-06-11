@@ -422,9 +422,9 @@ class Command(BaseCommand):
             clear_n_init()
 
         print('Pre-valid тесты начаты.')
-        for i in data_3:
-            if not pre_valid_tests(i):
-                print(f'Не прошла валидация строки {i[0]}!')
+        for item in data_3:
+            if not pre_valid_tests(item):
+                print(f'Не прошла валидация строки {item[0]}!')
                 sys.exit()
         print('Pre-valid тесты успешно завершены.')
 
