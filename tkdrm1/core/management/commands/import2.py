@@ -19,9 +19,9 @@ from core.models import (CustHouse,
                          Device,
                          # LocationOfUse,
                          Ppr,
-                         # Mmpo,
-                         # Oez,
-                         # Ztk,
+                         Mmpo,
+                         Oez,
+                         Ztk,
                          Rtu,
                          SourceTypes,
                          # CustPlace1Acc,
@@ -84,16 +84,35 @@ class Command(BaseCommand):
             DevCats.objects.all().delete()
             CustPlaceToLocation.objects.all().delete()
             Ppr.objects.all().delete()
+            Mmpo.objects.all().delete()
+            Oez.objects.all().delete()
+            Ztk.objects.all().delete()
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
             CustPlace2.objects.all().delete()
             SourceTypes.objects.all().delete()
             # create initial
-            tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
-            CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
-            tnp_obj_2 = CustPlace2.objects.create(title='ТНП', code=None, level=1, upper_id=None)  # noqa
-            CustPlace2.objects.create(title='ТНП', code=None, level=2, upper_id=tnp_obj_2)  # noqa
+            tnp_obj_1 = Rtu.objects.create(
+                title='ТНП',
+                code=None
+            )
+            CustHouse.objects.create(
+                title='ТНП',
+                code=None,
+                upper_id=tnp_obj_1
+            )
+            tnp_obj_2 = CustPlace2.objects.create(
+                title='ТНП',
+                code=None,
+                level=1,
+                upper_id=None)
+            CustPlace2.objects.create(
+                title='ТНП',
+                code=None,
+                level=2,
+                upper_id=tnp_obj_2
+            )
             source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
             SourceTypes.objects.bulk_create(objs=source_objs)
             dev_cats_titles = [
@@ -244,23 +263,69 @@ class Command(BaseCommand):
                     return False
             return True
 
-        def bd_some_flags_update(curr_cust_place: tuple[
+        def bd_some_flags_update(data_in: tuple[
             Union[Rtu,
                   CustHouse,
                   CustPost,
                   CustPlace2]
-        ]) -> None:
+        ]) -> tuple[Union[Rtu,
+                          CustHouse,
+                          CustPost,
+                          CustPlace2
+                          ]]:
             """."""
-            for item in curr_cust_place:
-                if (
-                    item.code in STANDALONE_CODES and
-                    item.standalone_allowed is False
-                ):
+            data_out = []
+            for item in data_in:
+                if item.code in STANDALONE_CODES:
                     item.standalone_allowed = True
                     item.save()
-            return None
+                data_out.append(item)
+            return (data_out[0], data_out[1])
 
-        def get_upper_rtu(
+        def get_or_create_rtu(
+                data_in: list[Union[list[str], str]]
+        ) -> tuple[Union[Rtu, CustPlace2]]:
+            """."""
+            curr_rtu_1, _ = Rtu.objects.get_or_create(
+                title=data_in[1][0],
+                code=data_in[2],
+            )
+            curr_rtu_1.address = data_in[3]
+            curr_rtu_1.save()
+            curr_rtu_2, _ = CustPlace2.objects.get_or_create(
+                title=data_in[1][0],
+                code=data_in[2],
+                level=1,
+                upper_id=None,
+            )
+            curr_rtu_2.address = data_in[3]
+            curr_rtu_2.save()
+            return bd_some_flags_update((curr_rtu_1, curr_rtu_2))
+
+        def get_or_create_ch(
+                data_in: list[Union[list[str], str]],
+                upper_rtu_1: Rtu,
+                upper_rtu_2: CustPlace2
+        ) -> tuple[Union[CustHouse, CustPlace2]]:
+            """."""
+            curr_ch_1, _ = CustHouse.objects.get_or_create(
+                title=data_in[1][1],
+                code=data_in[2],
+                upper_id=upper_rtu_1
+            )
+            curr_ch_1.address = data_in[3]
+            curr_ch_1.save()
+            curr_ch_2, _ = CustPlace2.objects.get_or_create(
+                title=data_in[1][1],
+                code=data_in[2],
+                level=2,
+                upper_id=upper_rtu_2,
+            )
+            curr_ch_2.address = data_in[3]
+            curr_ch_2.save()
+            return (bd_some_flags_update((curr_ch_1, curr_ch_2)))
+
+        def get_rtu(
                 data_in: list[Union[list[str],
                                     str]]
         ) -> tuple[Union[Rtu, CustPlace2]]:
@@ -279,9 +344,14 @@ class Command(BaseCommand):
                 )
             if upper_rtu_1_qs.count() != 1 or upper_rtu_2_qs.count() != 1:
                 return (None, None, False)
-            return (upper_rtu_1_qs.first(), upper_rtu_2_qs.first(), True)
+            curr_rtu_1 = upper_rtu_1_qs.first()
+            curr_rtu_2 = upper_rtu_2_qs.first()
+            curr_rtu_1, curr_rtu_2 = bd_some_flags_update(
+                (curr_rtu_1, curr_rtu_2)
+            )
+            return (curr_rtu_1, curr_rtu_2, True)
 
-        def get_upper_ch(
+        def get_ch(
                 data_in: list[Union[list[str],
                                     str]],
                 upper_rtu_1: Rtu,
@@ -306,7 +376,10 @@ class Command(BaseCommand):
                 )
             if upper_ch_1_qs.count() != 1 or upper_ch_2_qs.count() != 1:
                 return (None, None, False)
-            return (upper_ch_1_qs.first(), upper_ch_2_qs.first(), True)
+            curr_ch_1 = upper_ch_1_qs.first()
+            curr_ch_2 = upper_ch_2_qs.first()
+            curr_ch_1, curr_ch_2 = bd_some_flags_update((curr_ch_1, curr_ch_2))
+            return (curr_ch_1, curr_ch_2, True)
 
         # Main begin
         current_excel_files_list = [x for x in os.listdir() if (
@@ -352,7 +425,7 @@ class Command(BaseCommand):
         for i in data_3:
             if not pre_valid_tests(i):
                 print(f'Не прошла валидация строки {i[0]}!')
-                continue
+                sys.exit()
         print('Pre-valid тесты успешно завершены.')
 
         print('Начало создания/апдейта перечня РТУ.')
@@ -369,21 +442,7 @@ class Command(BaseCommand):
                   'либо названий, либо кодов, аварийный выход.')
             sys.exit()
         for item in rtu_pre_list:
-            curr_rtu_1, _ = Rtu.objects.get_or_create(
-                title=item[1][0],
-                code=item[2],
-            )
-            curr_rtu_1.address = item[3]
-            curr_rtu_1.save()
-            curr_rtu_2, _ = CustPlace2.objects.get_or_create(
-                title=item[1][0],
-                code=item[2],
-                level=1,
-                upper_id=None,
-            )
-            curr_rtu_2.address = item[3]
-            curr_rtu_2.save()
-            bd_some_flags_update((curr_rtu_1, curr_rtu_2))
+            get_or_create_rtu(item)
         print('Успешное завершение создания/апдейта перечня РТУ.')
 
         print('Начало создания/апдейта перечня таможен.')
@@ -400,27 +459,12 @@ class Command(BaseCommand):
                   'либо названий, либо кодов, аварийный выход.')
             sys.exit()
         for item in tqdm(ch_pre_list):
-            upper_rtu_1, upper_rtu_2, flag = get_upper_rtu(item)
+            upper_rtu_1, upper_rtu_2, flag = get_rtu(item)
             if not flag:
                 print(f'Строка {item[0]}, ошибка создания перечня таможен, '
                       'на запросе вышестоящего РТУ.')
                 sys.exit()
-            curr_ch_1, _ = CustHouse.objects.get_or_create(
-                title=item[1][1],
-                code=item[2],
-                upper_id=upper_rtu_1
-            )
-            curr_ch_1.address = item[3]
-            curr_ch_1.save()
-            curr_ch_2, _ = CustPlace2.objects.get_or_create(
-                title=item[1][1],
-                code=item[2],
-                level=2,
-                upper_id=upper_rtu_2,
-            )
-            curr_ch_2.address = item[3]
-            curr_ch_2.save()
-            bd_some_flags_update((curr_ch_1, curr_ch_2))
+            get_or_create_ch(item, upper_rtu_1, upper_rtu_2)
         print('Успешное завершение создания/апдейта перечня таможен.')
 
         print('Начало создания/апдейта перечня т.постов.')
@@ -437,15 +481,13 @@ class Command(BaseCommand):
                   'либо названий, либо кодов, аварийный выход.')
             sys.exit()
         for item in tqdm(cp_pre_list):
-            upper_rtu_1, upper_rtu_2, flag = get_upper_rtu(item)
+            upper_rtu_1, upper_rtu_2, flag = get_rtu(item)
             if not flag:
                 print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
                       'на запросе вышестоящего РТУ.')
                 sys.exit()
-            upper_ch_1, upper_ch_2, flag = get_upper_ch(
-                item,
-                upper_rtu_1,
-                upper_rtu_2
+            upper_ch_1, upper_ch_2, flag = get_ch(
+                item, upper_rtu_1, upper_rtu_2
             )
             if not flag:
                 print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
