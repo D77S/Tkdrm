@@ -344,12 +344,7 @@ class Command(BaseCommand):
                 )
             if upper_rtu_1_qs.count() != 1 or upper_rtu_2_qs.count() != 1:
                 return (None, None, False)
-            curr_rtu_1 = upper_rtu_1_qs.first()
-            curr_rtu_2 = upper_rtu_2_qs.first()
-            curr_rtu_1, curr_rtu_2 = bd_some_flags_update(
-                (curr_rtu_1, curr_rtu_2)
-            )
-            return (curr_rtu_1, curr_rtu_2, True)
+            return (upper_rtu_1_qs.first(), upper_rtu_2_qs.first(), True)
 
         def get_ch(
                 data_in: list[Union[list[str],
@@ -376,10 +371,7 @@ class Command(BaseCommand):
                 )
             if upper_ch_1_qs.count() != 1 or upper_ch_2_qs.count() != 1:
                 return (None, None, False)
-            curr_ch_1 = upper_ch_1_qs.first()
-            curr_ch_2 = upper_ch_2_qs.first()
-            curr_ch_1, curr_ch_2 = bd_some_flags_update((curr_ch_1, curr_ch_2))
-            return (curr_ch_1, curr_ch_2, True)
+            return (upper_ch_1_qs.first(), upper_ch_2_qs.first(), True)
 
         # Main begin
         current_excel_files_list = [x for x in os.listdir() if (
