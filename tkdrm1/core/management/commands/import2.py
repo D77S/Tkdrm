@@ -2,30 +2,33 @@
 import math
 import os
 import pandas
+import re
 import sys
 from tqdm import tqdm
 from typing import Union
 from django.core.management.base import BaseCommand
+from django.db.models import QuerySet
 
 from core.constants import (
     PATTERN1,
     PATTERN2,
     STANDALONE_CODES,
-    SOURCE_TITLES
+    SOURCE_TITLES,
+    PPTYPESCHOICES,
 )
 from core.models import (CustHouse,
                          CustPlace2,
                          CustPost,
                          Device,
-                         # LocationOfUse,
+                         LocationOfUse,
                          Ppr,
                          Mmpo,
                          Oez,
                          Ztk,
                          Rtu,
                          SourceTypes,
-                         # CustPlace1Acc,
-                         # CustPlace1Use,
+                         CustPlace1Acc,
+                         CustPlace1Use,
                          CustPlaceToLocation,
                          RelToDev,
                          DevTypes,
@@ -37,6 +40,31 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """."""
+
+        def get_frame() -> pandas.DataFrame:
+            """."""
+            current_excel_files_list = [x for x in os.listdir() if (
+                x.endswith('.xlsx') or
+                x.endswith('.xls') or
+                x.endswith('.xlsm')
+            )]
+            if len(current_excel_files_list) != 1:
+                print('Excel-файлов в текущей папке не найдено '
+                      'или найдено больше одного.')
+                sys.exit()
+            print('Excel-файл успешно найден и единственный.')
+            try:
+                data = pandas.read_excel(current_excel_files_list[0],
+                                         skiprows=6,
+                                         #  nrows=2,
+                                         header=None,
+                                         sheet_name='Новая база2',
+                                         # usecols=range(0, 17),
+                                         )
+            except Exception:
+                print('Ошибка формата файла.')
+                sys.exit()
+            return data
 
         def replace_to_clean(source: str, pattern: dict):
             """."""
@@ -59,7 +87,11 @@ class Command(BaseCommand):
                                 pattern=PATTERN1
                             )
                         )
-                    elif i == 4:
+                    elif (i == 4 or
+                          i == 20 or
+                          i == 21 or
+                          i == 24
+                          ):
                         temp_row.append(
                             row[i].split('.')[0]
                         )
@@ -173,18 +205,27 @@ class Command(BaseCommand):
                          'строка не будет обработана.'
             ERR_TEXT_2 = 'Строка {}, невалидное сочетание столбцов {}, ' \
                          'строка не будет обработана.'
-            if row[11] not in ['основная', 'служебная']:
-                print(ERR_TEXT_1.format(
-                    row[0],
-                    '\'статус строки\'',
-                    '\'основная\', \'служебная\'')
-                )
+            if not (row[4] == '' or re.fullmatch(r'^1\d{7}$', row[4])):
+                print(ERR_TEXT_1.format(row[0], '\'код\'', ''))
+                return False
+            if row[7] not in [
+                '', 'АПП', 'ВПП', 'ЖДПП', 'МПП',
+                'ППП', 'РПП', 'СПП', 'ММПО', 'ОЭЗ', 'ЗТК'
+            ]:
+                print(ERR_TEXT_1.format(row[0], '\'тип ПП, ММПО и т.п.\'', ''))
                 return False
             if row[8] not in ['1', '2', '3', '4']:
                 print(ERR_TEXT_1.format(
                     row[0],
                     '\'тип объекта\'',
                     '\'1\', \'2\', \'3\', \'4\'')
+                )
+                return False
+            if row[11] not in ['основная', 'служебная']:
+                print(ERR_TEXT_1.format(
+                    row[0],
+                    '\'статус строки\'',
+                    '\'основная\', \'служебная\'')
                 )
                 return False
             if row[14] not in [
@@ -203,9 +244,41 @@ class Command(BaseCommand):
             if row[8] == '1' and (row[5] == '' or row[7] == ''):
                 print(ERR_TEXT_2.format(row[0], '\'5\', \'7\', \'8\''))
                 return False
+            if row[15] not in ['', 'СИ', 'инд', 'Х.З.']:
+                print(ERR_TEXT_1.format(row[0], '\'СИ/инд/Х.З.\'', ''))
+                return False
+            if row[18] not in [
+                '',
+                'используется',
+                'демонтировано',
+                'хран-ещё будет пока неизвестно где',
+                'хран-ещё будет известно где',
+                'хран-передача',
+                'хран-на спис',
+                'фиктивная строка',
+                '?'
+            ]:
+                print(ERR_TEXT_1.format(row[0], '\'статус ТС\'', ''))
+                return False
+            if row[20] not in ['', '0', '1', '2', '3']:
+                print(ERR_TEXT_1.format(
+                    row[0], '\'0\', \'1\', \'2\', \'3\'', ''))
+                return False
+            if row[21] not in ['', '0', '1']:
+                print(ERR_TEXT_1.format(row[0], '\'0\', \'1\'', ''))
+                return False
+            if not (row[22] in ['', '?'] or re.fullmatch(r'^\d{4}$', row[22])):
+                print(ERR_TEXT_1.format(row[0], 'год выпуска', ''))
+                return False
+            if not (row[23] in ['', '?'] or re.fullmatch(r'^\d{4}$', row[23])):
+                print(ERR_TEXT_1.format(row[0], 'год ввода', ''))
+                return False
+            if not (row[24] in ['', '?'] or re.fullmatch(r'^\d{4}$', row[24])):
+                print(ERR_TEXT_1.format(row[0], 'год срока службы', ''))
+                return False
             if (not ((
                 row[11] == 'основная' and
-                row[8] != '1' and
+                row[8] in ['2', '3', '4'] and
                 row[4] != ''
                 ) or (
                     row[11] == 'основная' and
@@ -216,6 +289,26 @@ class Command(BaseCommand):
                     row[4] == ''
             ))):
                 print(ERR_TEXT_2.format(row[0], '\'4\', \'8\' и \'11\''))
+                return False
+            if row[8] == '1' and not (row[5] != '' and row[7] in [
+                '', 'АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП',
+                'СПП', 'ММПО', 'ОЭЗ', 'ЗТК'
+            ]):
+                print(ERR_TEXT_2.format(row[0], '\'8\', \'7\' и \'5\''))
+                return False
+            if row[8] == '2' and not (row[3] != '' and row[5] == ''
+                                      and row[6] == '' and row[7] == ''):
+                print(ERR_TEXT_2.format(row[0], '\'8\', \'3\' и \'5-7\''))
+                return False
+            if row[8] == '3' and not (row[2] != '' and row[3] == '' and
+                                      row[5] == '' and row[6] == '' and
+                                      row[7] == ''):
+                print(ERR_TEXT_2.format(row[0], '\'8\', \'2-3\' и \'5-7\''))
+                return False
+            if row[8] == '4' and not (row[1] != '' and row[2] == '' and
+                                      row[3] == '' and row[5] == '' and
+                                      row[6] == '' and row[7] == ''):
+                print(ERR_TEXT_2.format(row[0], '\'8\', \'1-3\' и \'5-7\''))
                 return False
             if not ((
                 row[11] == 'служебная' and
@@ -254,12 +347,24 @@ class Command(BaseCommand):
             for item in zip(data_in, counts_names_list, counts_codes_list):
                 if item[1] != 1:
                     print(f'Строка {item[0][0]}, \'основная\', '
-                          'имя т.о.органа [если есть, то в сочетании с '
+                          'название т.о. [если есть, то в сочетании с '
                           'вышестоящими] неуникально.')
                     return False
                 if item[2] != 1:
                     print(f'Строка {item[0][0]}, \'основная\', '
                           'код т.органа неуникален.')
+                    return False
+            return True
+
+        def loc_uniq_chk(data_in: list[Union[list[str], str]]) -> bool:
+            """."""
+            names_list = [item[1] for item in data_in]
+            counts_names_list = [names_list.count(item) for item in names_list]
+            for item in zip(data_in, counts_names_list):
+                if item[1] != 1:
+                    print(f'Строка {item[0][0]}, \'основная\', '
+                          'название локации в сочетании с т.о.'
+                          'неуникально')
                     return False
             return True
 
@@ -325,91 +430,307 @@ class Command(BaseCommand):
             curr_ch_2.save()
             return (bd_some_flags_update((curr_ch_1, curr_ch_2)))
 
+        def get_or_create_cp(
+                data_in: list[Union[list[str], str]],
+                upper_ch_1: CustHouse,
+                upper_ch_2: CustPlace2
+        ) -> tuple[Union[CustPost, CustPlace2]]:
+            """."""
+            curr_cp_1, _ = CustPost.objects.get_or_create(
+                title=data_in[1][2],
+                code=data_in[2],
+                upper_id=upper_ch_1
+            )
+            curr_cp_1.address = data_in[3]
+            curr_cp_1.save()
+            curr_cp_2, _ = CustPlace2.objects.get_or_create(
+                title=data_in[1][2],
+                code=data_in[2],
+                level=3,
+                upper_id=upper_ch_2,
+            )
+            curr_cp_2.address = data_in[3]
+            curr_cp_2.save()
+            return (bd_some_flags_update((curr_cp_1, curr_cp_2)))
+
         def get_rtu(
-                data_in: list[Union[list[str],
-                                    str]]
-        ) -> tuple[Union[Rtu, CustPlace2]]:
+                data_in: list[Union[list[str], str]],
+                all_rtus_1: QuerySet,
+                all_rtus_2: QuerySet
+        ) -> tuple[Rtu, CustPlace2]:
             """."""
             if data_in[1][0] != '':
-                upper_rtu_1_qs = Rtu.objects.filter(title=item[1][0])
-                upper_rtu_2_qs = CustPlace2.objects.filter(
-                    title=item[1][0],
+                rtu_1_qs = all_rtus_1.filter(title=data_in[1][0])
+                rtu_2_qs = all_rtus_2.filter(
+                    title=data_in[1][0],
                     level=1
                 )
             else:
-                upper_rtu_1_qs = Rtu.objects.filter(title='ТНП')
-                upper_rtu_2_qs = CustPlace2.objects.filter(
+                rtu_1_qs = all_rtus_1.filter(title='ТНП')
+                rtu_2_qs = all_rtus_2.filter(
                     title='ТНП',
                     level=1
                 )
-            if upper_rtu_1_qs.count() != 1 or upper_rtu_2_qs.count() != 1:
+            if rtu_1_qs.count() != 1 or rtu_2_qs.count() != 1:
                 return (None, None, False)
-            return (upper_rtu_1_qs.first(), upper_rtu_2_qs.first(), True)
+            return (rtu_1_qs.first(), rtu_2_qs.first(), True)
 
         def get_ch(
                 data_in: list[Union[list[str],
                                     str]],
+                all_ch_1: QuerySet,
+                all_ch_2: QuerySet,
                 upper_rtu_1: Rtu,
                 upper_rtu_2: CustPlace2
-        ) -> tuple[Union[CustHouse, CustPlace2]]:
+        ) -> tuple[CustHouse, CustPlace2]:
             """."""
             if data_in[1][1] != '':
-                upper_ch_1_qs = CustHouse.objects.filter(
-                    title=item[1][1],
+                ch_1_qs = all_ch_1.filter(
+                    title=data_in[1][1],
                     upper_id=upper_rtu_1
                 )
-                upper_ch_2_qs = CustPlace2.objects.filter(
-                    title=item[1][1],
+                ch_2_qs = all_ch_2.filter(
+                    title=data_in[1][1],
                     upper_id=upper_rtu_2,
                     level=2
                 )
             else:
-                upper_ch_1_qs = CustHouse.objects.filter(title='ТНП')
-                upper_ch_2_qs = CustPlace2.objects.filter(
+                ch_1_qs = all_ch_1.filter(title='ТНП')
+                ch_2_qs = all_ch_2.filter(
                     title='ТНП',
                     level=2
                 )
-            if upper_ch_1_qs.count() != 1 or upper_ch_2_qs.count() != 1:
+            if ch_1_qs.count() != 1 or ch_2_qs.count() != 1:
                 return (None, None, False)
-            return (upper_ch_1_qs.first(), upper_ch_2_qs.first(), True)
+            return (ch_1_qs.first(), ch_2_qs.first(), True)
+
+        def get_cp(
+                data_in: list[Union[list[str],
+                                    str]],
+                all_cp_1: QuerySet,
+                all_cp_2: QuerySet,
+                upper_ch_1: CustHouse,
+                upper_ch_2: CustPlace2
+        ) -> tuple[CustPost, CustPlace2]:
+            """."""
+            cp_1_qs = all_cp_1.filter(
+                title=data_in[1][2],
+                upper_id=upper_ch_1
+            )
+            cp_2_qs = all_cp_2.filter(
+                title=data_in[1][2],
+                upper_id=upper_ch_2,
+                level=3
+                )
+            if cp_1_qs.count() != 1 or cp_2_qs.count() != 1:
+                return (None, None, False)
+            return (cp_1_qs.first(), cp_2_qs.first(), True)
+
+        def get_curr_cust_place(
+                item: list[list[str], str],
+                all_rtus_1: QuerySet,
+                all_rtus_2: QuerySet,
+                all_ch_1: QuerySet,
+                all_ch_2: QuerySet,
+                all_cp_1: QuerySet,
+                all_cp_2: QuerySet
+        ) -> tuple[Union[Rtu, CustHouse, CustPost], CustPlace2]:
+            """."""
+            curr_cust_place_1 = None
+            curr_cust_place_2 = None
+            curr_rtu_1, curr_rtu_2, flag = get_rtu(
+                data_in=item,
+                all_rtus_1=all_rtus_1,
+                all_rtus_2=all_rtus_2)
+            if not flag:
+                err_report(row=item[0],
+                           reason='Ошибка получения текущего РТУ',
+                           st_1='п.п.',
+                           st_2='РТУ')
+                return (None, None)
+            if item[1][2] != '':
+                curr_level = 3
+            elif item[1][1] != '':
+                curr_level = 2
+            else:
+                err_report(row=item[0],
+                           reason='Ошибка определения уровня там.'
+                           'органа: должен быть либо пост, '
+                           'либо таможня',
+                           st_1='п.п.')
+                return (None, None)
+            curr_ch_1, curr_ch_2, flag = get_ch(
+                data_in=item,
+                all_ch_1=all_ch_1,
+                all_ch_2=all_ch_2,
+                upper_rtu_1=curr_rtu_1,
+                upper_rtu_2=curr_rtu_2
+            )
+            if not flag:
+                err_report(row=item[0],
+                           reason='Ошибка получения текущей таможни',
+                           st_1='п.п.',
+                           st_2='таможни')
+                return (None, None)
+            if curr_ch_1.title != 'ТНП':
+                curr_cust_place_1 = curr_ch_1
+            if curr_ch_2.title != 'ТНП':
+                curr_cust_place_2 = curr_ch_2
+            if curr_level == 3:
+                curr_cp_1, curr_cp_2, flag = get_cp(
+                    data_in=item,
+                    all_cp_1=all_cp_1,
+                    all_cp_2=all_cp_2,
+                    upper_ch_1=curr_ch_1,
+                    upper_ch_2=curr_ch_2
+                )
+                if not flag:
+                    err_report(row=item[0],
+                               reason='Ошибка получения текущего поста',
+                               st_1='п.п.',
+                               st_2='поста')
+                    return (None, None)
+                curr_cust_place_1 = curr_cp_1
+                curr_cust_place_2 = curr_cp_2
+            return (curr_cust_place_1, curr_cust_place_2)
+
+        def get_curr_pl_1_acc(
+                curr_cpl: Union[Rtu, CustHouse, CustPost]) -> CustPlace1Acc:
+            """."""
+            if isinstance(curr_cpl, Rtu):
+                return CustPlace1Acc.objects.get(rtu=curr_cpl)
+            if isinstance(curr_cpl, CustHouse):
+                return CustPlace1Acc.objects.get(custhouse=curr_cpl)
+            if isinstance(curr_cpl, CustPost):
+                if curr_cpl.upper_id.title == 'ТНП':
+                    return CustPlace1Acc.objects.get(custpost=curr_cpl)
+                return CustPlace1Acc.objects.get(custhouse=curr_cpl.upper_id)
+            return None
+
+        def get_curr_pl_1_use(
+                curr_cpl: Union[Rtu, CustHouse, CustPost]) -> CustPlace1Use:
+            """."""
+            if isinstance(curr_cpl, Rtu):
+                return CustPlace1Use.objects.get(rtu=curr_cpl)
+            if isinstance(curr_cpl, CustHouse):
+                return CustPlace1Use.objects.get(custhouse=curr_cpl)
+            if isinstance(curr_cpl, CustPost):
+                return CustPlace1Use.objects.get(custpost=curr_cpl)
+            return None
+
+        def get_curr_loc_use(
+                curr_site: Union[Ppr, Mmpo, Oez, Ztk]
+        ) -> LocationOfUse:
+            """."""
+            if isinstance(curr_site, Ppr):
+                return LocationOfUse.objects.get(ppr=curr_site)
+            if isinstance(curr_site, Mmpo):
+                return LocationOfUse.objects.get(mmpo=curr_site)
+            if isinstance(curr_site, Oez):
+                return LocationOfUse.objects.get(oez=curr_site)
+            if isinstance(curr_site, Ztk):
+                return LocationOfUse.objects.get(ztk=curr_site)
+            return None
+
+        def get_or_cr_curr_cp_to_loc(
+                curr_pl_1_use: CustPlace1Use,
+                curr_cust_place_1: Union[Rtu, CustHouse, CustPost],
+                curr_cust_place_2: CustPlace2,
+                curr_loc_use: LocationOfUse
+        ) -> CustPlaceToLocation:
+            """."""
+            temp_cp_to_loc = CustPlaceToLocation.objects.filter(
+                cust_pl1=curr_pl_1_use,
+                cust_pl2=curr_cust_place_2
+            )
+            if not temp_cp_to_loc.exists():
+                return CustPlaceToLocation.objects.create(
+                    cust_pl1=curr_pl_1_use,
+                    cust_pl2=curr_cust_place_2,
+                    loc=curr_loc_use,
+                    is_main_for_cust=True
+                    )
+            else:
+                temp2_cp_to_loc = temp_cp_to_loc.filter(loc=curr_loc_use)
+                if not temp2_cp_to_loc.exists():
+                    return CustPlaceToLocation.objects.create(
+                        cust_pl1=curr_pl_1_use,
+                        cust_pl2=curr_cust_place_2,
+                        loc=curr_loc_use,
+                        is_main_for_cust=False
+                    )
+                else:
+                    return temp2_cp_to_loc.first()
+
+        def chk_flags(
+                item: list[list[str], str],
+                curr_cpl: Union[Rtu, CustHouse, CustPost],
+                curr_site: Union[Ppr, Mmpo, Oez, Ztk]
+        ) -> bool:
+            """."""
+            if curr_cpl.standalone_allowed is False and curr_site is None:
+                err_report(row=item[0],
+                           reason='Некорректное сочетание флага '
+                           'standalone_allowed и отсутствия субъекта '
+                           'эксплуатации (п.п., ММПО, ОЭЗ, ЗТК).')
+                return False
+            if curr_cpl.ztk_allowed is False and isinstance(curr_site, Ztk):
+                err_report(row=item[0],
+                           reason='Некорректное сочетание флага '
+                           'ztk_allowed и того, что в строке ЗТК.')
+                return False
+            return True
+
+        def get_or_create_pp(row: list[Union[list[str], str]]):
+            """."""
+            country = row[2][1] if row[2][1] != '' else None
+            pre_type = row[2][2]
+            pptype = [
+                i for i, item in enumerate(
+                    PPTYPESCHOICES, start=1
+                ) if item[1] == pre_type
+            ][0]
+            return Ppr.objects.get_or_create(
+                pptype=pptype,
+                title=row[2][0],
+                tow_country=country
+            )[0]
+
+        def get_or_create_mmpo_oez_ztk(
+                model: Union[Mmpo, Oez, Ztk],
+                item: list[Union[list[str], str]]
+        ):
+            """."""
+            try:
+                return model.objects.get(title=item[2][0])
+            except Exception:
+                return model.objects.create(title=item[2][0])
+
+        def err_report(
+                row: str = None,
+                reason: str = None,
+                st_1: str = None,
+                st_2: str = None):
+            """."""
+            row_lit = f'Строка {row}. ' if row else ''
+            reason_lit = f'Ошибка {reason}. ' if reason else ''
+            stage_lit_1 = f'При создании перечня {st_1}. ' if st_1 else ''
+            stage_lit_2 = f'На этапе запроса {st_2}.' if st_2 else ''
+            print(f'{row_lit}{reason_lit}{stage_lit_1}{stage_lit_2}')
 
         # Main begin
-        current_excel_files_list = [x for x in os.listdir() if (
-            x.endswith('.xlsx') or
-            x.endswith('.xls') or
-            x.endswith('.xlsm')
-        )]
-
-        if len(current_excel_files_list) != 1:
-            print('Эксель-файлов в текущей папке не найдено или найдено больше одного.')  # noqa
-            sys.exit()
-
-        print('Excel-файл успешно найден и единственный.')
-
-        try:
-            data = pandas.read_excel(current_excel_files_list[0],
-                                     skiprows=7,
-                                     #  nrows=2,
-                                     header=None,
-                                     sheet_name='Новая база2',
-                                     # usecols=range(0, 17),
-                                     )
-        except Exception:
-            print('Ошибка формата файла.')
-            sys.exit()
-
+        data = get_frame()
         data_2 = [
             [
                 '' if isinstance(j, float) and math.isnan(j) else
                 str(j) for j in i
                 ]
             for i in data.values]
-
         data_3 = clean_data_second(data_2)
 
         del_flag = None
         while not (del_flag == 'y' or del_flag == 'n'):
-            del_flag = input('Очищать таблицы в БД (y/n)?')  # noqa
+            del_flag = input('Очищать таблицы в БД (y/n)?')
         if del_flag == 'y':
             clear_n_init()
 
@@ -430,33 +751,35 @@ class Command(BaseCommand):
             ] for row in data_3 if row[11] == 'основная' and row[8] == '4'
         ]
         if not (co_uniq_chk(rtu_pre_list)):
-            print('Ошибка создания перечня РТУ по уникальности '
-                  'либо названий, либо кодов, аварийный выход.')
+            err_report(reason='уникальности имён либо кодов', st_1='РТУ')
             sys.exit()
+        ##########
         for item in rtu_pre_list:
             get_or_create_rtu(item)
+        all_rtus_1 = Rtu.objects.all()
+        all_rtus_2 = CustPlace2.objects.filter(level=1)
         print('Успешное завершение создания/апдейта перечня РТУ.')
 
         print('Начало создания/апдейта перечня таможен.')
         ch_pre_list = [
-            [
-                row[0],
-                [row[1], row[2]],
-                row[4],
-                row[26]
-            ] for row in data_3 if row[11] == 'основная' and row[8] == '3'
+            [row[0],
+             [row[1], row[2]],
+             row[4],
+             row[26]]
+            for row in data_3 if row[11] == 'основная' and row[8] == '3'
         ]
         if not (co_uniq_chk(ch_pre_list)):
-            print('Ошибка создания перечня таможен по уникальности '
-                  'либо названий, либо кодов, аварийный выход.')
+            err_report(reason='уникальности имён либо кодов', st_1='таможен')
             sys.exit()
+        ##########
         for item in tqdm(ch_pre_list):
-            upper_rtu_1, upper_rtu_2, flag = get_rtu(item)
+            upp_rtu_1, upp_rtu_2, flag = get_rtu(item, all_rtus_1, all_rtus_2)
             if not flag:
-                print(f'Строка {item[0]}, ошибка создания перечня таможен, '
-                      'на запросе вышестоящего РТУ.')
-                sys.exit()
-            get_or_create_ch(item, upper_rtu_1, upper_rtu_2)
+                err_report(row=item[0], reason=' ', st_1='таможен', st_2='РТУ')
+                continue
+            get_or_create_ch(item, upp_rtu_1, upp_rtu_2)
+        all_ch_1 = CustHouse.objects.all()
+        all_ch_2 = CustPlace2.objects.filter(level=2)
         print('Успешное завершение создания/апдейта перечня таможен.')
 
         print('Начало создания/апдейта перечня т.постов.')
@@ -469,36 +792,126 @@ class Command(BaseCommand):
             ] for row in data_3 if row[11] == 'основная' and row[8] == '2'
         ]
         if not (co_uniq_chk(cp_pre_list)):
-            print('Ошибка создания перечня т.постов по уникальности '
-                  'либо названий, либо кодов, аварийный выход.')
+            err_report(reason='уникальности имён либо кодов', st_1='т.постов')
             sys.exit()
+        ##########
         for item in tqdm(cp_pre_list):
-            upper_rtu_1, upper_rtu_2, flag = get_rtu(item)
+            upper_rtu_1, upper_rtu_2, flag = get_rtu(
+                data_in=item,
+                all_rtus_1=all_rtus_1,
+                all_rtus_2=all_rtus_2)
             if not flag:
-                print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
-                      'на запросе вышестоящего РТУ.')
-                sys.exit()
+                err_report(row=item[0], reason=' ', st_1='постов', st_2='РТУ')
+                continue
             upper_ch_1, upper_ch_2, flag = get_ch(
-                item, upper_rtu_1, upper_rtu_2
+                data_in=item,
+                all_ch_1=all_ch_1,
+                all_ch_2=all_ch_2,
+                upper_rtu_1=upper_rtu_1,
+                upper_rtu_2=upper_rtu_2
             )
             if not flag:
-                print(f'Строка {item[0]}, ошибка создания перечня т.постов, '
-                      'на запросе вышестоящей таможни.')
-                sys.exit()
-            curr_cp_1, _ = CustPost.objects.get_or_create(
-                title=item[1][2],
-                code=item[2],
-                upper_id=upper_ch_1
-            )
-            curr_cp_1.address = item[3]
-            curr_cp_1.save()
-            curr_cp_2, _ = CustPlace2.objects.get_or_create(
-                title=item[1][2],
-                code=item[2],
-                level=2,
-                upper_id=upper_ch_2,
-            )
-            curr_cp_2.address = item[3]
-            curr_cp_2.save()
-            bd_some_flags_update((curr_cp_1, curr_cp_2))
+                err_report(row=item[0], reason=' ', st_1='постов', st_2='т-н')
+                continue
+            get_or_create_cp(item, upper_ch_1, upper_ch_2)
+            all_cp_1 = CustPost.objects.all()
+            all_cp_2 = CustPlace2.objects.filter(level=3)
         print('Успешное завершение создания/апдейта перечня т.постов.')
+
+        print('Начало создания/апдейта перечня пунктов пропуска, '
+              'ММПО, ОЭЗ, ЗТК.')
+        sites_pre_list = [
+            [row[0],
+             [row[1], row[2], row[3]],
+             [row[5], row[6], row[7]]]
+            for row in data_3 if (
+                row[11] == 'основная' and
+                row[8] == '1' and
+                row[7] in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП',
+                           'РПП', 'СПП', 'ММПО', 'ОЭЗ', 'ЗТК']
+                )
+        ]
+        pp_pre_list = [[
+            row[0],
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
+        ] for row in sites_pre_list if row[2][2] in [
+            'АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП', 'СПП']]
+        mmpo_pre_list = [[
+            row[0],
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1]]
+        ] for row in sites_pre_list if row[2][1] == 'ММПО']
+        oez_pre_list = [[
+            row[0],
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1]]
+        ] for row in sites_pre_list if row[2][1] == 'ОЭЗ']
+        ztk_pre_list = [[
+            row[0],
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1]]
+        ] for row in sites_pre_list if row[2][1] == 'ЗТК']
+        if not (loc_uniq_chk(pp_pre_list)):
+            err_report(reason='уникальности имён пунктов пропуска в сочетании '
+                       'с именами т.органа', st_1='п.пропуска')
+            sys.exit()
+        if not (loc_uniq_chk(mmpo_pre_list)):
+            err_report(reason='уникальности имён ММПО в сочетании '
+                       'с именами т.органа', st_1='ММПО')
+            sys.exit()
+        if not (loc_uniq_chk(oez_pre_list)):
+            err_report(reason='уникальности имён ОЭЗ в сочетании '
+                       'с именами т.органа', st_1='ОЭЗ')
+            sys.exit()
+        if not (loc_uniq_chk(ztk_pre_list)):
+            err_report(reason='уникальности имён ЗТК в сочетании '
+                       'с именами т.органа', st_1='ЗТК')
+            sys.exit()
+        ##########
+        for item in tqdm(sites_pre_list):
+            curr_cust_place_1, curr_cust_place_2 = get_curr_cust_place(
+                item=item,
+                all_rtus_1=all_rtus_1,
+                all_rtus_2=all_rtus_2,
+                all_ch_1=all_ch_1,
+                all_ch_2=all_ch_2,
+                all_cp_1=all_cp_1,
+                all_cp_2=all_cp_2
+            )
+            ##########
+            if not curr_cust_place_1 or not curr_cust_place_2:
+                err_report(row=item[0],
+                           reason='Ошибка определения текущего т.органа')
+                continue
+            ##########
+            curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place_1)
+            if not curr_pl_1_acc:
+                err_report(row=item[0], reason=' ')
+                continue
+            curr_pl_1_use = get_curr_pl_1_use(curr_cust_place_1)
+            if not curr_pl_1_use:
+                err_report(row=item[0], reason=' ')
+                continue
+            ##########
+            if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
+                              'МПП', 'ППП', 'РПП', 'СПП']:
+                curr_site = get_or_create_pp(item)
+            elif item[2][2] == 'ММПО':
+                curr_site = get_or_create_mmpo_oez_ztk(item=item, model=Mmpo)
+            elif item[2][2] == 'ОЭЗ':
+                curr_site = get_or_create_mmpo_oez_ztk(item=item, model=Oez)
+            elif item[2][2] == 'ЗТК':
+                curr_site = get_or_create_mmpo_oez_ztk(item=item, model=Ztk)
+            else:
+                curr_site = None
+
+            curr_loc_use = get_curr_loc_use(curr_site)
+            # Внимание!! Проверка только по т.о. первого типа!!
+            # Иметь в виду, если будет решено перейти на т.о. второго типа.
+            if not chk_flags(item, curr_cust_place_1, curr_site):
+                continue
+            # Внимание!! Только по т.о. первого типа!!
+            # Иметь в виду, если будет решено перейти на т.о. второго типа.
+            get_or_cr_curr_cp_to_loc(curr_pl_1_use,
+                                     curr_cust_place_1,
+                                     curr_cust_place_2,
+                                     curr_loc_use)
+        print('Успешное завершение создания/апдейта перечня пунктов '
+              'пропуска, ММПО, ОЭЗ, ЗТК.')

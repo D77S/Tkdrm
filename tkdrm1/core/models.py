@@ -97,7 +97,7 @@ class CustHouse(models.Model):
     title = models.CharField(
         max_length=255,
         default='Новая таможня',
-        unique=True,
+        unique=False,  # !!!!!
         null=False,
         blank=False,
         verbose_name='Название'

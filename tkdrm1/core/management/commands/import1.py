@@ -471,7 +471,7 @@ class Command(BaseCommand):
 
         try:
             data = pandas.read_excel(current_excel_files_list[0],
-                                     skiprows=7,
+                                     skiprows=6,
                                      #  nrows=2,
                                      header=None,
                                      sheet_name='Новая база2',
@@ -620,10 +620,10 @@ class Command(BaseCommand):
                 # print(f'Строка {i[0]} не содержит инф-ции о единице т.с. , переход к следующей')  # noqa
                 continue
 
-            if curr_cust_place[0].standalone_allowed == False and curr_loc_use is None:  # noqa
+            if curr_cust_place[0].standalone_allowed is False and curr_loc_use is None:  # noqa
                 print(f'Строка {i[0]}. Некорректное сочетаение флага standalone_allowed и наличия субъекта эксплуатации. Строка будет пропущена.')  # noqa
                 continue
-            if curr_cust_place[0].ztk_allowed == False and isinstance(curr_site, Ztk):  # noqa
+            if curr_cust_place[0].ztk_allowed is False and isinstance(curr_site, Ztk):  # noqa
                 print('Некорректное сочетание флага ztk_allowed и типа субъекта эксплуатации. Строка будет пропущена.')  # noqa
                 continue
 
