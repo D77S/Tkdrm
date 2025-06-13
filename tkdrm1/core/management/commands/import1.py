@@ -419,11 +419,11 @@ class Command(BaseCommand):
                 # print(f'строка {curr_row[0]}, названия собственника нет в БД. Не обработан.')  # noqa
                 return None
 
-            if ((curr_serial is not None) and (curr_dev_type.serial_flag == '2')):  # noqa
+            if ((curr_serial is not None) and (curr_dev_type.serial_flag is False)):  # noqa
                 # print(f'строка {curr_row[0]}, наличие серийного номера невалидно. Не обработан.')  # noqa
                 return None
 
-            if ((curr_serial is None) and (curr_dev_type.serial_flag == '1')):
+            if ((curr_serial is None) and (curr_dev_type.serial_flag is True)):
                 # print(f'строка {curr_row[0]}, отсутствие серийного номера невалидно. Не обработан.')  # noqa
                 return None
 

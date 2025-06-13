@@ -59,7 +59,8 @@ PATTERN3 = {
     'Росгранстрой-факт.пред.': SOURCE_TITLES[3],
     'Иной владелец-договор': SOURCE_TITLES[4],
     'Иной владелец-акт': SOURCE_TITLES[5],
-    'Иной владелец-факт.пред.': SOURCE_TITLES[6]
+    'Иной владелец-факт.пред.': SOURCE_TITLES[6],
+    '?': SOURCE_TITLES[7]
 }
 
 ALL_DEV_PAG = 20

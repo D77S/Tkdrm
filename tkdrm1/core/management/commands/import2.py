@@ -12,6 +12,7 @@ from django.db.models import QuerySet
 from core.constants import (
     PATTERN1,
     PATTERN2,
+    PATTERN3,
     STANDALONE_CODES,
     SOURCE_TITLES,
     PPTYPESCHOICES,
@@ -535,9 +536,23 @@ class Command(BaseCommand):
                 all_cp_1: QuerySet,
                 all_cp_2: QuerySet
         ) -> tuple[Union[Rtu, CustHouse, CustPost], CustPlace2]:
-            """."""
+            """Определение там.органа.
+            Принимает строку вида
+            ['1', ['Дальневосточное таможенное управление', 'Бурятская таможня', 'Таможенный пост ДАПП Монды'], ...]  # noqa
+            Также принимает полные перечни всех РТУ, таможен, постов.
+            В виде кверисетов. Каждый перечень в двух видах.
+            Возвращает кортеж из двух объектов.
+            Первый - какого-либо из классов Rtu, CustHouse, CustPost.
+            Второй - класса CustPlace2.
+            """
             curr_cust_place_1 = None
             curr_cust_place_2 = None
+            if item[1][2] != '':
+                curr_level = 3
+            elif item[1][1] != '':
+                curr_level = 2
+            else:
+                curr_level = 1
             curr_rtu_1, curr_rtu_2, flag = get_rtu(
                 data_in=item,
                 all_rtus_1=all_rtus_1,
@@ -545,37 +560,27 @@ class Command(BaseCommand):
             if not flag:
                 err_report(row=item[0],
                            reason='Ошибка получения текущего РТУ',
-                           st_1='п.п.',
                            st_2='РТУ')
                 return (None, None)
-            if item[1][2] != '':
-                curr_level = 3
-            elif item[1][1] != '':
-                curr_level = 2
-            else:
-                err_report(row=item[0],
-                           reason='Ошибка определения уровня там.'
-                           'органа: должен быть либо пост, '
-                           'либо таможня',
-                           st_1='п.п.')
-                return (None, None)
-            curr_ch_1, curr_ch_2, flag = get_ch(
-                data_in=item,
-                all_ch_1=all_ch_1,
-                all_ch_2=all_ch_2,
-                upper_rtu_1=curr_rtu_1,
-                upper_rtu_2=curr_rtu_2
-            )
-            if not flag:
-                err_report(row=item[0],
-                           reason='Ошибка получения текущей таможни',
-                           st_1='п.п.',
-                           st_2='таможни')
-                return (None, None)
-            if curr_ch_1.title != 'ТНП':
-                curr_cust_place_1 = curr_ch_1
-            if curr_ch_2.title != 'ТНП':
-                curr_cust_place_2 = curr_ch_2
+            curr_cust_place_1 = curr_rtu_1
+            curr_cust_place_2 = curr_rtu_2
+            if curr_level in [2, 3]:
+                curr_ch_1, curr_ch_2, flag = get_ch(
+                    data_in=item,
+                    all_ch_1=all_ch_1,
+                    all_ch_2=all_ch_2,
+                    upper_rtu_1=curr_rtu_1,
+                    upper_rtu_2=curr_rtu_2
+                )
+                if not flag:
+                    err_report(row=item[0],
+                               reason='Ошибка получения текущей таможни',
+                               st_2='таможни')
+                    return (None, None)
+                if curr_ch_1.title != 'ТНП':
+                    curr_cust_place_1 = curr_ch_1
+                if curr_ch_2.title != 'ТНП':
+                    curr_cust_place_2 = curr_ch_2
             if curr_level == 3:
                 curr_cp_1, curr_cp_2, flag = get_cp(
                     data_in=item,
@@ -587,7 +592,6 @@ class Command(BaseCommand):
                 if not flag:
                     err_report(row=item[0],
                                reason='Ошибка получения текущего поста',
-                               st_1='п.п.',
                                st_2='поста')
                     return (None, None)
                 curr_cust_place_1 = curr_cp_1
@@ -659,8 +663,7 @@ class Command(BaseCommand):
                         loc=curr_loc_use,
                         is_main_for_cust=False
                     )
-                else:
-                    return temp2_cp_to_loc.first()
+                return temp2_cp_to_loc.first()
 
         def chk_flags(
                 item: list[list[str], str],
@@ -705,6 +708,155 @@ class Command(BaseCommand):
                 return model.objects.get(title=item[2][0])
             except Exception:
                 return model.objects.create(title=item[2][0])
+
+        def get_curr_site(
+                item: list[Union[list[str], str]],
+                all_pprs: QuerySet,
+                all_mmpos: QuerySet,
+                all_oezs: QuerySet,
+                all_ztks: QuerySet
+        ) -> Union[Ppr, Mmpo, Ztk, Oez]:
+            """Определение текущего п.п, ММПО, ОЭЗ или ЗТК.
+            Принимает строку вида
+            ['1', ['Дальневосточное таможенное управление', 'Бурятская таможня', 'Таможенный пост ДАПП Монды'], ['Монды', 'МНР', 'АПП']]  # noqa
+            И перечни всех п.п., ММПО, ОЭЗ, ЗТК в виде кверисетов.
+            Возвращает объект одного из типов:
+            Ppr, Mmpo, Ztk или Oez.
+            """
+            if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
+                              'МПП', 'ППП', 'РПП', 'СПП']:
+                pptype = [i for i, j in enumerate(
+                        PPTYPESCHOICES, start=1
+                    ) if j[1] == item[2][2]][0]
+                if item[2][2] in ['АПП', 'ЖДПП', 'ППП', 'РПП', 'СПП']:
+                    pprs_qs = all_pprs.filter(
+                        pptype=pptype,
+                        title=item[2][0],
+                        tow_country=item[2][1]
+                    )
+                else:
+                    pprs_qs = all_pprs.filter(
+                        pptype=pptype,
+                        title=item[2][0]
+                    )
+                if pprs_qs.count() != 1:
+                    err_report(row=item[0],
+                               reason='Ошибка поиска п.п.')
+                    return None
+                return pprs_qs.first()
+            elif item[2][2] == 'ММПО':
+                mmpos_qs = all_mmpos.filter(title=item[2][0])
+                if mmpos_qs.count() != 1:
+                    err_report(row=item[0],
+                               reason='Ошибка поиска ММПО')
+                    return None
+                return mmpos_qs.first()
+            elif item[2][2] == 'ОЭЗ':
+                oezs_qs = all_oezs.filter(title=item[2][0])
+                if oezs_qs.count() != 1:
+                    err_report(row=item[0],
+                               reason='Ошибка поиска ОЭЗ')
+                    return None
+                return oezs_qs.first()
+            elif item[2][2] == 'ЗТК':
+                ztks_qs = all_ztks.filter(title=item[2][0])
+                if ztks_qs.count() != 1:
+                    err_report(row=item[0],
+                               reason='Ошибка поиска ЗТК')
+                    return None
+                return ztks_qs.first()
+            return None
+
+        def get_curr_dev(
+                item: list[Union[list[str], str]],
+                all_dev_types: QuerySet[DevTypes],
+                curr_pl_1_acc: CustPlace1Acc,
+                curr_pl_2_acc: CustPlace2,
+                all_sour_types: QuerySet
+        ) -> Device:
+            """."""
+            curr_subtype = item[13] if item[13] != '' else None
+            try:
+                curr_dev_type = all_dev_types.get(
+                    title=item[12]
+                )
+            except Exception:
+                err_report(row=item[0],
+                           reason='поиск типа девайса')
+                return None
+            serial_field = 17 if curr_dev_type.title[:2] == 'ВН' else 16
+            if item[serial_field] == '' or item[serial_field] == 'б/н':
+                curr_serial = None
+            else:
+                curr_serial = item[serial_field]
+            curr_sour_type_temp = replace_to_clean(source=item[14],
+                                                   pattern=PATTERN3)
+            try:
+                curr_sour_type = all_sour_types.get(
+                    title=curr_sour_type_temp
+                )
+            except Exception:
+                err_report(row=item[0],
+                           reason='названия собственника нет в БД')
+                return None
+            if ((curr_serial is not None) and
+               (curr_dev_type.serial_flag is False)):
+                err_report(row=item[0],
+                           reason='наличия сер.номера, а его быть не должно')
+                return None
+            if ((curr_serial is None) and
+               (curr_dev_type.serial_flag is True)):
+                err_report(row=item[0],
+                           reason='отсутствие сер.номера, а он должен быть')
+                return None
+            if ((curr_subtype is not None) and
+                (curr_dev_type.sub_types is not None) and
+                    (curr_subtype not in curr_dev_type.sub_types)):
+                err_report(row=item[0],
+                           reason='невалидный подтип девайса')
+                return None
+            curr_upper_id = None
+            if curr_dev_type.upper_dev_flag:
+                temp_dev = Device.objects.filter(
+                    type__title__regex=r'Янтарь*',
+                    cp1_acc=curr_pl_1_acc,
+                    cp2_acc=curr_pl_2_acc,
+                    serial=item[16]
+                )
+                if temp_dev.exists():
+                    curr_upper_id = temp_dev.first()
+            curr_dev, _ = Device.objects.get_or_create(
+                type=curr_dev_type,
+                serial=curr_serial,
+                cp1_acc=curr_pl_1_acc,
+                cp2_acc=curr_pl_2_acc,
+                sour_type=curr_sour_type,
+                sub_type=curr_subtype,
+                upper_id=curr_upper_id
+            )
+            return curr_dev
+
+        def get_or_cr_curr_reltodev(
+                to_rel: CustPlaceToLocation,
+                to_dev: Device
+        ) -> RelToDev:
+            """."""
+            temp_rel_to_dev = RelToDev.objects.filter(to_dev=to_dev)
+            if not temp_rel_to_dev.exists():
+                return RelToDev.objects.create(
+                    to_rel=to_rel,
+                    to_dev=to_dev,
+                    is_main_for_dev=True
+                )
+            else:
+                temp2_rel_to_dev = temp_rel_to_dev.filter(to_rel=to_rel)
+                if not temp2_rel_to_dev.exists():
+                    return RelToDev.objects.create(
+                        to_rel=to_rel,
+                        to_dev=to_dev,
+                        is_main_for_dev=False
+                    )
+                return temp2_rel_to_dev.first()
 
         def err_report(
                 row: str = None,
@@ -878,16 +1030,21 @@ class Command(BaseCommand):
             ##########
             if not curr_cust_place_1 or not curr_cust_place_2:
                 err_report(row=item[0],
-                           reason='Ошибка определения текущего т.органа')
+                           reason='Ошибка определения текущего т.органа',
+                           st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
             ##########
             curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place_1)
             if not curr_pl_1_acc:
-                err_report(row=item[0], reason=' ')
+                err_report(row=item[0], reason='Ошибка определения '
+                           'субъекта собственника текущего т.органа',
+                           st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
             curr_pl_1_use = get_curr_pl_1_use(curr_cust_place_1)
             if not curr_pl_1_use:
-                err_report(row=item[0], reason=' ')
+                err_report(row=item[0], reason='Ошибка определения '
+                           'субъекта пользователя текущего т.органа',
+                           st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
             ##########
             if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
@@ -915,3 +1072,79 @@ class Command(BaseCommand):
                                      curr_loc_use)
         print('Успешное завершение создания/апдейта перечня пунктов '
               'пропуска, ММПО, ОЭЗ, ЗТК.')
+
+        print('Начало создания/апдейта перечня девайсов.')
+        devs_pre_list = [row for row in data_3 if row[11] == 'служебная']
+        all_dev_types = DevTypes.objects.all()
+        all_sour_types = SourceTypes.objects.all()
+        all_pprs = Ppr.objects.all()
+        all_mmpos = Mmpo.objects.all()
+        all_oezs = Oez.objects.all()
+        all_ztks = Ztk.objects.all()
+        ##########
+        for item in tqdm(devs_pre_list):
+            curr_mini_item = [
+                item[0],
+                [item[1], item[2], item[3]],
+                [item[5], item[6], item[7]]
+            ]
+            curr_cust_place_1, curr_cust_place_2 = get_curr_cust_place(
+                item=curr_mini_item,
+                all_rtus_1=all_rtus_1,
+                all_rtus_2=all_rtus_2,
+                all_ch_1=all_ch_1,
+                all_ch_2=all_ch_2,
+                all_cp_1=all_cp_1,
+                all_cp_2=all_cp_2
+            )
+            if not curr_cust_place_1 or not curr_cust_place_2:
+                err_report(row=item[0],
+                           reason='Ошибка определения текущего т.органа',
+                           st_1='девайсов')
+                continue
+            ##########
+            curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place_1)
+            if not curr_pl_1_acc:
+                err_report(row=item[0], reason='Ошибка определения '
+                           'субъекта собственника текущего т.органа',
+                           st_1='девайсов')
+                continue
+            curr_pl_1_use = get_curr_pl_1_use(curr_cust_place_1)
+            if not curr_pl_1_use:
+                err_report(row=item[0], reason='Ошибка определения '
+                           'субъекта пользователя текущего т.органа',
+                           st_1='девайсов')
+                continue
+            ##########
+            curr_site = get_curr_site(
+                item=curr_mini_item,
+                all_pprs=all_pprs,
+                all_mmpos=all_mmpos,
+                all_oezs=all_oezs,
+                all_ztks=all_ztks
+            )
+            ##########
+            curr_loc_use = get_curr_loc_use(curr_site)
+            # Внимание!! Проверка только по т.о. первого типа!!
+            # Иметь в виду, если будет решено перейти на т.о. второго типа.
+            if not chk_flags(item, curr_cust_place_1, curr_site):
+                continue
+            # Внимание!! Только по т.о. первого типа!!
+            # Иметь в виду, если будет решено перейти на т.о. второго типа.
+            curr_cpl_to_loc = get_or_cr_curr_cp_to_loc(curr_pl_1_use,
+                                                       curr_cust_place_1,
+                                                       curr_cust_place_2,
+                                                       curr_loc_use)
+            ##########
+            curr_dev = get_curr_dev(item=item,
+                                    all_dev_types=all_dev_types,
+                                    curr_pl_1_acc=curr_pl_1_acc,
+                                    curr_pl_2_acc=curr_cust_place_2,
+                                    all_sour_types=all_sour_types
+                                    )
+            if curr_dev is None:
+                err_report(row=[item[0]],
+                           reason='девайс не распознан и пропущен')
+            get_or_cr_curr_reltodev(to_rel=curr_cpl_to_loc,
+                                    to_dev=curr_dev)
+        print('Успешное завершение создания/апдейта перечня девайсов.')
