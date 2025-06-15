@@ -1128,6 +1128,24 @@ class Device(models.Model):
                                  verbose_name='Вышестоящий девайс',
                                  related_name='to_upper_level')
 
+    note1 = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Примечание1'
+    )
+
+    note2 = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Примечание2'
+    )
+
     class Meta:
         """."""
 

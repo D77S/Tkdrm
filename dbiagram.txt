@@ -114,8 +114,9 @@ Table DevTypes{
   title varchar
   category integer [not null, ref: > DevCats.id]
   serial_flag varchar
-  upper_dev_flag boolean
   sub_types JSON
+  upper_dev_flag boolean
+
 }
 
 Table Device{
@@ -125,9 +126,11 @@ Table Device{
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
   cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
-  // rel_of_work integer [not null, ref: <> CustPlaceToLocation.id]
+  rel_of_work integer [not null, ref: <> CustPlaceToLocation.id]
   sub_type varchar
   upper_id integer [ref: > Device.id]
+  note1 varchar
+  note2 varchar
 }
 
 Table RelToDev{

@@ -825,6 +825,8 @@ class Command(BaseCommand):
                 )
                 if temp_dev.exists():
                     curr_upper_id = temp_dev.first()
+            note1 = item[9] if item[9] != '' else None
+            note2 = item[10] if item[10] != '' else None
             curr_dev, _ = Device.objects.get_or_create(
                 type=curr_dev_type,
                 serial=curr_serial,
@@ -834,6 +836,9 @@ class Command(BaseCommand):
                 sub_type=curr_subtype,
                 upper_id=curr_upper_id
             )
+            curr_dev.note1 = note1
+            curr_dev.note2 = note2
+            curr_dev.save()
             return curr_dev
 
         def get_or_cr_curr_reltodev(
