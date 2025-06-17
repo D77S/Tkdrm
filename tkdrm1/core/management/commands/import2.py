@@ -33,7 +33,8 @@ from core.models import (CustHouse,
                          CustPlaceToLocation,
                          RelToDev,
                          DevTypes,
-                         DevCats)
+                         DevCatsL2,
+                         DevCatsL1)
 
 
 class Command(BaseCommand):
@@ -114,7 +115,8 @@ class Command(BaseCommand):
             RelToDev.objects.all().delete()
             Device.objects.all().delete()
             DevTypes.objects.all().delete()
-            DevCats.objects.all().delete()
+            DevCatsL2.objects.all().delete()
+            DevCatsL1.objects.all().delete()
             CustPlaceToLocation.objects.all().delete()
             Ppr.objects.all().delete()
             Mmpo.objects.all().delete()
@@ -148,56 +150,85 @@ class Command(BaseCommand):
             )
             source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
             SourceTypes.objects.bulk_create(objs=source_objs)
-            dev_cats_titles = [
-                'АКДРМ',
-                'дозиметры',
-                'поисковые',
-                'радиометры-спектрометры',
-                'спектрометры',
-                'СИЗ'
+            DevCatsL1.objects.create(title='Стационарные')
+            DevCatsL1.objects.create(title='Переносные')
+            dev_cats_l2_titles = [
+                ['СТСО', DevCatsL1.objects.get(title='Стационарные')],
+                ['ВН', DevCatsL1.objects.get(title='Стационарные')],
+                ['Телеком', DevCatsL1.objects.get(title='Стационарные')],
+                ['Дозиметры', DevCatsL1.objects.get(title='Переносные')],
+                ['Поисковые', DevCatsL1.objects.get(title='Переносные')],
+                ['Радиометры-спектрометры', DevCatsL1.objects.get(
+                    title='Переносные')],
+                ['Спектрометры', DevCatsL1.objects.get(title='Переносные')],
+                ['СИЗ', DevCatsL1.objects.get(title='Переносные')],
             ]
-            dev_cats_objs = [DevCats(title=i) for i in dev_cats_titles]
-            DevCats.objects.bulk_create(objs=dev_cats_objs)
-            dev_types = [
-                ('Янтарь-1С', 'АКДРМ', True, False, None),
-                ('Янтарь-1СН', 'АКДРМ', True, False, None),
-                ('Янтарь-2С', 'АКДРМ', True, False, None),
-                ('Янтарь-2СН', 'АКДРМ', True, False, None),
-                ('ВН-СН', 'АКДРМ', None, True, None),
-                ('Янтарь-1А', 'АКДРМ', True, False, None),
-                ('Янтарь-2А', 'АКДРМ', True, False, None),
-                ('ВН-А', 'АКДРМ', None, True, None),
-                ('Янтарь-1П', 'АКДРМ', True, False, [
+            dev_cats_l2_objs = [
+                DevCatsL2(title=item[0],
+                          cat_l2=item[1]) for item in dev_cats_l2_titles]
+            DevCatsL2.objects.bulk_create(objs=dev_cats_l2_objs)
+
+            dev_types_titles = [
+                ['Янтарь-1С', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-1СН', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2С', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2СН', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['ВН-СН', DevCatsL2.objects.get(title='ВН'),
+                 None, True, None],
+                ['Янтарь-1А', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2А', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['ВН-А', DevCatsL2.objects.get(title='ВН'),
+                 None, True, None],
+                ['Янтарь-1П', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, [
                     '1П1',
                     '1П2',
                     '1П3',
                     '1У',
                     'ПБ'
-                ]),
-                ('Янтарь-2П', 'АКДРМ', True, False, [
+                ]],
+                ['Янтарь-2П', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, [
                     '2П1',
                     '2П2',
                     '2П3'
-                ]),
-                ('ВН-П', 'АКДРМ', None, True, None),
-                ('Янтарь-ПБ', 'АКДРМ', True, False, None),
-                ('ВН-ПБ', 'АКДРМ', None, True, None),
-                ('Янтарь-1Ж', 'АКДРМ', True, False, None),
-                ('Янтарь-1Ж2', 'АКДРМ', True, False, None),
-                ('Янтарь-2Ж', 'АКДРМ', True, False, None),
-                ('Янтарь-2Ж2', 'АКДРМ', True, False, None),
-                ('ВН-Ж', 'АКДРМ', None, True, None),
-                ('ССД', 'АКДРМ', None, False, None),
-                ('АРМ', 'АКДРМ', None, False, None),
-                ('ССД/АРМ', 'АКДРМ', None, False, None),
+                ]],
+                ['ВН-П', DevCatsL2.objects.get(title='ВН'),
+                 None, True, None],
+                ['Янтарь-ПБ', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['ВН-ПБ', DevCatsL2.objects.get(title='ВН'),
+                 None, True, None],
+                ['Янтарь-1Ж', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-1Ж2', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2Ж', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2Ж2', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['ВН-Ж', DevCatsL2.objects.get(title='ВН'),
+                 None, True, None],
+                ['ССД', DevCatsL2.objects.get(title='Телеком'),
+                 None, False, None],
+                ['АРМ', DevCatsL2.objects.get(title='Телеком'),
+                 None, False, None],
+                ['ССД/АРМ', DevCatsL2.objects.get(title='Телеком'),
+                 None, False, None],
             ]
             dev_types_objs = [DevTypes(
-                title=i[0],
-                category=DevCats.objects.get(title=i[1]),
-                serial_flag=i[2],
-                upper_dev_flag=i[3],
-                sub_types=i[4]
-            ) for i in dev_types]
+                title=item[0],
+                category=item[1],
+                serial_flag=item[2],
+                upper_dev_flag=item[3],
+                sub_types=item[4]
+            ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
 
         def pre_valid_tests(row):
