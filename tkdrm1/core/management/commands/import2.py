@@ -1141,13 +1141,13 @@ class Command(BaseCommand):
             ##########
             curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place_1)
             if not curr_pl_1_acc:
-                err_report(row=item[0], reason='Ошибка определения '
+                err_report(row=item[0], reason='определения '
                            'субъекта собственника текущего т.органа',
                            st_1='девайсов')
                 continue
             curr_pl_1_use = get_curr_pl_1_use(curr_cust_place_1)
             if not curr_pl_1_use:
-                err_report(row=item[0], reason='Ошибка определения '
+                err_report(row=item[0], reason='определения '
                            'субъекта пользователя текущего т.органа',
                            st_1='девайсов')
                 continue
