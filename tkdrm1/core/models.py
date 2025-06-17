@@ -987,26 +987,56 @@ class CustPlaceToLocation(models.Model):
         return f'Модель промежутки с id= {self.id}'
 
 
-class DevCats(models.Model):
-    """Модель категорий типов приборов."""
+class DevCatsL1(models.Model):
+    """Модель категорий уровня 1 типов приборов."""
     title = models.CharField(
         max_length=255,
-        default='Новая категория',
+        default='Новая категория уровня 1',
         unique=True,
         null=False,
         blank=False,
-        verbose_name='Название категории'
+        verbose_name='Название категории уровня 1'
     )
 
     class Meta:
         """."""
 
-        verbose_name = 'Объект категории типа прибора'
-        verbose_name_plural = 'Объекты категории типов приборов'
+        verbose_name = 'Объект категории уровня 1 типа прибора'
+        verbose_name_plural = 'Объекты категории уровня 1 типов приборов'
 
     def __str__(self):
         """."""
-        return f'категория: {self.title}'
+        return f'категория уровня 1: {self.title}'
+
+
+class DevCatsL2(models.Model):
+    """Модель категорий уровня 2 типов приборов."""
+    title = models.CharField(
+        max_length=255,
+        default='Новая категория уровня 2',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название категории уровня 2'
+    )
+    cat_l2 = models.ForeignKey(
+        to=DevCatsL1,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Категория уровня 2 прибора',
+        related_name='dev_cat_to_dev_type'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект категории уровня 2 типа прибора'
+        verbose_name_plural = 'Объекты категории уровня 2 типов приборов'
+
+    def __str__(self):
+        """."""
+        return f'категория уровня 2: {self.title}'
 
 
 class DevTypes(models.Model):
@@ -1021,7 +1051,7 @@ class DevTypes(models.Model):
         verbose_name='Название прибора'
     )
     category = models.ForeignKey(
-        to=DevCats,
+        to=DevCatsL2,
         null=False,
         blank=False,
         on_delete=models.PROTECT,

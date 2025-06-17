@@ -1035,13 +1035,13 @@ class Command(BaseCommand):
             ##########
             if not curr_cust_place_1 or not curr_cust_place_2:
                 err_report(row=item[0],
-                           reason='Ошибка определения текущего т.органа',
+                           reason='определения текущего т.органа',
                            st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
             ##########
             curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place_1)
             if not curr_pl_1_acc:
-                err_report(row=item[0], reason='Ошибка определения '
+                err_report(row=item[0], reason='определения '
                            'субъекта собственника текущего т.органа',
                            st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
@@ -1104,7 +1104,7 @@ class Command(BaseCommand):
             )
             if not curr_cust_place_1 or not curr_cust_place_2:
                 err_report(row=item[0],
-                           reason='Ошибка определения текущего т.органа',
+                           reason='определения текущего т.органа',
                            st_1='девайсов')
                 continue
             ##########

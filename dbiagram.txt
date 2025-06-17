@@ -104,15 +104,21 @@ Table CustPlaceToLocation{
   is_main_for_cust boolean
 }
 
-Table DevCats{
+Table DevCatsL1{
   id integer [primary key]
   title varchar
+}
+
+Table DevCatsL2{
+  id integer [primary key]
+  title varchar
+  cat_l2 integer [not null, ref: > DevCatsL1.id]
 }
 
 Table DevTypes{
   id integer [primary key]
   title varchar
-  category integer [not null, ref: > DevCats.id]
+  category integer [not null, ref: > DevCatsL2.id]
   serial_flag varchar
   sub_types JSON
   upper_dev_flag boolean
@@ -126,7 +132,6 @@ Table Device{
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
   cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
-  rel_of_work integer [not null, ref: <> CustPlaceToLocation.id]
   sub_type varchar
   upper_id integer [ref: > Device.id]
   note1 varchar
