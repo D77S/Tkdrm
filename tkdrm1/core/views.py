@@ -4,6 +4,7 @@
 import time
 # from django.db import connection, reset_queries
 from django.core.paginator import Paginator
+# from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
 from core.constants import ALL_DEV_PAG
@@ -130,7 +131,15 @@ def all_list_by_cpl(request: HttpRequest):
 def dev_detail(request, pk):
     """."""
     template_name = 'dev_detail.html'
-    curr_dev = get_object_or_404(Device, pk=pk)
-    print(curr_dev.from_dev.all())
+    curr_dev: Device = get_object_or_404(Device, pk=pk)
+    curr_reltodevs = RelToDev.objects.filter(
+        to_dev=curr_dev
+    ).order_by('-is_main_for_dev')
+    main_reltodev: RelToDev = curr_reltodevs.first()
+    other_reltodevs = curr_reltodevs.exclude(id=main_reltodev.id)
+    main_cpl = main_reltodev.to_rel
+    other_cpls = [item.to_rel for item in other_reltodevs]
+    print(f'{main_cpl=}')
+    print(f'{other_cpls=}')
     context = {'dev': curr_dev}
     return render(request, template_name, context)

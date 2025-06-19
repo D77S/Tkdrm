@@ -1183,6 +1183,11 @@ class Command(BaseCommand):
                                                        curr_cust_place_1,
                                                        curr_cust_place_2,
                                                        curr_loc_use)
+            if curr_cpl_to_loc is None:
+                err_report(row=[item[0]],
+                           reason='curr_cpl_to_loc не распознан '
+                           'и девайс пропущен')
+                continue
             ##########
             curr_dev = get_curr_dev(item=item,
                                     all_dev_types=all_dev_types,
@@ -1193,6 +1198,7 @@ class Command(BaseCommand):
             if curr_dev is None:
                 err_report(row=[item[0]],
                            reason='девайс не распознан и пропущен')
+                continue
             get_or_cr_curr_reltodev(to_rel=curr_cpl_to_loc,
                                     to_dev=curr_dev)
         print('Успешное завершение создания/апдейта перечня девайсов.')
