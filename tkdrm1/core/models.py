@@ -1079,6 +1079,7 @@ class DevTypes(models.Model):
         blank=True,
         verbose_name='Признак наличия вышестоящего девайса'
     )
+    # пример заполнения поля sub_types: ['1П1', '1П2', '1П3', '1У', 'ПБ']
     sub_types = models.JSONField(
         default=list,
         unique=False,

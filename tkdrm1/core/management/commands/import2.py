@@ -186,23 +186,27 @@ class Command(BaseCommand):
                 ['ВН-А', DevCatsL2.objects.get(title='ВН'),
                  None, True, None],
                 ['Янтарь-1П', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, [
-                    '1П1',
-                    '1П2',
-                    '1П3',
-                    '1У',
-                    'ПБ'
-                ]],
-                ['Янтарь-2П', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, [
-                    '2П1',
-                    '2П2',
-                    '2П3'
-                ]],
-                ['ВН-П', DevCatsL2.objects.get(title='ВН'),
-                 None, True, None],
+                 True, False, None],
+                ['Янтарь-1П1', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-1П2', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-1П3', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-1У', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
                 ['Янтарь-ПБ', DevCatsL2.objects.get(title='СТСО'),
                  True, False, None],
+                ['Янтарь-2П', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2П1', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2П2', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['Янтарь-2П3', DevCatsL2.objects.get(title='СТСО'),
+                 True, False, None],
+                ['ВН-П', DevCatsL2.objects.get(title='ВН'),
+                 None, True, None],
                 ['ВН-ПБ', DevCatsL2.objects.get(title='ВН'),
                  None, True, None],
                 ['Янтарь-1Ж', DevCatsL2.objects.get(title='СТСО'),
@@ -219,7 +223,7 @@ class Command(BaseCommand):
                  None, False, None],
                 ['АРМ', DevCatsL2.objects.get(title='Телеком'),
                  None, False, None],
-                ['ССД/АРМ', DevCatsL2.objects.get(title='Телеком'),
+                ['АРМ/ССД', DevCatsL2.objects.get(title='Телеком'),
                  None, False, None],
             ]
             dev_types_objs = [DevTypes(
@@ -806,10 +810,17 @@ class Command(BaseCommand):
                 all_sour_types: QuerySet
         ) -> Device:
             """."""
-            curr_subtype = item[13] if item[13] != '' else None
+            if (item[13] != '' and
+               item[13] in [
+                   '1П1', '1П2', '1П3', '1У', 'ПБ', '2П1', '2П2', '2П3']):
+                curr_dev_type_temp = 'Янтарь-' + item[13]
+            elif item[13] != '' and item[13] == 'АРМ/ССД':
+                curr_dev_type_temp = item[13]
+            else:
+                curr_dev_type_temp = item[12]
             try:
                 curr_dev_type = all_dev_types.get(
-                    title=item[12]
+                    title=curr_dev_type_temp
                 )
             except Exception:
                 err_report(row=item[0],
@@ -840,12 +851,13 @@ class Command(BaseCommand):
                 err_report(row=item[0],
                            reason='отсутствие сер.номера, а он должен быть')
                 return None
-            if ((curr_subtype is not None) and
-                (curr_dev_type.sub_types is not None) and
-                    (curr_subtype not in curr_dev_type.sub_types)):
-                err_report(row=item[0],
-                           reason='невалидный подтип девайса')
-                return None
+            # curr_subtype = ???
+            # if ((curr_subtype is not None) and
+            #     (curr_dev_type.sub_types is not None) and
+            #         (curr_subtype not in curr_dev_type.sub_types)):
+            #     err_report(row=item[0],
+            #                reason='невалидный подтип девайса')
+            #     return None
             curr_upper_id = None
             if curr_dev_type.upper_dev_flag:
                 temp_dev = Device.objects.filter(
@@ -864,7 +876,7 @@ class Command(BaseCommand):
                 cp1_acc=curr_pl_1_acc,
                 cp2_acc=curr_pl_2_acc,
                 sour_type=curr_sour_type,
-                sub_type=curr_subtype,
+                # sub_type=curr_subtype,
                 upper_id=curr_upper_id
             )
             curr_dev.note1 = note1
