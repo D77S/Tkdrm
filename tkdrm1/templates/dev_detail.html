@@ -5,42 +5,71 @@
    <table class="table-bordered table-sm">
     <thead>
       <tr style="border: 3px solid black;">
-        <th scope="col" valign="top" width="3%" cellspacing="0" cellpadding="4" class="col-2" style="border: 3px solid black;">Свойство</th>
-        <th scope="col" valign="top" style="text-align: left" class="col-10" colspan=2 style=>Значение</th>
+        <th scope="col" valign="top" width="3%" cellspacing="0" cellpadding="4" class="col-4" style="border: 3px solid black;" colspan=2>Свойство</th>
+        <th scope="col" valign="top" style="text-align: left" class="col-8">Значение</th>
       </tr>
     </thead>
     <tbody>
       <tr>
-        <th>Тип</th>
-        <td colspan=2>{{  dev.type.title  }}</td>
+        <th colspan=2>Тип</th>
+        <td>{{  dev.type.title  }}</td>
       </tr>
       <tr>
-        <th>Подтип (если есть)</th>
-        <td colspan=2>{{  dev.sub_type|default_if_none:"Отсутствует"  }}</td>
+        <th colspan=2>Подтип (если есть)</th>
+        <td>{{  dev.sub_type|default_if_none:"Отсутствует"  }}</td>
       </tr>
       <tr>
-        <th>Собственник</th>
-        <td colspan=2>{{  dev.sour_type.title  }}</td>
+        <th colspan=2>Категория уровня 2</th>
+        <td>{{ dev.type.category.title|default_if_none:"Отсутствует" }}</td>
       </tr>
       <tr>
-        <th>Серийный номер (если есть)</th>
-        <td colspan=2>{{  dev.serial }}</td>
+        <th colspan=2>Категория уровня 1</th>
+        <td>{{ dev.type.category.cat_l2.title|default_if_none:"Отсутствует" }}</td>
       </tr>
       <tr>
-        <th>Где стоит на учёте по балансу или забалансу</th>
-        <td>
-          {% if dev.cp1_acc.rtu %}
-            {{  dev.cp1_acc.rtu.title  }}
-          {% elif dev.cp1_acc.custhouse %}
-            {{  dev.cp1_acc.custhouse.title  }}
-          {% else %}
-            {{  div.cp1_acc.custpost.title  }}
-          {% endif %}
+        <th colspan=2>Собственник</th>
+        <td>{{  dev.sour_type.title  }}</td>
+      </tr>
+      <tr>
+        <th colspan=2>Серийный номер (если есть)</th>
+        <td>{{  dev.serial|default_if_none:"Отсутствует" }}</td>
+      </tr>
+      <tr>
+        <th colspan=2>Где стоит на учёте по балансу или забалансу</th>
+        <td>Таможенный орган "{{  dev_cpl_acc_fin.title  }}"
         </td>
       </tr>
       <tr>
-        <th>Где находится в эксплуатации</th>
-        <td>{{  dev.from_dev.all  }}</td>
+        <th rowspan={{ total_rowspan }}>Где находится в эксплуатации</th>
+      </tr>
+      {% if main_cpl_use_fin_count > 0  %}
+        <tr>
+          <th rowspan={{ main_rowspan }}>Основные эксплуатанты</th>
+        </tr>
+        {% for item in main_cpl_use_fin %}
+          <tr>
+            <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.1.title }}"</td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+
+      {% if other_cpl_use_fin_count > 0  %}
+        <tr>
+          <th rowspan={{ other_rowspan }}>Дополнительные эксплуатанты</th>
+        </tr>
+        {% for item in other_cpl_use_fin %}
+          <tr>
+            <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.1.title }}"</td>
+          </tr>
+        {% endfor %}
+      {% endif %}
+      <tr>
+        <th colspan=2>Примечание. В каком участке объекта эксплуатируется</th>
+        <td>{{ dev.note1 }}</td>
+      </tr>
+      <tr>
+        <th colspan=2>Примечание 2</th>
+        <td>{{ dev.note2 }}</td>
       </tr>
     </tbody>
   </table>

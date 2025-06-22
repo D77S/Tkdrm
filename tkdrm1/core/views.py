@@ -4,13 +4,17 @@
 import time
 # from django.db import connection, reset_queries
 from django.core.paginator import Paginator
-# from django.db.models import QuerySet
+from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
 from core.constants import ALL_DEV_PAG
 from core.models import (
-    # CustPlace1Use,
-    # CustPlaceToLocation,
+    # Rtu,
+    # CustHouse,
+    CustPost,
+    CustPlace1Use,
+    CustPlaceToLocation,
+    LocationOfUse,
     Device,
     RelToDev
 )
@@ -131,15 +135,124 @@ def all_list_by_cpl(request: HttpRequest):
 def dev_detail(request, pk):
     """."""
     template_name = 'dev_detail.html'
-    curr_dev: Device = get_object_or_404(Device, pk=pk)
-    curr_reltodevs = RelToDev.objects.filter(
-        to_dev=curr_dev
-    ).order_by('-is_main_for_dev')
-    main_reltodev: RelToDev = curr_reltodevs.first()
-    other_reltodevs = curr_reltodevs.exclude(id=main_reltodev.id)
-    main_cpl = main_reltodev.to_rel
-    other_cpls = [item.to_rel for item in other_reltodevs]
-    print(f'{main_cpl=}')
-    print(f'{other_cpls=}')
-    context = {'dev': curr_dev}
+
+    dev: Device = get_object_or_404(Device, pk=pk)
+
+    dev_cpl_acc = dev.cp1_acc
+    if dev_cpl_acc.rtu is not None:
+        dev_cpl_acc_fin = dev_cpl_acc.rtu
+    elif dev_cpl_acc.custhouse is not None:
+        dev_cpl_acc_fin = dev_cpl_acc.custhouse
+    elif dev_cpl_acc.custpost is not None:
+        dev_cpl_acc_fin = dev_cpl_acc.custpost
+    else:
+        dev_cpl_acc_fin = None
+    print(f'{dev_cpl_acc_fin=}')
+
+    main_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
+        to_dev=dev,
+        is_main_for_dev=True
+    ).order_by('id')
+    other_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
+        to_dev=dev,
+        is_main_for_dev=False
+    ).order_by('id')
+
+    # main_reltodevs = RelToDev.objects.filter(
+    #     id__in=[10300,]
+    # )
+    # other_reltodevs = RelToDev.objects.filter(
+    #     id__in=[10500, 10600]
+    # )
+
+    print(f'{main_reltodevs=}, {other_reltodevs=}')
+
+    main_cpls: list[CustPlaceToLocation] = [
+        item.to_rel for item in main_reltodevs
+    ]
+    other_cpls: list[CustPlaceToLocation] = [
+        item.to_rel for item in other_reltodevs
+    ]
+    print(f'{main_cpls=} {other_cpls=}')
+
+    main_cpl_use_pre: list[
+        list[CustPlace1Use, LocationOfUse]
+    ] = [[item.cust_pl1, item.loc] for item in main_cpls]
+    other_cpl_use_pre: list[
+        list[CustPlace1Use, LocationOfUse]
+    ] = [[item.cust_pl1, item.loc] for item in other_cpls]
+    print(f'{main_cpl_use_pre=} {other_cpl_use_pre}')
+
+    main_cpl_use_fin = []
+    for item in main_cpl_use_pre:
+        if item[0].rtu is not None:
+            temp1 = item[0].rtu
+        elif item[0].custhouse is not None:
+            temp1 = item[0].custhouse
+        elif item[0].custpost is not None:
+            temp1 = item[0].custpost
+        else:
+            temp1 = None
+        if item[1].ppr is not None:
+            temp2 = item[1].ppr
+        elif item[1].mmpo is not None:
+            temp2 = item[1].mmpo
+        elif item[1].oez is not None:
+            temp2 = item[1].oez
+        elif item[1].ztk is not None:
+            temp2 = item[1].ztk
+        else:
+            temp2 = None
+        main_cpl_use_fin.append([temp1, temp2])
+
+    other_cpl_use_fin = []
+    for item in other_cpl_use_pre:
+        if item[0].rtu is not None:
+            temp1 = item[0].rtu
+        elif item[0].custhouse is not None:
+            temp1 = item[0].custhouse
+        elif item[0].custpost is not None:
+            temp1 = item[0].custpost
+        else:
+            temp1 = None
+        if item[1].ppr is not None:
+            temp2 = item[1].ppr
+        elif item[1].mmpo is not None:
+            temp2 = item[1].mmpo
+        elif item[1].oez is not None:
+            temp2 = item[1].oez
+        elif item[1].ztk is not None:
+            temp2 = item[1].ztk
+        else:
+            temp2 = None
+        other_cpl_use_fin.append([temp1, temp2])
+    print(f'{main_cpl_use_fin=} {other_cpl_use_fin=}')
+
+    main_cpl_use_fin_count = len(main_cpl_use_fin)
+    other_cpl_use_fin_count = len(other_cpl_use_fin)
+    if main_cpl_use_fin_count == 0:
+        main_rowspan = 1
+    else:
+        main_rowspan = main_cpl_use_fin_count
+    if other_cpl_use_fin_count == 0:
+        other_rowspan = 1
+    else:
+        other_rowspan = other_cpl_use_fin_count
+
+
+
+    print(f'{main_cpl_use_fin_count=} {other_cpl_use_fin_count=}')
+    print(f'{main_rowspan=} {other_rowspan=} {total_rowspan=}')
+
+    context = {
+        'dev': dev,
+        'dev_cpl_acc_fin': dev_cpl_acc_fin,
+        'main_cpl_use_fin': main_cpl_use_fin,
+        'other_cpl_use_fin': other_cpl_use_fin,
+        'main_cpl_use_fin_count': main_cpl_use_fin_count,
+        'other_cpl_use_fin_count': other_cpl_use_fin_count,
+        'main_rowspan': main_rowspan,
+        'other_rowspan': other_rowspan,
+        'total_rowspan': total_rowspan
+    }
     return render(request, template_name, context)
