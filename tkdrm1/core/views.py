@@ -186,7 +186,11 @@ def dev_detail(request, pk):
             temp1 = item[0].custpost
         else:
             temp1 = None
-        if item[1].ppr is not None:
+
+        if item[1] is None:
+            temp2 = None
+            temp3 = None
+        elif item[1].ppr is not None:
             temp2 = item[1].ppr
             temp3 = item[1].ppr.pptype.title
         elif item[1].mmpo is not None:
@@ -213,7 +217,11 @@ def dev_detail(request, pk):
             temp1 = item[0].custpost
         else:
             temp1 = None
-        if item[1].ppr is not None:
+
+        if item[1] is None:
+            temp2 = None
+            temp3 = None
+        elif item[1].ppr is not None:
             temp2 = item[1].ppr
             temp3 = item[1].ppr.pptype.title
         elif item[1].mmpo is not None:

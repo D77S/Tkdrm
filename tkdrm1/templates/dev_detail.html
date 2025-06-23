@@ -1,6 +1,6 @@
 {% extends "base.html" %}
   {% block content %}
-    <h4 class="pb-2 mb-0">Детализация по выбранному тех.средству</h4>
+    <h4 class="pb-2 mb-0">Детализация по выбранному техническому средству</h4>
     <p></p>
     <table class="table-bordered table-sm">
       <thead>
@@ -27,6 +27,16 @@
           <td>{{ dev.type.category.cat_l2.title|default_if_none:"Отсутствует" }}</td>
         </tr>
         <tr>
+          <th colspan=2>Вышестоящее тех.средств (если есть)</th>
+          <td>
+            {% if dev.upper_id %}
+              {{ dev.upper_id.type.title }}, сер. номер {{ dev.upper_id.serial }}
+            {% else %}
+              Отсутствует
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
           <th colspan=2>Собственник</th>
           <td>{{  dev.sour_type.title  }}</td>
         </tr>
@@ -50,7 +60,14 @@
           </tr>
           {% for item in main_cpl_use_fin %}
             <tr>
-              <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.2 }} {{ item.1.title }}"</td>
+              <td>
+                Таможенный орган "{{ item.0.title }}" эксплуатирует 
+                {% if item.1 %}
+                  в административном объекте "{{ item.2 }} {{ item.1.title }}"
+                {% else %}
+                  вне административного объекта
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         {% endif %}
@@ -61,14 +78,26 @@
           </tr>
           {% for item in other_cpl_use_fin %}
             <tr>
-              <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.2 }} {{ item.1.title }}"</td>
+              <td>
+                Таможенный орган "{{ item.0.title }}" эксплуатирует 
+                {% if item.1 %}
+                  в административном объекте "{{ item.2 }} {{ item.1.title }}"
+                {% else %}
+                  вне административного объекта
+                {% endif %}
+              </td>
             </tr>
           {% endfor %}
         {% endif %}
         <tr>
           <th colspan=2>Примечание. В каком участке объекта эксплуатируется (если есть информация)</th>
-          <td>{{ dev.note1 }}</td>
+          <td>{{ dev.note1|default_if_none:"Отсутствует" }}</td>
+        </tr>
+        <tr>
+          <th colspan=2>ID в БД</th>
+          <td>{{ dev.id }}</td>
         </tr>
       </tbody>
     </table>
+    <input type="button" onclick="history.back();" value="Вернуться на предыдущую страницу"/>
   {% endblock %}
