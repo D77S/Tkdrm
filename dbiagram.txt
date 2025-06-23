@@ -32,9 +32,14 @@ Table CustPost{
   upper_id integer [not null, ref: > CustHouse.id]
 }
 
+Table PprType{
+  id integer [primary key]
+  title varchar
+}
+
 Table Ppr{
   id integer [primary key]
-  pptype varchar
+  pptype integer [not null, ref: > PprType.id]
   title varchar
   tow_country varchar
 }

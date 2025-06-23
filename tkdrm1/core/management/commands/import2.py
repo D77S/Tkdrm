@@ -15,7 +15,6 @@ from core.constants import (
     PATTERN3,
     STANDALONE_CODES,
     SOURCE_TITLES,
-    PPTYPESCHOICES,
 )
 from core.models import (CustHouse,
                          CustPlace2,
@@ -23,6 +22,7 @@ from core.models import (CustHouse,
                          Device,
                          LocationOfUse,
                          Ppr,
+                         PprType,
                          Mmpo,
                          Oez,
                          Ztk,
@@ -122,6 +122,7 @@ class Command(BaseCommand):
             Mmpo.objects.all().delete()
             Oez.objects.all().delete()
             Ztk.objects.all().delete()
+            PprType.objects.all().delete()
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
@@ -234,6 +235,11 @@ class Command(BaseCommand):
                 sub_types=item[4]
             ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
+
+            ppr_types_titles = ['АПП', 'ВПП', 'ЖДПП', 'МПП',
+                                'ППП', 'РПП', 'СПП']
+            ppr_types_objs = [PprType(title=item) for item in ppr_types_titles]
+            PprType.objects.bulk_create(objs=ppr_types_objs)
 
         def pre_valid_tests(row):
             """."""
@@ -723,11 +729,12 @@ class Command(BaseCommand):
             """."""
             country = row[2][1] if row[2][1] != '' else None
             pre_type = row[2][2]
-            pptype = [
-                i for i, item in enumerate(
-                    PPTYPESCHOICES, start=1
-                ) if item[1] == pre_type
-            ][0]
+            try:
+                pptype = PprType.objects.get(title=pre_type)
+            except Exception:
+                err_report(row=item[0],
+                           reason='поиска ТИПА п.п.')
+                return None
             return Ppr.objects.get_or_create(
                 pptype=pptype,
                 title=row[2][0],
@@ -760,9 +767,7 @@ class Command(BaseCommand):
             """
             if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
                               'МПП', 'ППП', 'РПП', 'СПП']:
-                pptype = [i for i, j in enumerate(
-                        PPTYPESCHOICES, start=1
-                    ) if j[1] == item[2][2]][0]
+                pptype = PprType.objects.get(title=item[2][2])
                 if item[2][2] in ['АПП', 'ЖДПП', 'ППП', 'РПП', 'СПП']:
                     pprs_qs = all_pprs.filter(
                         pptype=pptype,
@@ -776,28 +781,28 @@ class Command(BaseCommand):
                     )
                 if pprs_qs.count() != 1:
                     err_report(row=item[0],
-                               reason='Ошибка поиска п.п.')
+                               reason='поиска п.п.')
                     return None
                 return pprs_qs.first()
             elif item[2][2] == 'ММПО':
                 mmpos_qs = all_mmpos.filter(title=item[2][0])
                 if mmpos_qs.count() != 1:
                     err_report(row=item[0],
-                               reason='Ошибка поиска ММПО')
+                               reason='поиска ММПО')
                     return None
                 return mmpos_qs.first()
             elif item[2][2] == 'ОЭЗ':
                 oezs_qs = all_oezs.filter(title=item[2][0])
                 if oezs_qs.count() != 1:
                     err_report(row=item[0],
-                               reason='Ошибка поиска ОЭЗ')
+                               reason='поиска ОЭЗ')
                     return None
                 return oezs_qs.first()
             elif item[2][2] == 'ЗТК':
                 ztks_qs = all_ztks.filter(title=item[2][0])
                 if ztks_qs.count() != 1:
                     err_report(row=item[0],
-                               reason='Ошибка поиска ЗТК')
+                               reason='поиска ЗТК')
                     return None
                 return ztks_qs.first()
             return None

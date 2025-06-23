@@ -39,16 +39,18 @@
         <td>Таможенный орган "{{  dev_cpl_acc_fin.title  }}"
         </td>
       </tr>
-      <tr>
-        <th rowspan={{ total_rowspan }}>Где находится в эксплуатации</th>
-      </tr>
+      {% if total_count > 0 %}
+        <tr>
+          <th rowspan={{ total_rowspan }}>Где находится в эксплуатации</th>
+        </tr>
+      {% endif %}
       {% if main_cpl_use_fin_count > 0  %}
         <tr>
           <th rowspan={{ main_rowspan }}>Основные эксплуатанты</th>
         </tr>
         {% for item in main_cpl_use_fin %}
           <tr>
-            <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.1.title }}"</td>
+            <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.2 }} {{ item.1.title }}"</td>
           </tr>
         {% endfor %}
       {% endif %}
@@ -59,17 +61,13 @@
         </tr>
         {% for item in other_cpl_use_fin %}
           <tr>
-            <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.1.title }}"</td>
+            <td>Таможенный орган "{{ item.0.title }}" эксплуатирует в "{{ item.2 }} {{ item.1.title }}"</td>
           </tr>
         {% endfor %}
       {% endif %}
       <tr>
-        <th colspan=2>Примечание. В каком участке объекта эксплуатируется</th>
+        <th colspan=2>Примечание. В каком участке объекта эксплуатируется (если есть информация)</th>
         <td>{{ dev.note1 }}</td>
-      </tr>
-      <tr>
-        <th colspan=2>Примечание 2</th>
-        <td>{{ dev.note2 }}</td>
       </tr>
     </tbody>
   </table>

@@ -5,4 +5,4 @@ Adminka: admin/admin1
 
 Из папки tkdrm/tkdrm1
 запустить скрипт парсинта из Эксель
-командой python manage.py import1
+командой python manage.py import2

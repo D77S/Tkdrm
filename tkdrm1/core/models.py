@@ -5,8 +5,6 @@ from django.db import models
 
 from core.constants import (
     CUSTCHOICES,
-    PPTYPESCHOICES,
-    # SERIAL_NUM_CHOICES
 )
 
 
@@ -272,15 +270,37 @@ class CustPost(models.Model):
         return f'пост: {self.title}'
 
 
+class PprType(models.Model):
+    """Модель типов пунктов пропуска."""
+    title = models.CharField(
+        max_length=255,
+        unique=True,
+        null=False,
+        verbose_name='Название'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект типа пункта пропуска'
+        verbose_name_plural = 'объекты типа пунктов пропуска'
+
+    def __str__(self):
+        """."""
+        return f'типа пункта пропуска: {self.title}'
+
+
 class Ppr(models.Model):
     """Модель пункта пропуска."""
 
-    pptype = models.CharField(choices=PPTYPESCHOICES,
-                              verbose_name='Тип п. пропуска',
-                              max_length=1,
-                              null=False,
-                              blank=False
-                              )
+    pptype = models.ForeignKey(
+        to=PprType,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Тип п. пропуска',
+        related_name='from_pptype'
+    )
     title = models.CharField(
         max_length=255,
         unique=False,  # !!!!!!

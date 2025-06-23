@@ -11,7 +11,7 @@ from core.constants import ALL_DEV_PAG
 from core.models import (
     # Rtu,
     # CustHouse,
-    CustPost,
+    # CustPost,
     CustPlace1Use,
     CustPlaceToLocation,
     LocationOfUse,
@@ -152,18 +152,11 @@ def dev_detail(request, pk):
     main_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
         to_dev=dev,
         is_main_for_dev=True
-    ).order_by('id')
+    )
     other_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
         to_dev=dev,
         is_main_for_dev=False
-    ).order_by('id')
-
-    # main_reltodevs = RelToDev.objects.filter(
-    #     id__in=[10300,]
-    # )
-    # other_reltodevs = RelToDev.objects.filter(
-    #     id__in=[10500, 10600]
-    # )
+    )
 
     print(f'{main_reltodevs=}, {other_reltodevs=}')
 
@@ -195,15 +188,20 @@ def dev_detail(request, pk):
             temp1 = None
         if item[1].ppr is not None:
             temp2 = item[1].ppr
+            temp3 = item[1].ppr.pptype.title
         elif item[1].mmpo is not None:
             temp2 = item[1].mmpo
+            temp3 = 'ММПО'
         elif item[1].oez is not None:
             temp2 = item[1].oez
+            temp3 = 'ОЭЗ'
         elif item[1].ztk is not None:
             temp2 = item[1].ztk
+            temp3 = 'ЗТК'
         else:
             temp2 = None
-        main_cpl_use_fin.append([temp1, temp2])
+            temp3 = None
+        main_cpl_use_fin.append([temp1, temp2, temp3])
 
     other_cpl_use_fin = []
     for item in other_cpl_use_pre:
@@ -217,32 +215,34 @@ def dev_detail(request, pk):
             temp1 = None
         if item[1].ppr is not None:
             temp2 = item[1].ppr
+            temp3 = item[1].ppr.pptype.title
         elif item[1].mmpo is not None:
             temp2 = item[1].mmpo
+            temp3 = 'ММПО'
         elif item[1].oez is not None:
             temp2 = item[1].oez
+            temp3 = 'ОЭЗ'
         elif item[1].ztk is not None:
             temp2 = item[1].ztk
+            temp3 = 'ЗТК'
         else:
             temp2 = None
-        other_cpl_use_fin.append([temp1, temp2])
+            temp3 = None
+        other_cpl_use_fin.append([temp1, temp2, temp3])
     print(f'{main_cpl_use_fin=} {other_cpl_use_fin=}')
 
     main_cpl_use_fin_count = len(main_cpl_use_fin)
+    main_rowspan = main_cpl_use_fin_count + 1
     other_cpl_use_fin_count = len(other_cpl_use_fin)
-    if main_cpl_use_fin_count == 0:
-        main_rowspan = 1
-    else:
-        main_rowspan = main_cpl_use_fin_count
-    if other_cpl_use_fin_count == 0:
-        other_rowspan = 1
-    else:
-        other_rowspan = other_cpl_use_fin_count
-
-
+    other_rowspan = other_cpl_use_fin_count + 1
+    total_count = main_cpl_use_fin_count + other_cpl_use_fin_count
+    total_rowspan = 1
+    if main_cpl_use_fin_count > 0:
+        total_rowspan += (main_cpl_use_fin_count + 1)
+    if other_cpl_use_fin_count > 0:
+        total_rowspan += (other_cpl_use_fin_count + 1)
 
     print(f'{main_cpl_use_fin_count=} {other_cpl_use_fin_count=}')
-    print(f'{main_rowspan=} {other_rowspan=} {total_rowspan=}')
 
     context = {
         'dev': dev,
@@ -251,6 +251,7 @@ def dev_detail(request, pk):
         'other_cpl_use_fin': other_cpl_use_fin,
         'main_cpl_use_fin_count': main_cpl_use_fin_count,
         'other_cpl_use_fin_count': other_cpl_use_fin_count,
+        'total_count': total_count,
         'main_rowspan': main_rowspan,
         'other_rowspan': other_rowspan,
         'total_rowspan': total_rowspan
