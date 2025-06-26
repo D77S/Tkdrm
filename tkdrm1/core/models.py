@@ -1090,14 +1090,24 @@ class DevTypes(models.Model):
     )
     # Признак наличия у объекта вышестоящего объекта:
     # (например, видеокамера имеет вышестоящий объект: Янтарь)
-    # True: он обязан быть у объекта;
-    # False: его обязано не быть у объекта;
-    # None: он может как быть, так и не быть.
+    # True: все девайсы данного типа обязаны его иметь;
+    # False: все девайсы данного типа обязаны его не иметь;
+    # None: девайсы данного типа могут как иметь, так и не иметь его.
     upper_dev_flag = models.BooleanField(
         null=True,
         default=False,
         blank=True,
         verbose_name='Признак наличия вышестоящего девайса'
+    )
+    # Признак принадлежности к СИ.
+    # True: все девайсы данного типа обязаны его иметь;
+    # False: все девайсы данного типа обязаны его не иметь;
+    # None: девайсы данного типа могут как иметь, так и не иметь его.
+    si_flag = models.BooleanField(
+        null=True,
+        default=False,
+        blank=True,
+        verbose_name='Признак принадлежности к СИ'
     )
     # пример заполнения поля sub_types: ['1П1', '1П2', '1П3', '1У', 'ПБ']
     sub_types = models.JSONField(
@@ -1117,6 +1127,27 @@ class DevTypes(models.Model):
     def __str__(self):
         """."""
         return f'прибор типа {self.title}'
+
+
+class Si(models.Model):
+    """Модель типов по СИ."""
+    title = models.CharField(
+         max_length=255,
+         unique=True,
+         null=False,
+         blank=False,
+         verbose_name='Тип по СИ'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект типа по СИ'
+        verbose_name_plural = 'Объекты типов по СИ'
+
+    def __str__(self):
+        """."""
+        return f'СИ типа {self.title}'
 
 
 class Device(models.Model):
@@ -1178,7 +1209,13 @@ class Device(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий девайс',
                                  related_name='to_upper_level')
-
+    si = models.ForeignKey(to='Si',
+                           null=True,
+                           blank=True,
+                           default=None,
+                           on_delete=models.RESTRICT,
+                           verbose_name='Тип по СИ',
+                           related_name='to_si')
     note1 = models.CharField(
         max_length=255,
         default=None,
@@ -1202,12 +1239,13 @@ class Device(models.Model):
 
         verbose_name = 'Техническое средство'
         verbose_name_plural = 'Технические средства'
-        # constraints = [
-        #     models.CheckConstraint(
-        #         check=(models.Q()),
-        #         name='ser_num_valid'
-        #     ),
-        # ]
+        # добавить констрейты на:
+        # то, что наличие/отсутствие серийного номера согласуется
+        # с соотв. флагом типа девайса
+        # то, что наличие/отсутствие ссылки на девайс верхнего
+        # уровня согласуетс с соотв. флагом типа девайса
+        # то, что наличие/отсутствие принадлежности девайса к СИ
+        # согласуется с соотв. флагом типа девайса
 
     def __str__(self):
         """."""

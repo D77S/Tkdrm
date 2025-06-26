@@ -20,6 +20,7 @@ from core.models import (CustHouse,
                          CustPlace2,
                          CustPost,
                          Device,
+                         Si,
                          LocationOfUse,
                          Ppr,
                          PprType,
@@ -114,6 +115,7 @@ class Command(BaseCommand):
             # delete
             RelToDev.objects.all().delete()
             Device.objects.all().delete()
+            Si.objects.all().delete()
             DevTypes.objects.all().delete()
             DevCatsL2.objects.all().delete()
             DevCatsL1.objects.all().delete()
@@ -170,71 +172,83 @@ class Command(BaseCommand):
             DevCatsL2.objects.bulk_create(objs=dev_cats_l2_objs)
 
             dev_types_titles = [
-                ['Янтарь-1С', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                [
+                    'Янтарь-1С',  # title
+                    DevCatsL2.objects.get(title='СТСО'),  # category
+                    True,  # serail_flag
+                    False,  # upper_dev_flag
+                    True,  # si_flag
+                    None  # sub_types
+                ],
                 ['Янтарь-1СН', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2С', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2СН', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['ВН-СН', DevCatsL2.objects.get(title='ВН'),
-                 None, True, None],
+                 None, True, False, None],
                 ['Янтарь-1А', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2А', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['ВН-А', DevCatsL2.objects.get(title='ВН'),
-                 None, True, None],
+                 None, True, False, None],
                 ['Янтарь-1П', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-1П1', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-1П2', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-1П3', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-1У', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-ПБ', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2П', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2П1', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2П2', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2П3', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['ВН-П', DevCatsL2.objects.get(title='ВН'),
-                 None, True, None],
+                 None, True, False, None],
                 ['ВН-ПБ', DevCatsL2.objects.get(title='ВН'),
-                 None, True, None],
+                 None, True, False, None],
                 ['Янтарь-1Ж', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-1Ж2', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2Ж', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['Янтарь-2Ж2', DevCatsL2.objects.get(title='СТСО'),
-                 True, False, None],
+                 True, False, True, None],
                 ['ВН-Ж', DevCatsL2.objects.get(title='ВН'),
-                 None, True, None],
+                 None, True, False, None],
                 ['ССД', DevCatsL2.objects.get(title='Телеком'),
-                 None, False, None],
+                 None, False, False, None],
                 ['АРМ', DevCatsL2.objects.get(title='Телеком'),
-                 None, False, None],
+                 None, False, False, None],
                 ['АРМ/ССД', DevCatsL2.objects.get(title='Телеком'),
-                 None, False, None],
+                 None, False, False, None],
             ]
             dev_types_objs = [DevTypes(
                 title=item[0],
                 category=item[1],
                 serial_flag=item[2],
                 upper_dev_flag=item[3],
-                sub_types=item[4]
+                si_flag=item[4],
+                sub_types=item[5]
             ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
+
+            Si.objects.bulk_create(
+                objs=[Si(title='СИ'),
+                      Si(title='индикатор')]
+            )
 
             ppr_types_titles = ['АПП', 'ВПП', 'ЖДПП', 'МПП',
                                 'ППП', 'РПП', 'СПП']
@@ -863,7 +877,7 @@ class Command(BaseCommand):
             #     err_report(row=item[0],
             #                reason='невалидный подтип девайса')
             #     return None
-            curr_upper_id = None
+
             if curr_dev_type.upper_dev_flag:
                 temp_dev = Device.objects.filter(
                     type__title__regex=r'Янтарь*',
@@ -873,6 +887,25 @@ class Command(BaseCommand):
                 )
                 if temp_dev.exists():
                     curr_upper_id = temp_dev.first()
+                else:
+                    curr_upper_id = None
+            else:
+                curr_upper_id = None
+
+            if curr_dev_type.si_flag is False:
+                curr_dev_si = None
+            else:
+                if item[15] == '':
+                    curr_dev_si = None
+                else:
+                    try:
+                        curr_dev_si = Si.objects.get(title=item[15])
+                    except Exception:
+                        err_report(row=item[0],
+                                   reason='поиска типа СИ',
+                                   st_2='литерала, который таков:' + item[15])
+                        return None
+
             note1 = item[9] if item[9] != '' else None
             note2 = item[10] if item[10] != '' else None
             curr_dev, _ = Device.objects.get_or_create(
@@ -882,7 +915,8 @@ class Command(BaseCommand):
                 cp2_acc=curr_pl_2_acc,
                 sour_type=curr_sour_type,
                 # sub_type=curr_subtype,
-                upper_id=curr_upper_id
+                upper_id=curr_upper_id,
+                si=curr_dev_si
             )
             curr_dev.note1 = note1
             curr_dev.note2 = note2
