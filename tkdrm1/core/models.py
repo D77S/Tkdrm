@@ -1100,9 +1100,12 @@ class DevTypes(models.Model):
         verbose_name='Признак наличия вышестоящего девайса'
     )
     # Признак принадлежности к СИ.
-    # True: все девайсы данного типа обязаны его иметь;
-    # False: все девайсы данного типа обязаны его не иметь;
-    # None: девайсы данного типа могут как иметь, так и не иметь его.
+    # True: все девайсы данного типа обязаны его иметь (быть либо СИ,
+    # либо инд);
+    # False: все девайсы данного типа обязаны его не иметь (они все
+    # не СИ и не инд);
+    # None: девайсы данного типа могут как иметь, так и не иметь его
+    # (могут быть либо СИ, либо инд, либо ни тем ни другим).
     si_flag = models.BooleanField(
         null=True,
         default=False,
@@ -1127,27 +1130,6 @@ class DevTypes(models.Model):
     def __str__(self):
         """."""
         return f'прибор типа {self.title}'
-
-
-class Si(models.Model):
-    """Модель типов по СИ."""
-    title = models.CharField(
-         max_length=255,
-         unique=True,
-         null=False,
-         blank=False,
-         verbose_name='Тип по СИ'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект типа по СИ'
-        verbose_name_plural = 'Объекты типов по СИ'
-
-    def __str__(self):
-        """."""
-        return f'СИ типа {self.title}'
 
 
 class Device(models.Model):
@@ -1209,13 +1191,12 @@ class Device(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий девайс',
                                  related_name='to_upper_level')
-    si = models.ForeignKey(to='Si',
-                           null=True,
-                           blank=True,
-                           default=None,
-                           on_delete=models.RESTRICT,
-                           verbose_name='Тип по СИ',
-                           related_name='to_si')
+    is_si = models.BooleanField(
+        null=True,
+        blank=False,
+        default=False,
+        verbose_name='СИ или индикатор'
+    )
     note1 = models.CharField(
         max_length=255,
         default=None,
@@ -1244,7 +1225,7 @@ class Device(models.Model):
         # с соотв. флагом типа девайса
         # то, что наличие/отсутствие ссылки на девайс верхнего
         # уровня согласуетс с соотв. флагом типа девайса
-        # то, что наличие/отсутствие принадлежности девайса к СИ
+        # то, что принадлежности девайса к СИ
         # согласуется с соотв. флагом типа девайса
 
     def __str__(self):

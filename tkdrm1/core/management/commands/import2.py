@@ -20,7 +20,6 @@ from core.models import (CustHouse,
                          CustPlace2,
                          CustPost,
                          Device,
-                         Si,
                          LocationOfUse,
                          Ppr,
                          PprType,
@@ -115,7 +114,6 @@ class Command(BaseCommand):
             # delete
             RelToDev.objects.all().delete()
             Device.objects.all().delete()
-            Si.objects.all().delete()
             DevTypes.objects.all().delete()
             DevCatsL2.objects.all().delete()
             DevCatsL1.objects.all().delete()
@@ -244,11 +242,6 @@ class Command(BaseCommand):
                 sub_types=item[5]
             ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
-
-            Si.objects.bulk_create(
-                objs=[Si(title='СИ'),
-                      Si(title='индикатор')]
-            )
 
             ppr_types_titles = ['АПП', 'ВПП', 'ЖДПП', 'МПП',
                                 'ППП', 'РПП', 'СПП']
@@ -829,6 +822,7 @@ class Command(BaseCommand):
                 all_sour_types: QuerySet
         ) -> Device:
             """."""
+            # Определение типа девайса
             if (item[13] != '' and
                item[13] in [
                    '1П1', '1П2', '1П3', '1У', 'ПБ', '2П1', '2П2', '2П3']):
@@ -893,18 +887,18 @@ class Command(BaseCommand):
                 curr_upper_id = None
 
             if curr_dev_type.si_flag is False:
-                curr_dev_si = None
+                curr_is_si = None
+            elif item[15] == '':
+                curr_is_si = None
+            elif item[15] == 'СИ':
+                curr_is_si = True
+            elif item[15] == 'инд':
+                curr_is_si = False
             else:
-                if item[15] == '':
-                    curr_dev_si = None
-                else:
-                    try:
-                        curr_dev_si = Si.objects.get(title=item[15])
-                    except Exception:
-                        err_report(row=item[0],
-                                   reason='поиска типа СИ',
-                                   st_2='литерала, который таков:' + item[15])
-                        return None
+                err_report(row=item[0],
+                           reason='поиска типа СИ',
+                           st_2='литерала, который таков:' + item[15])
+                return None
 
             note1 = item[9] if item[9] != '' else None
             note2 = item[10] if item[10] != '' else None
@@ -916,7 +910,7 @@ class Command(BaseCommand):
                 sour_type=curr_sour_type,
                 # sub_type=curr_subtype,
                 upper_id=curr_upper_id,
-                si=curr_dev_si
+                is_si=curr_is_si
             )
             curr_dev.note1 = note1
             curr_dev.note2 = note2
@@ -1223,7 +1217,7 @@ class Command(BaseCommand):
                                                        curr_cust_place_2,
                                                        curr_loc_use)
             if curr_cpl_to_loc is None:
-                err_report(row=[item[0]],
+                err_report(row=item[0],
                            reason='curr_cpl_to_loc не распознан '
                            'и девайс пропущен')
                 continue
@@ -1235,7 +1229,7 @@ class Command(BaseCommand):
                                     all_sour_types=all_sour_types
                                     )
             if curr_dev is None:
-                err_report(row=[item[0]],
+                err_report(row=item[0],
                            reason='девайс не распознан и пропущен')
                 continue
             get_or_cr_curr_reltodev(to_rel=curr_cpl_to_loc,

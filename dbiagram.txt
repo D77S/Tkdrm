@@ -130,11 +130,6 @@ Table DevTypes{
   sub_types JSON
 }
 
-Table Si{
-  id integer [primary key]
-  title varchar
-}
-
 Table Device{
   id integer [primary key]
   type integer [not null, ref: > DevTypes.id]
@@ -144,7 +139,7 @@ Table Device{
   sour_type integer [not null, ref: > SourceTypes.id]
   sub_type varchar
   upper_id integer [ref: > Device.id]
-  si integer [ref:> Si.id]
+  is_si boolean
   note1 varchar
   note2 varchar
 }
