@@ -97,6 +97,10 @@
           <th colspan=2>ID в БД</th>
           <td>{{ dev.id }}</td>
         </tr>
+        <!--
+        {% if dev.type.si_flag is True or dev.type.si_flag is None %}
+        {% endif %}
+        -->
       </tbody>
     </table>
     <input type="button" onclick="history.back();" value="Вернуться на предыдущую страницу"/>

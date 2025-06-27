@@ -822,6 +822,7 @@ class Command(BaseCommand):
                 all_sour_types: QuerySet
         ) -> Device:
             """."""
+
             # Определение типа девайса
             if (item[13] != '' and
                item[13] in [
@@ -839,21 +840,13 @@ class Command(BaseCommand):
                 err_report(row=item[0],
                            reason='поиск типа девайса')
                 return None
+
+            # определение серийного номера девайса
             serial_field = 17 if curr_dev_type.title[:2] == 'ВН' else 16
             if item[serial_field] == '' or item[serial_field] == 'б/н':
                 curr_serial = None
             else:
                 curr_serial = item[serial_field]
-            curr_sour_type_temp = replace_to_clean(source=item[14],
-                                                   pattern=PATTERN3)
-            try:
-                curr_sour_type = all_sour_types.get(
-                    title=curr_sour_type_temp
-                )
-            except Exception:
-                err_report(row=item[0],
-                           reason='названия собственника нет в БД')
-                return None
             if ((curr_serial is not None) and
                (curr_dev_type.serial_flag is False)):
                 err_report(row=item[0],
@@ -864,6 +857,19 @@ class Command(BaseCommand):
                 err_report(row=item[0],
                            reason='отсутствие сер.номера, а он должен быть')
                 return None
+
+            # определение собственника девайса
+            curr_sour_type_temp = replace_to_clean(source=item[14],
+                                                   pattern=PATTERN3)
+            try:
+                curr_sour_type = all_sour_types.get(
+                    title=curr_sour_type_temp
+                )
+            except Exception:
+                err_report(row=item[0],
+                           reason='названия собственника нет в БД')
+                return None
+
             # curr_subtype = ???
             # if ((curr_subtype is not None) and
             #     (curr_dev_type.sub_types is not None) and
@@ -872,6 +878,7 @@ class Command(BaseCommand):
             #                reason='невалидный подтип девайса')
             #     return None
 
+            # определение вышестоящего девайса
             if curr_dev_type.upper_dev_flag:
                 temp_dev = Device.objects.filter(
                     type__title__regex=r'Янтарь*',
@@ -886,6 +893,7 @@ class Command(BaseCommand):
             else:
                 curr_upper_id = None
 
+            # определение принадлежности девайса к СИ
             if curr_dev_type.si_flag is False:
                 curr_is_si = None
             elif item[15] == '':
@@ -900,8 +908,11 @@ class Command(BaseCommand):
                            st_2='литерала, который таков:' + item[15])
                 return None
 
+            # загрузка примечаний к девайсу
             note1 = item[9] if item[9] != '' else None
             note2 = item[10] if item[10] != '' else None
+
+            # создание девайса
             curr_dev, _ = Device.objects.get_or_create(
                 type=curr_dev_type,
                 serial=curr_serial,
