@@ -147,7 +147,6 @@ def dev_detail(request, pk):
         dev_cpl_acc_fin = dev_cpl_acc.custpost
     else:
         dev_cpl_acc_fin = None
-    print(f'{dev_cpl_acc_fin=}')
 
     main_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
         to_dev=dev,
@@ -158,15 +157,12 @@ def dev_detail(request, pk):
         is_main_for_dev=False
     )
 
-    print(f'{main_reltodevs=}, {other_reltodevs=}')
-
     main_cpls: list[CustPlaceToLocation] = [
         item.to_rel for item in main_reltodevs
     ]
     other_cpls: list[CustPlaceToLocation] = [
         item.to_rel for item in other_reltodevs
     ]
-    print(f'{main_cpls=} {other_cpls=}')
 
     main_cpl_use_pre: list[
         list[CustPlace1Use, LocationOfUse]
@@ -174,7 +170,6 @@ def dev_detail(request, pk):
     other_cpl_use_pre: list[
         list[CustPlace1Use, LocationOfUse]
     ] = [[item.cust_pl1, item.loc] for item in other_cpls]
-    print(f'{main_cpl_use_pre=} {other_cpl_use_pre}')
 
     main_cpl_use_fin = []
     for item in main_cpl_use_pre:
@@ -237,7 +232,6 @@ def dev_detail(request, pk):
             temp2 = None
             temp3 = None
         other_cpl_use_fin.append([temp1, temp2, temp3])
-    print(f'{main_cpl_use_fin=} {other_cpl_use_fin=}')
 
     main_cpl_use_fin_count = len(main_cpl_use_fin)
     main_rowspan = main_cpl_use_fin_count + 1
@@ -249,8 +243,6 @@ def dev_detail(request, pk):
         total_rowspan += (main_cpl_use_fin_count + 1)
     if other_cpl_use_fin_count > 0:
         total_rowspan += (other_cpl_use_fin_count + 1)
-
-    print(f'{main_cpl_use_fin_count=} {other_cpl_use_fin_count=}')
 
     context = {
         'dev': dev,

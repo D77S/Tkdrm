@@ -93,14 +93,22 @@
           <th colspan=2>Примечание. В каком участке объекта эксплуатируется (если есть информация)</th>
           <td>{{ dev.note1|default_if_none:"Отсутствует" }}</td>
         </tr>
+        {% if dev.type.si_flag is True %}
+        <tr>
+          <th colspan=2>Подлежит отнесению к СИ либо к индикаторам и является</th>
+          <td>
+            {% if dev.is_si is True %}
+              СИ
+            {% else %}
+              индикатор
+            {% endif %}
+          </td>
+        </tr>
+        {% endif %}
         <tr>
           <th colspan=2>ID в БД</th>
           <td>{{ dev.id }}</td>
         </tr>
-        <!--
-        {% if dev.type.si_flag is True or dev.type.si_flag is None %}
-        {% endif %}
-        -->
       </tbody>
     </table>
     <input type="button" onclick="history.back();" value="Вернуться на предыдущую страницу"/>
