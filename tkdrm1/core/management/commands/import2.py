@@ -843,7 +843,9 @@ class Command(BaseCommand):
 
             # определение серийного номера девайса
             serial_field = 17 if curr_dev_type.title[:2] == 'ВН' else 16
-            if item[serial_field] == '' or item[serial_field] == 'б/н':
+            if (item[serial_field] == '' or
+               item[serial_field] == 'б/н' or
+               item[serial_field] == 'б.н.'):
                 curr_serial = None
             else:
                 curr_serial = item[serial_field]
@@ -950,7 +952,7 @@ class Command(BaseCommand):
             curr_dev.note1 = note1
             curr_dev.note2 = note2
             curr_dev.save()
-            if temp_f and temp_f is False:
+            if temp_f is False:
                 print(f'Строка {item[0]}, девайс был не создан, а ретривен.')
             return curr_dev
 
