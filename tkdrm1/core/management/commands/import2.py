@@ -913,19 +913,45 @@ class Command(BaseCommand):
             note2 = item[10] if item[10] != '' else None
 
             # создание девайса
-            curr_dev, _ = Device.objects.get_or_create(
-                type=curr_dev_type,
-                serial=curr_serial,
-                cp1_acc=curr_pl_1_acc,
-                cp2_acc=curr_pl_2_acc,
-                sour_type=curr_sour_type,
-                # sub_type=curr_subtype,
-                upper_id=curr_upper_id,
-                is_si=curr_is_si
-            )
+            temp_f = None
+            if curr_dev_type.serial_flag is False:
+                curr_dev = Device.objects.create(
+                    type=curr_dev_type,
+                    serial=curr_serial,
+                    cp1_acc=curr_pl_1_acc,
+                    cp2_acc=curr_pl_2_acc,
+                    sour_type=curr_sour_type,
+                    # sub_type=curr_subtype,
+                    upper_id=curr_upper_id,
+                    is_si=curr_is_si
+                )
+            elif curr_dev_type.serial_flag is None and curr_serial is None:
+                curr_dev = Device.objects.create(
+                    type=curr_dev_type,
+                    serial=curr_serial,
+                    cp1_acc=curr_pl_1_acc,
+                    cp2_acc=curr_pl_2_acc,
+                    sour_type=curr_sour_type,
+                    # sub_type=curr_subtype,
+                    upper_id=curr_upper_id,
+                    is_si=curr_is_si
+                )
+            else:
+                curr_dev, temp_f = Device.objects.get_or_create(
+                    type=curr_dev_type,
+                    serial=curr_serial,
+                    cp1_acc=curr_pl_1_acc,
+                    cp2_acc=curr_pl_2_acc,
+                    sour_type=curr_sour_type,
+                    # sub_type=curr_subtype,
+                    upper_id=curr_upper_id,
+                    is_si=curr_is_si
+                )
             curr_dev.note1 = note1
             curr_dev.note2 = note2
             curr_dev.save()
+            if temp_f and temp_f is False:
+                print(f'Строка {item[0]}, девайс был не создан, а ретривен.')
             return curr_dev
 
         def get_or_cr_curr_reltodev(
