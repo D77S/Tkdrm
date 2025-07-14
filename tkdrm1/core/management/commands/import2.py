@@ -919,7 +919,7 @@ class Command(BaseCommand):
             if curr_dev_type.serial_flag is False:
                 curr_dev = Device.objects.create(
                     type=curr_dev_type,
-                    serial=curr_serial,
+                    serial=None,
                     cp1_acc=curr_pl_1_acc,
                     cp2_acc=curr_pl_2_acc,
                     sour_type=curr_sour_type,
