@@ -791,11 +791,6 @@ class SourceTypes(models.Model):
         verbose_name='Тип источника имущества'
     )
 
-    def save(self, *args, **kwargs):
-        """."""
-        temp = super().save(*args, **kwargs)
-        return temp  # noqa
-
     class Meta:
         """."""
 
@@ -805,6 +800,27 @@ class SourceTypes(models.Model):
     def __str__(self):
         """."""
         return f'источник, являющийся: {self.title}'
+
+
+class StatusTypes(models.Model):
+    """Модель типов статуса по эксплуатации."""
+
+    title = models.CharField(
+        max_length=255,
+        unique=True,
+        null=False,
+        verbose_name='Тип статуса по эксплуатации'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Статус по эксплуатации'
+        verbose_name_plural = 'Статусы по эксплуатации'
+
+    def __str__(self):
+        """."""
+        return f'статус по эксплуатации, являющийся: {self.title}'
 
 
 class LocationOfUse(models.Model):
@@ -1197,6 +1213,13 @@ class Device(models.Model):
         default=False,
         verbose_name='СИ или индикатор'
     )
+    # Статус по эксплуатации
+    status_use = models.ForeignKey(to=StatusTypes,
+                                   null=False,
+                                   blank=False,
+                                   on_delete=models.PROTECT,
+                                   verbose_name='Статус эксплуатации',
+                                   related_name='status_use_to_dev')
     note1 = models.CharField(
         max_length=255,
         default=None,

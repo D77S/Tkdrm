@@ -13,8 +13,10 @@ from core.constants import (
     PATTERN1,
     PATTERN2,
     PATTERN3,
+    PATTERN4,
     STANDALONE_CODES,
     SOURCE_TITLES,
+    STATUS_TITLES
 )
 from core.models import (CustHouse,
                          CustPlace2,
@@ -33,6 +35,7 @@ from core.models import (CustHouse,
                          CustPlaceToLocation,
                          RelToDev,
                          DevTypes,
+                         StatusTypes,
                          DevCatsL2,
                          DevCatsL1)
 
@@ -128,6 +131,7 @@ class Command(BaseCommand):
             Rtu.objects.all().delete()
             CustPlace2.objects.all().delete()
             SourceTypes.objects.all().delete()
+            StatusTypes.objects.all().delete()
             # create initial
             tnp_obj_1 = Rtu.objects.create(
                 title='ТНП',
@@ -149,8 +153,13 @@ class Command(BaseCommand):
                 level=2,
                 upper_id=tnp_obj_2
             )
+
             source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
             SourceTypes.objects.bulk_create(objs=source_objs)
+
+            status_objs = [StatusTypes(title=i) for i in STATUS_TITLES]
+            StatusTypes.objects.bulk_create(objs=status_objs)
+
             DevCatsL1.objects.create(title='Стационарные')
             DevCatsL1.objects.create(title='Переносные')
             dev_cats_l2_titles = [
@@ -819,7 +828,8 @@ class Command(BaseCommand):
                 all_dev_types: QuerySet[DevTypes],
                 curr_pl_1_acc: CustPlace1Acc,
                 curr_pl_2_acc: CustPlace2,
-                all_sour_types: QuerySet
+                all_sour_types: QuerySet,
+                all_status_types: QuerySet
         ) -> Device:
             """."""
 
@@ -870,6 +880,19 @@ class Command(BaseCommand):
             except Exception:
                 err_report(row=item[0],
                            reason='названия собственника нет в БД')
+                return None
+
+            # определение статуса тех.средства по использованию
+            curr_status_use_temp = replace_to_clean(source=item[18],
+                                                    pattern=PATTERN4)
+
+            try:
+                curr_status_use = all_status_types.get(
+                    title=curr_status_use_temp
+                )
+            except Exception:
+                err_report(row=item[0],
+                           reason='статуса по эксплуатации т.с. нет в БД')
                 return None
 
             # curr_subtype = ???
@@ -923,9 +946,9 @@ class Command(BaseCommand):
                     cp1_acc=curr_pl_1_acc,
                     cp2_acc=curr_pl_2_acc,
                     sour_type=curr_sour_type,
+                    status_use=curr_status_use,
                     # sub_type=curr_subtype,
                     upper_id=curr_upper_id,
-                    is_si=curr_is_si
                 )
             elif curr_dev_type.serial_flag is None and curr_serial is None:
                 curr_dev = Device.objects.create(
@@ -934,9 +957,9 @@ class Command(BaseCommand):
                     cp1_acc=curr_pl_1_acc,
                     cp2_acc=curr_pl_2_acc,
                     sour_type=curr_sour_type,
+                    status_use=curr_status_use,
                     # sub_type=curr_subtype,
                     upper_id=curr_upper_id,
-                    is_si=curr_is_si
                 )
             else:
                 curr_dev, temp_f = Device.objects.get_or_create(
@@ -945,12 +968,13 @@ class Command(BaseCommand):
                     cp1_acc=curr_pl_1_acc,
                     cp2_acc=curr_pl_2_acc,
                     sour_type=curr_sour_type,
+                    status_use=curr_status_use,
                     # sub_type=curr_subtype,
                     upper_id=curr_upper_id,
-                    is_si=curr_is_si
                 )
             curr_dev.note1 = note1
             curr_dev.note2 = note2
+            curr_dev.is_si = curr_is_si
             curr_dev.save()
             if temp_f is False:
                 print(f'Строка {item[0]}, девайс был не создан, а ретривен.')
@@ -1197,6 +1221,7 @@ class Command(BaseCommand):
         devs_pre_list = [row for row in data_3 if row[11] == 'служебная']
         all_dev_types = DevTypes.objects.all()
         all_sour_types = SourceTypes.objects.all()
+        all_status_types = StatusTypes.objects.all()
         all_pprs = Ppr.objects.all()
         all_mmpos = Mmpo.objects.all()
         all_oezs = Oez.objects.all()
@@ -1265,7 +1290,8 @@ class Command(BaseCommand):
                                     all_dev_types=all_dev_types,
                                     curr_pl_1_acc=curr_pl_1_acc,
                                     curr_pl_2_acc=curr_cust_place_2,
-                                    all_sour_types=all_sour_types
+                                    all_sour_types=all_sour_types,
+                                    all_status_types=all_status_types
                                     )
             if curr_dev is None:
                 err_report(row=item[0],
