@@ -106,6 +106,14 @@
         </tr>
         {% endif %}
         <tr>
+          <th colspan=2>Статуc по использованию</th>
+          <td>{{dev.status_use.title }}</td>
+        </tr>
+        <tr>
+          <th colspan=2>Предложения по использованию в ином месте (если есть)</th>
+          <td>{{ dev.note3|default_if_none:"Отсутствует" }}</td>
+        </tr>
+        <tr>
           <th colspan=2>ID в БД</th>
           <td>{{ dev.id }}</td>
         </tr>

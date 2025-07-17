@@ -1238,6 +1238,15 @@ class Device(models.Model):
         verbose_name='Примечание2'
     )
 
+    note3 = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Примечание3'
+    )
+
     class Meta:
         """."""
 

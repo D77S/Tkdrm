@@ -148,6 +148,7 @@ Table Device{
   is_si boolean
   note1 varchar
   note2 varchar
+  note3 varchar
 }
 
 Table RelToDev{

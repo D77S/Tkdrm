@@ -936,6 +936,7 @@ class Command(BaseCommand):
             # загрузка примечаний к девайсу
             note1 = item[9] if item[9] != '' else None
             note2 = item[10] if item[10] != '' else None
+            note3 = item[19] if item[19] != '' else None
 
             # создание девайса
             temp_f = None
@@ -974,6 +975,7 @@ class Command(BaseCommand):
                 )
             curr_dev.note1 = note1
             curr_dev.note2 = note2
+            curr_dev.note3 = note3
             curr_dev.is_si = curr_is_si
             curr_dev.save()
             if temp_f is False:
