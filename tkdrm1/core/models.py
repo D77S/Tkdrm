@@ -1207,11 +1207,21 @@ class Device(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий девайс',
                                  related_name='to_upper_level')
+    # Является ли СИ конкретный экземпляр
     is_si = models.BooleanField(
         null=True,
         blank=False,
         default=False,
         verbose_name='СИ или индикатор'
+    )
+    # флаг вхождения в ГК
+    gk_flag = models.CharField(
+        max_length=100,
+        unique=False,
+        null=False,
+        blank=True,
+        default='',
+        verbose_name='Флаг вхождения в ГК'
     )
     # Статус по эксплуатации
     status_use = models.ForeignKey(to=StatusTypes,
@@ -1228,7 +1238,6 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание1'
     )
-
     note2 = models.CharField(
         max_length=255,
         default=None,
@@ -1237,7 +1246,6 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание2'
     )
-
     note3 = models.CharField(
         max_length=255,
         default=None,

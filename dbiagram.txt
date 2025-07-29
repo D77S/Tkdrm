@@ -142,10 +142,11 @@ Table Device{
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
   cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
-  status_use integer [not null, ref: > StatusTypes.id]
   sub_type varchar
   upper_id integer [ref: > Device.id]
   is_si boolean
+  gk_flag varchar
+  status_use integer [not null, ref: > StatusTypes.id]
   note1 varchar
   note2 varchar
   note3 varchar

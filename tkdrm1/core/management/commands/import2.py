@@ -933,6 +933,14 @@ class Command(BaseCommand):
                            st_2='литерала, который таков:' + item[15])
                 return None
 
+            # определение флага включения ТС в ГК
+            curr_gk_flag = item[20]
+            if curr_gk_flag not in ['0', '1', '2', '3']:
+                err_report(row=item[0],
+                           reason='парсинга флага включения в ГК',
+                           st_2=curr_gk_flag)
+                return None
+
             # загрузка примечаний к девайсу
             note1 = item[9] if item[9] != '' else None
             note2 = item[10] if item[10] != '' else None
@@ -977,6 +985,14 @@ class Command(BaseCommand):
             curr_dev.note2 = note2
             curr_dev.note3 = note3
             curr_dev.is_si = curr_is_si
+            if curr_gk_flag == '0':
+                curr_dev.gk_flag = 'Ни тех.обслуживания, ни ремонта'
+            elif curr_gk_flag == '1':
+                curr_dev.gk_flag = 'И тех.обслуживание, и ремонт'
+            elif curr_gk_flag == '2':
+                curr_dev.gk_flag = 'Только тех.обслуживание'
+            elif curr_gk_flag == '3':
+                curr_dev.gk_flag = 'Только ремонт'
             curr_dev.save()
             if temp_f is False:
                 print(f'Строка {item[0]}, девайс был не создан, а ретривен.')
