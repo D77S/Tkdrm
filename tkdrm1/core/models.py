@@ -1232,6 +1232,7 @@ class Device(models.Model):
                                    related_name='status_use_to_dev')
 
     # статус по модернизации 12 лет
+    # (только для СТСО)
     @property
     def mod_flag(self):
         return True  # !!!!!!!!!!!
