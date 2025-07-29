@@ -1223,13 +1223,19 @@ class Device(models.Model):
         default='',
         verbose_name='Флаг вхождения в ГК'
     )
-    # Статус по эксплуатации
+    # статус по эксплуатации
     status_use = models.ForeignKey(to=StatusTypes,
                                    null=False,
                                    blank=False,
                                    on_delete=models.PROTECT,
                                    verbose_name='Статус эксплуатации',
                                    related_name='status_use_to_dev')
+
+    # статус по модернизации 12 лет
+    @property
+    def mod_flag(self):
+        return True  # !!!!!!!!!!!
+
     note1 = models.CharField(
         max_length=255,
         default=None,
