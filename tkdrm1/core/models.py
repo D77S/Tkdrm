@@ -1080,7 +1080,7 @@ class DevTypes(models.Model):
 
     title = models.CharField(
         max_length=255,
-        default='Новый прибор',
+        default='Новый прибора',
         unique=False,
         null=False,
         blank=False,

@@ -8,6 +8,7 @@ from django.db.models import QuerySet
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
 from core.constants import ALL_DEV_PAG
+from core.forms import DevDetailForm
 from core.models import (
     # Rtu,
     # CustHouse,
@@ -256,4 +257,26 @@ def dev_detail(request, pk):
         'other_rowspan': other_rowspan,
         'total_rowspan': total_rowspan
     }
+    return render(request, template_name, context)
+
+
+def dev_detail2(request, pk):
+    """."""
+
+    dev: Device = get_object_or_404(Device, pk=pk)
+    devdetailform = DevDetailForm(initial={
+        'type': dev.type.pk,
+        'subtype': dev.sub_type,
+        'serial': dev.serial,
+        'id': dev.pk,
+    })
+
+    # for field in devdetailform.fields.values():
+    #     field.disabled = True
+    devdetailform.fields['id'].disabled = True
+
+    context = {
+        'devdetailform': devdetailform,
+    }
+    template_name = 'dev_detail2.html'
     return render(request, template_name, context)

@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+  {% block content %}
+    <h4 class="pb-2 mb-0">Детализация по выбранному техническому средству</h4>
+    <p></p>
+    <form>
+      {{ devdetailform.as_p }}
+      <input type="submit" value="Сохранить">
+    </form>
+    <input type="button" onclick="history.back();" value="Вернуться без сохранения"/>
+  {% endblock %}
