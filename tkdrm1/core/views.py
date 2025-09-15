@@ -264,12 +264,17 @@ def dev_detail2(request, pk):
     """."""
 
     dev: Device = get_object_or_404(Device, pk=pk)
-    devdetailform = DevDetailForm(initial={
+    initial = {
         'type': dev.type.pk,
         'subtype': dev.sub_type,
+        'cat_l2': dev.type.category.pk,
+        'cat_l1': dev.type.category.cat_l2.pk,
+        'upper_dev': dev.upper_id.pk if dev.upper_id else None,
+        'source': dev.sour_type.pk,
         'serial': dev.serial,
         'id': dev.pk,
-    })
+    }
+    devdetailform = DevDetailForm(initial=initial)
 
     # for field in devdetailform.fields.values():
     #     field.disabled = True
