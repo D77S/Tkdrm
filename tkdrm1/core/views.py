@@ -10,9 +10,13 @@ from django.shortcuts import get_object_or_404, render
 from core.constants import ALL_DEV_PAG
 from core.forms import DevDetailForm
 from core.models import (
-    # Rtu,
-    # CustHouse,
-    # CustPost,
+    Rtu,
+    CustHouse,
+    CustPost,
+    Ppr,
+    Mmpo,
+    Oez,
+    Ztk,
     CustPlace1Use,
     CustPlaceToLocation,
     LocationOfUse,
@@ -264,6 +268,100 @@ def dev_detail2(request, pk):
     """."""
 
     dev: Device = get_object_or_404(Device, pk=pk)
+
+    main_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
+        to_dev=dev,
+        is_main_for_dev=True
+    )
+    other_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
+        to_dev=dev,
+        is_main_for_dev=False
+    )
+
+    main_cpls: list[CustPlaceToLocation] = [
+        item.to_rel for item in main_reltodevs
+    ]
+    other_cpls: list[CustPlaceToLocation] = [
+        item.to_rel for item in other_reltodevs
+    ]
+
+    main_cpl_use_pre: list[
+        list[CustPlace1Use, LocationOfUse]
+    ] = [[item.cust_pl1, item.loc] for item in main_cpls]
+    other_cpl_use_pre: list[
+        list[CustPlace1Use, LocationOfUse]
+    ] = [[item.cust_pl1, item.loc] for item in other_cpls]
+
+    main_cpl_use_fin = []
+    for item in main_cpl_use_pre:
+        if item[0].rtu is not None:
+            temp1 = item[0].rtu
+        elif item[0].custhouse is not None:
+            temp1 = item[0].custhouse
+        elif item[0].custpost is not None:
+            temp1 = item[0].custpost
+        else:
+            temp1 = None
+
+        if item[1] is None:
+            temp2 = None
+            # temp3 = None
+        elif item[1].ppr is not None:
+            temp2 = item[1].ppr
+            # temp3 = item[1].ppr.pptype.title
+        elif item[1].mmpo is not None:
+            temp2 = item[1].mmpo
+            # temp3 = 'ММПО'
+        elif item[1].oez is not None:
+            temp2 = item[1].oez
+            # temp3 = 'ОЭЗ'
+        elif item[1].ztk is not None:
+            temp2 = item[1].ztk
+            # temp3 = 'ЗТК'
+        else:
+            temp2 = None
+            # temp3 = None
+        main_cpl_use_fin.append([
+            temp1,
+            temp2,
+            # temp3
+        ])
+
+    other_cpl_use_fin = []
+    for item in other_cpl_use_pre:
+        if item[0].rtu is not None:
+            temp1 = item[0].rtu
+        elif item[0].custhouse is not None:
+            temp1 = item[0].custhouse
+        elif item[0].custpost is not None:
+            temp1 = item[0].custpost
+        else:
+            temp1 = None
+
+        if item[1] is None:
+            temp2 = None
+            # temp3 = None
+        elif item[1].ppr is not None:
+            temp2 = item[1].ppr
+            # temp3 = item[1].ppr.pptype.title
+        elif item[1].mmpo is not None:
+            temp2 = item[1].mmpo
+            # temp3 = 'ММПО'
+        elif item[1].oez is not None:
+            temp2 = item[1].oez
+            # temp3 = 'ОЭЗ'
+        elif item[1].ztk is not None:
+            temp2 = item[1].ztk
+            # temp3 = 'ЗТК'
+        else:
+            temp2 = None
+            # temp3 = None
+        other_cpl_use_fin.append([
+            temp1,
+            temp2,
+            # temp3
+        ])
+
     initial = {
         'type': dev.type.pk,
         'subtype': dev.sub_type,
@@ -272,13 +370,123 @@ def dev_detail2(request, pk):
         'upper_dev': dev.upper_id.pk if dev.upper_id else None,
         'source': dev.sour_type.pk,
         'serial': dev.serial,
+        'acc1_rtu': dev.cp1_acc.rtu.pk if dev.cp1_acc.rtu is not None else 0,
+        'acc1_ch': dev.cp1_acc.custhouse.pk if dev.cp1_acc.custhouse is not None else 0,  # noqa
+        'acc1_cp': dev.cp1_acc.custpost.pk if dev.cp1_acc.custpost is not None else 0,  # noqa
+        'use_main1_rtu': 0,
+        'use_main1_ch': 0,
+        'use_main1_cp': 0,
+        'use_main1_ppr': 0,
+        'use_main1_mmpo': 0,
+        'use_main1_oez': 0,
+        'use_main1_ztk': 0,
+        'use_oth1_rtu': 0,
+        'use_oth1_ch': 0,
+        'use_oth1_cp': 0,
+        'use_oth1_ppr': 0,
+        'use_oth1_mmpo': 0,
+        'use_oth1_oez': 0,
+        'use_oth1_ztk': 0,
+        'use_oth2_rtu': 0,
+        'use_oth2_ch': 0,
+        'use_oth2_cp': 0,
+        'use_oth2_ppr': 0,
+        'use_oth2_mmpo': 0,
+        'use_oth2_oez': 0,
+        'use_oth2_ztk': 0,
+        'use_oth3_rtu': 0,
+        'use_oth3_ch': 0,
+        'use_oth3_cp': 0,
+        'use_oth3_ppr': 0,
+        'use_oth3_mmpo': 0,
+        'use_oth3_oez': 0,
+        'use_oth3_ztk': 0,
+        'use_oth4_rtu': 0,
+        'use_oth4_ch': 0,
+        'use_oth4_cp': 0,
+        'use_oth4_ppr': 0,
+        'use_oth4_mmpo': 0,
+        'use_oth4_oez': 0,
+        'use_oth4_ztk': 0,
+        'use_oth5_rtu': 0,
+        'use_oth5_ch': 0,
+        'use_oth5_cp': 0,
+        'use_oth5_ppr': 0,
+        'use_oth5_mmpo': 0,
+        'use_oth5_oez': 0,
+        'use_oth5_ztk': 0,
+        'note1': dev.note1,
+        'status_use': dev.status_use.pk,
+        'note3': dev.note3,
         'id': dev.pk,
     }
+
+    if len(main_cpl_use_fin) > 1:
+        print('Внимание, для т.с. более одного основного места эксплуатации!')
+    index = 0
+    for item in main_cpl_use_fin:
+        index += 1
+        if isinstance(item[0], Rtu):
+            initial['use_main{}_rtu'.format(index)] = item[0].pk
+        elif isinstance(item[0], CustHouse):
+            initial['use_main{}_ch'.format(index)] = item[0].pk
+        elif isinstance(item[0], CustPost):
+            initial['use_main{}_cp'.format(index)] = item[0].pk
+        if isinstance(item[1], Ppr):
+            initial['use_main{}_ppr'.format(index)] = item[1].pk
+        elif isinstance(item[1], Mmpo):
+            initial['use_main{}_mmpo'.format(index)] = item[1].pk
+        elif isinstance(item[1], Oez):
+            initial['use_main{}_oez'.format(index)] = item[1].pk
+        elif isinstance(item[1], Ztk):
+            initial['use_main{}_ztk'.format(index)] = item[1].pk
+
+    if len(other_cpl_use_fin) > 5:
+        print('Внимание, для т.с. более 5-ти вспомогат. мест эксплуатации!')
+    index = 0
+    for item in other_cpl_use_fin:
+        index += 1
+        if isinstance(item[0], Rtu):
+            initial['use_oth{}_rtu'.format(index)] = item[0].pk
+        elif isinstance(item[0], CustHouse):
+            initial['use_oth{}_ch'.format(index)] = item[0].pk
+        elif isinstance(item[0], CustPost):
+            initial['use_oth{}_cp'.format(index)] = item[0].pk
+        if isinstance(item[1], Ppr):
+            initial['use_oth{}_ppr'.format(index)] = item[1].pk
+        elif isinstance(item[1], Mmpo):
+            initial['use_oth{}_mmpo'.format(index)] = item[1].pk
+        elif isinstance(item[1], Oez):
+            initial['use_oth{}_oez'.format(index)] = item[1].pk
+        elif isinstance(item[1], Ztk):
+            initial['use_oth{}_ztk'.format(index)] = item[1].pk
+
+    if dev.type.si_flag is None:
+        initial['si_flag'] = 0
+    elif dev.type.si_flag is True:
+        initial['si_flag'] = 1
+    elif dev.type.si_flag is False:
+        initial['si_flag'] = 2
+
+    if dev.type.serial_flag is None:
+        initial['serial_flag'] = 0
+    elif dev.type.serial_flag is True:
+        initial['serial_flag'] = 1
+    elif dev.type.serial_flag is False:
+        initial['serial_flag'] = 2
+
+    if dev.is_si is None:
+        initial['is_si'] = 0
+    elif dev.is_si is True:
+        initial['is_si'] = 1
+    elif dev.is_si is False:
+        initial['is_si'] = 2
+
     devdetailform = DevDetailForm(initial=initial)
 
-    # for field in devdetailform.fields.values():
-    #     field.disabled = True
+    devdetailform.fields['serial_flag'].disabled = True
     devdetailform.fields['id'].disabled = True
+    devdetailform.fields['si_flag'].disabled = True
 
     context = {
         'devdetailform': devdetailform,

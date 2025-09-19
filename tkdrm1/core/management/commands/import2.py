@@ -16,6 +16,7 @@ from core.constants import (
     PATTERN4,
     STANDALONE_CODES,
     SOURCE_TITLES,
+    SERVICE_TITLES,
     STATUS_TITLES
 )
 from core.models import (CustHouse,
@@ -30,6 +31,7 @@ from core.models import (CustHouse,
                          Ztk,
                          Rtu,
                          SourceTypes,
+                         ServiceTypes,
                          CustPlace1Acc,
                          CustPlace1Use,
                          CustPlaceToLocation,
@@ -132,6 +134,7 @@ class Command(BaseCommand):
             CustPlace2.objects.all().delete()
             SourceTypes.objects.all().delete()
             StatusTypes.objects.all().delete()
+            ServiceTypes.objects.all().delete()
             # create initial
             tnp_obj_1 = Rtu.objects.create(
                 title='ТНП',
@@ -156,6 +159,9 @@ class Command(BaseCommand):
 
             source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
             SourceTypes.objects.bulk_create(objs=source_objs)
+
+            service_objs = [ServiceTypes(title=i) for i in SERVICE_TITLES]
+            ServiceTypes.objects.bulk_create(objs=service_objs)
 
             status_objs = [StatusTypes(title=i) for i in STATUS_TITLES]
             StatusTypes.objects.bulk_create(objs=status_objs)

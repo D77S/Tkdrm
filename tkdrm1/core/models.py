@@ -823,6 +823,27 @@ class StatusTypes(models.Model):
         return f'статус по эксплуатации, являющийся: {self.title}'
 
 
+class ServiceTypes(models.Model):
+    """Модель видов действий с т.с."""
+
+    title = models.CharField(
+        max_length=255,
+        unique=True,
+        null=False,
+        verbose_name='Вид действий'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Вид действия'
+        verbose_name_plural = 'Виды действий'
+
+    def __str__(self):
+        """."""
+        return f'вид действия, являющийся: {self.title}'
+
+
 class LocationOfUse(models.Model):
     """Модель локации пользования.
 
@@ -1253,13 +1274,13 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание2'
     )
-    note3 = models.CharField(
-        max_length=255,
-        default=None,
-        unique=False,
-        null=True,
+    service_type = models.ForeignKey(
+        to=ServiceTypes,
+        null=False,
         blank=False,
-        verbose_name='Примечание3'
+        on_delete=models.PROTECT,
+        verbose_name='Тип действий с т.с.',
+        related_name='serv_to_dev'
     )
 
     class Meta:

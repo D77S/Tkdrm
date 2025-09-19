@@ -96,6 +96,11 @@ Table StatusTypes{
   title varchar
 }
 
+Table ServiceTypes{
+  id integer [primary key]
+  title varchar
+}
+
 Table LocationOfUse{
   id integer [primary key]
   ppr integer [null, unique, ref: - Ppr.id]
@@ -149,7 +154,7 @@ Table Device{
   status_use integer [not null, ref: > StatusTypes.id]
   note1 varchar
   note2 varchar
-  note3 varchar
+  service_type integer [not null, ref: > ServiceTypes.id]
 }
 
 Table RelToDev{
