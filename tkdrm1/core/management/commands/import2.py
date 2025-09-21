@@ -940,12 +940,14 @@ class Command(BaseCommand):
                 return None
 
             # определение флага включения ТС в ГК
-            curr_gk_flag = item[20]
-            if curr_gk_flag not in ['0', '1', '2', '3']:
+            curr_serv_flag = item[20]
+            if curr_serv_flag not in ['0', '1', '2', '3']:
                 err_report(row=item[0],
                            reason='парсинга флага включения в ГК',
-                           st_2=curr_gk_flag)
+                           st_2=curr_serv_flag)
                 return None
+            serv_types_list = [item.pk for item in ServiceTypes.objects.all().order_by('id')]  # noqa
+            curr_serv_type = ServiceTypes.objects.get(pk=serv_types_list[int(curr_serv_flag)])  # noqa
 
             # загрузка примечаний к девайсу
             note1 = item[9] if item[9] != '' else None
@@ -964,6 +966,7 @@ class Command(BaseCommand):
                     status_use=curr_status_use,
                     # sub_type=curr_subtype,
                     upper_id=curr_upper_id,
+                    service_type=curr_serv_type
                 )
             elif curr_dev_type.serial_flag is None and curr_serial is None:
                 curr_dev = Device.objects.create(
@@ -975,6 +978,7 @@ class Command(BaseCommand):
                     status_use=curr_status_use,
                     # sub_type=curr_subtype,
                     upper_id=curr_upper_id,
+                    service_type=curr_serv_type
                 )
             else:
                 curr_dev, temp_f = Device.objects.get_or_create(
@@ -986,19 +990,20 @@ class Command(BaseCommand):
                     status_use=curr_status_use,
                     # sub_type=curr_subtype,
                     upper_id=curr_upper_id,
+                    service_type=curr_serv_type
                 )
             curr_dev.note1 = note1
             curr_dev.note2 = note2
             curr_dev.note3 = note3
             curr_dev.is_si = curr_is_si
-            if curr_gk_flag == '0':
-                curr_dev.gk_flag = 'Ни тех.обслуживания, ни ремонта'
-            elif curr_gk_flag == '1':
-                curr_dev.gk_flag = 'И тех.обслуживание, и ремонт'
-            elif curr_gk_flag == '2':
-                curr_dev.gk_flag = 'Только тех.обслуживание'
-            elif curr_gk_flag == '3':
-                curr_dev.gk_flag = 'Только ремонт'
+            # if curr_gk_flag == '0':
+            #     curr_dev.gk_flag = 'Ни тех.обслуживания, ни ремонта'
+            # elif curr_gk_flag == '1':
+            #     curr_dev.gk_flag = 'И тех.обслуживание, и ремонт'
+            # elif curr_gk_flag == '2':
+            #     curr_dev.gk_flag = 'Только тех.обслуживание'
+            # elif curr_gk_flag == '3':
+            #     curr_dev.gk_flag = 'Только ремонт'
             curr_dev.save()
             if temp_f is False:
                 print(f'Строка {item[0]}, девайс был не создан, а ретривен.')

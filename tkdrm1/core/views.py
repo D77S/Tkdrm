@@ -138,134 +138,9 @@ def all_list_by_cpl(request: HttpRequest):
 
 
 def dev_detail(request, pk):
-    """."""
-    template_name = 'dev_detail.html'
-
-    dev: Device = get_object_or_404(Device, pk=pk)
-
-    dev_cpl_acc = dev.cp1_acc
-    if dev_cpl_acc.rtu is not None:
-        dev_cpl_acc_fin = dev_cpl_acc.rtu
-    elif dev_cpl_acc.custhouse is not None:
-        dev_cpl_acc_fin = dev_cpl_acc.custhouse
-    elif dev_cpl_acc.custpost is not None:
-        dev_cpl_acc_fin = dev_cpl_acc.custpost
-    else:
-        dev_cpl_acc_fin = None
-
-    main_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
-        to_dev=dev,
-        is_main_for_dev=True
-    )
-    other_reltodevs: QuerySet[RelToDev] = RelToDev.objects.filter(
-        to_dev=dev,
-        is_main_for_dev=False
-    )
-
-    main_cpls: list[CustPlaceToLocation] = [
-        item.to_rel for item in main_reltodevs
-    ]
-    other_cpls: list[CustPlaceToLocation] = [
-        item.to_rel for item in other_reltodevs
-    ]
-
-    main_cpl_use_pre: list[
-        list[CustPlace1Use, LocationOfUse]
-    ] = [[item.cust_pl1, item.loc] for item in main_cpls]
-    other_cpl_use_pre: list[
-        list[CustPlace1Use, LocationOfUse]
-    ] = [[item.cust_pl1, item.loc] for item in other_cpls]
-
-    main_cpl_use_fin = []
-    for item in main_cpl_use_pre:
-        if item[0].rtu is not None:
-            temp1 = item[0].rtu
-        elif item[0].custhouse is not None:
-            temp1 = item[0].custhouse
-        elif item[0].custpost is not None:
-            temp1 = item[0].custpost
-        else:
-            temp1 = None
-
-        if item[1] is None:
-            temp2 = None
-            temp3 = None
-        elif item[1].ppr is not None:
-            temp2 = item[1].ppr
-            temp3 = item[1].ppr.pptype.title
-        elif item[1].mmpo is not None:
-            temp2 = item[1].mmpo
-            temp3 = 'ММПО'
-        elif item[1].oez is not None:
-            temp2 = item[1].oez
-            temp3 = 'ОЭЗ'
-        elif item[1].ztk is not None:
-            temp2 = item[1].ztk
-            temp3 = 'ЗТК'
-        else:
-            temp2 = None
-            temp3 = None
-        main_cpl_use_fin.append([temp1, temp2, temp3])
-
-    other_cpl_use_fin = []
-    for item in other_cpl_use_pre:
-        if item[0].rtu is not None:
-            temp1 = item[0].rtu
-        elif item[0].custhouse is not None:
-            temp1 = item[0].custhouse
-        elif item[0].custpost is not None:
-            temp1 = item[0].custpost
-        else:
-            temp1 = None
-
-        if item[1] is None:
-            temp2 = None
-            temp3 = None
-        elif item[1].ppr is not None:
-            temp2 = item[1].ppr
-            temp3 = item[1].ppr.pptype.title
-        elif item[1].mmpo is not None:
-            temp2 = item[1].mmpo
-            temp3 = 'ММПО'
-        elif item[1].oez is not None:
-            temp2 = item[1].oez
-            temp3 = 'ОЭЗ'
-        elif item[1].ztk is not None:
-            temp2 = item[1].ztk
-            temp3 = 'ЗТК'
-        else:
-            temp2 = None
-            temp3 = None
-        other_cpl_use_fin.append([temp1, temp2, temp3])
-
-    main_cpl_use_fin_count = len(main_cpl_use_fin)
-    main_rowspan = main_cpl_use_fin_count + 1
-    other_cpl_use_fin_count = len(other_cpl_use_fin)
-    other_rowspan = other_cpl_use_fin_count + 1
-    total_count = main_cpl_use_fin_count + other_cpl_use_fin_count
-    total_rowspan = 1
-    if main_cpl_use_fin_count > 0:
-        total_rowspan += (main_cpl_use_fin_count + 1)
-    if other_cpl_use_fin_count > 0:
-        total_rowspan += (other_cpl_use_fin_count + 1)
-
-    context = {
-        'dev': dev,
-        'dev_cpl_acc_fin': dev_cpl_acc_fin,
-        'main_cpl_use_fin': main_cpl_use_fin,
-        'other_cpl_use_fin': other_cpl_use_fin,
-        'main_cpl_use_fin_count': main_cpl_use_fin_count,
-        'other_cpl_use_fin_count': other_cpl_use_fin_count,
-        'total_count': total_count,
-        'main_rowspan': main_rowspan,
-        'other_rowspan': other_rowspan,
-        'total_rowspan': total_rowspan
-    }
-    return render(request, template_name, context)
-
-
-def dev_detail2(request, pk):
-    """."""
+    """Вью-функция по детализированному выводу
+    одного уже сущтвующего в БД прибора
+    для цели ПРОСМОТРА или РЕДАКТИРОВАНИЯ."""
 
     dev: Device = get_object_or_404(Device, pk=pk)
 
@@ -417,6 +292,7 @@ def dev_detail2(request, pk):
         'use_oth5_ztk': 0,
         'note1': dev.note1,
         'status_use': dev.status_use.pk,
+        'service_type': dev.service_type.pk,
         'note3': dev.note3,
         'id': dev.pk,
     }
@@ -488,6 +364,24 @@ def dev_detail2(request, pk):
     devdetailform.fields['id'].disabled = True
     devdetailform.fields['si_flag'].disabled = True
 
+    context = {
+        'devdetailform': devdetailform,
+    }
+    template_name = 'dev_detail2.html'
+    return render(request, template_name, context)
+
+
+def dev_create(request):
+    """Вью-функция для цели СОЗДАНИЯ НОВОГО одного прибора."""
+    if request.GET:
+        devdetailform = DevDetailForm(request.GET)
+        if devdetailform.is_valid():
+            print('Form is valid')
+        else:
+            print('Form is not valid!')
+    else:
+        devdetailform = DevDetailForm()
+    devdetailform.fields['id'].disabled = True
     context = {
         'devdetailform': devdetailform,
     }

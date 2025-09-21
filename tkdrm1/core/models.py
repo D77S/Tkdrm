@@ -1235,15 +1235,6 @@ class Device(models.Model):
         default=False,
         verbose_name='СИ или индикатор'
     )
-    # флаг вхождения в ГК
-    gk_flag = models.CharField(
-        max_length=100,
-        unique=False,
-        null=False,
-        blank=True,
-        default='',
-        verbose_name='Флаг вхождения в ГК'
-    )
     # статус по эксплуатации
     status_use = models.ForeignKey(to=StatusTypes,
                                    null=False,
@@ -1257,7 +1248,7 @@ class Device(models.Model):
     @property
     def mod_flag(self):
         return True  # !!!!!!!!!!!
-
+    # примечание note1: район объекта
     note1 = models.CharField(
         max_length=255,
         default=None,
@@ -1266,6 +1257,7 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание1'
     )
+    # примечание note2: просто примечание, старые письма и т.д.
     note2 = models.CharField(
         max_length=255,
         default=None,
@@ -1274,12 +1266,22 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание2'
     )
+    # примечание note3: предложения по дальнейшему использованию, если есть
+    note3 = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Примечание3'
+    )
+    # статус по централизованному т.о./ремонту
     service_type = models.ForeignKey(
         to=ServiceTypes,
         null=False,
         blank=False,
         on_delete=models.PROTECT,
-        verbose_name='Тип действий с т.с.',
+        verbose_name='Статус по централизованному т.о./ремонту',
         related_name='serv_to_dev'
     )
 
