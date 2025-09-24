@@ -127,7 +127,7 @@ Table DevCatsL1{
 Table DevCatsL2{
   id integer [primary key]
   title varchar
-  cat_l2 integer [not null, ref: > DevCatsL1.id]
+  cat_l1 integer [not null, ref: > DevCatsL1.id]
 }
 
 Table DevTypes{

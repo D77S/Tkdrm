@@ -181,7 +181,7 @@ class Command(BaseCommand):
             ]
             dev_cats_l2_objs = [
                 DevCatsL2(title=item[0],
-                          cat_l2=item[1]) for item in dev_cats_l2_titles]
+                          cat_l1=item[1]) for item in dev_cats_l2_titles]
             DevCatsL2.objects.bulk_create(objs=dev_cats_l2_objs)
 
             dev_types_titles = [

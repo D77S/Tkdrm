@@ -241,7 +241,7 @@ def dev_detail(request, pk):
         'type': dev.type.pk,
         'subtype': dev.sub_type,
         'cat_l2': dev.type.category.pk,
-        'cat_l1': dev.type.category.cat_l2.pk,
+        'cat_l1': dev.type.category.cat_l1.pk,
         'upper_dev': dev.upper_id.pk if dev.upper_id else None,
         'source': dev.sour_type.pk,
         'serial': dev.serial,

@@ -1076,7 +1076,7 @@ class DevCatsL2(models.Model):
         blank=False,
         verbose_name='Название категории уровня 2'
     )
-    cat_l2 = models.ForeignKey(
+    cat_l1 = models.ForeignKey(
         to=DevCatsL1,
         null=False,
         blank=False,
