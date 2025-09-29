@@ -7,6 +7,7 @@ from core.models import (
     Mmpo,
     Oez,
     Ztk,
+    Device,
     DevTypes,
     DevCatsL2,
     DevCatsL1,
@@ -15,6 +16,7 @@ from core.models import (
     ServiceTypes,
 )
 
+devs = Device.objects.all()
 dev_types = DevTypes.objects.all()
 dev_cat_l2_s = DevCatsL2.objects.all()
 dev_cat_l1_s = DevCatsL1.objects.all()
@@ -66,17 +68,17 @@ class DevDetailForm(forms.Form):
         required=True,
         # help_text='Собственник'
     )
-    serial = forms.CharField(
-        label='Серийный номер',
-        max_length=20,
-        required=False,
-        # help_text='Серийный номер'
-    )
     serial_flag = forms.ChoiceField(
         choices=[],
         label='Девайсы текущего типа т.с., в плане наличия сер.номера',
         required=True,
         # help_text='Девайсы текущего типа т.с., в плане наличия сер.номера'
+    )
+    serial = forms.CharField(
+        label='Серийный номер',
+        max_length=20,
+        required=False,
+        # help_text='Серийный номер'
     )
     acc1_rtu = forms.ChoiceField(
         choices=[],
@@ -432,19 +434,19 @@ class DevDetailForm(forms.Form):
         oezs_choices = EMPTY_OBJ + [(item.pk, item.title) for item in oezs]
         ztks_choices = EMPTY_OBJ + [(item.pk, item.title) for item in ztks]
         serial_flag_choices = EMPTY_OBJ + [
-            (0, 'Могут иметь сер.номер, или нет'),
-            (1, 'Обязаны иметь сер.номер'),
-            (2, 'Обязаны не иметь сер.номер')
+            (1, 'Могут иметь сер.номер, или нет'),
+            (2, 'Обязаны иметь сер.номер'),
+            (3, 'Обязаны не иметь сер.номер')
         ]
         is_si_choices = EMPTY_OBJ + [
-            (0, 'Не подлежит к отнесению к СИ/инд'),
-            (1, 'Является СИ'),
-            (2, 'Является индикатором')
+            (1, 'Не подлежит к отнесению к СИ/инд'),
+            (2, 'Является СИ'),
+            (3, 'Является индикатором')
         ]
         si_flag_choices = EMPTY_OBJ + [
-            (0, 'Могут относиться к СИ/инд, или нет'),
-            (1, 'Обязаны относиться к  СИ/инд'),
-            (2, 'Обязаны не относиться к СИ/инд')
+            (1, 'Могут относиться к СИ/инд, или нет'),
+            (2, 'Обязаны относиться к  СИ/инд'),
+            (3, 'Обязаны не относиться к СИ/инд')
         ]
         self.fields['type'].choices = EMPTY_OBJ + [
             (item.pk, item.title) for item in dev_types
@@ -531,16 +533,28 @@ class DevDetailForm(forms.Form):
         curr_dev_type_catl2 = dev_types.get(pk=dev_type).category.pk
         if curr_dev_type_catl2 != cat_l2:
             raise forms.ValidationError(
-                "Поле \"Тип прибора\" не соовтетствует полю \"Категория уровня 2\". Измените одно из них (обычно второе).",  # noqa
+                'Поле \"Тип прибора\" не соовтетствует полю \"Категория уровня 2\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
 
-        curr_catl2_cat_l1 = dev_cat_l2_s.get(cat_l2=curr_dev_type_catl2).pk
+        curr_catl2_cat_l1 = dev_types.get(pk=dev_type).category.cat_l1.pk
         if curr_catl2_cat_l1 != cat_l1:
             raise forms.ValidationError(
-                "Поле \"Категория уровня 2\" не соовтетствует полю \"Категория уровня 1\". Измените одно из них (обычно второе).",  # noqa
+                'Поле \"Категория уровня 2\" не соовтетствует полю \"Категория уровня 1\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
+ 
+        upper_dev_id = cleaned_data.get('upper_dev') if cleaned_data.get('upper_dev') else None  # noqa
+        if upper_dev_id and (upper_dev_id not in [item.pk for item in devs]):
+            raise forms.ValidationError(
+                'Поле \"ID вышестоящего прибора (если есть)\" должно быть либо пусто, либо содержать валидный id',  # noqa
+                code='invalid_value'
+            )
+
+        check_single('source')
+        check_single('serial_flag')
+
+        # проверить, что значение поля serial_flag бьется с текущим типом девайса
 
         return cleaned_data
 
