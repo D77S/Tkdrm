@@ -373,17 +373,17 @@ class DevDetailForm(forms.Form):
         required=False,
         # help_text='Примечание 1'
     )
-    is_si = forms.ChoiceField(
-        choices=[],
-        label='Является ли текущее т.с. СИ',
-        required=True,
-        # help_text='Является ли текущее т.с. СИ'
-    )
     si_flag = forms.ChoiceField(
         choices=[],
         label='Девайсы текущего типа т.с., в плане отнесения к СИ',
         required=True,
         # help_text='Текущий тип т.с., в плане отнесения к СИ'
+    )
+    is_si = forms.ChoiceField(
+        choices=[],
+        label='Является ли текущее т.с. СИ',
+        required=True,
+        # help_text='Является ли текущее т.с. СИ'
     )
     status_use = forms.ChoiceField(
         choices=[],
