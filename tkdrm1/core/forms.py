@@ -543,8 +543,9 @@ class DevDetailForm(forms.Form):
                 'Поле \"Категория уровня 2\" не соовтетствует полю \"Категория уровня 1\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
- 
+
         upper_dev_id = cleaned_data.get('upper_dev') if cleaned_data.get('upper_dev') else None  # noqa
+
         if upper_dev_id and (upper_dev_id not in [item.pk for item in devs]):
             raise forms.ValidationError(
                 'Поле \"ID вышестоящего прибора (если есть)\" должно быть либо пусто, либо содержать валидный id',  # noqa
