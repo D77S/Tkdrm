@@ -527,75 +527,89 @@ class DevDetailForm(forms.Form):
         cleaned_data: dict = super().clean()
 
         # код типа девайса, получен из формы
-        dev_type_code = check_single('type')
+        form_type = check_single('type')
         # объект типа девайса, получен из БД по коду, полученному из формы
-        dev_type = dev_types.get(pk=dev_type_code)
+        db_type = dev_types.get(pk=form_type)
         # код категории L2 типа девайса, получен из формы
-        cat_l2 = check_single('cat_l2')
+        form_l2 = check_single('cat_l2')
         # код категории L2 типа девайса, получен из БД по коду типа девайса, полученному из формы  # noqa
-        dev_type_catl2 = int(dev_types.get(pk=dev_type_code).category.pk)
+        db_l2 = int(dev_types.get(pk=form_type).category.pk)
         # проверка, что в форме соответствуют друг другу: код типа девайса и код его L2  # noqa
-        if dev_type_catl2 != cat_l2:
+        if db_l2 != form_l2:
             raise forms.ValidationError(
-                'Поле \"Тип прибора\" не соовтетствует полю \"Категория уровня 2\". Измените одно из них (обычно второе).',  # noqa
+                'Поле \"Тип прибора\" не соответствует полю \"Категория уровня 2\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
         # код категории L1 типа девайса, получен из формы
-        cat_l1 = check_single('cat_l1')
+        form_l1 = check_single('cat_l1')
         # код категории L1 типа девайса, полчен из БД по коду типа девайса, полученному из формы  # noqa
-        dev_type_cat_l1 = int(dev_type.category.cat_l1.pk)
+        db_l1 = int(db_type.category.cat_l1.pk)
         # проверка, что в форме соответствуют друг другу: код типа девайса и код его L1  # noqa
-        if dev_type_cat_l1 != cat_l1:
+        if db_l1 != form_l1:
             raise forms.ValidationError(
-                'Поле \"Категория уровня 2\" не соовтетствует полю \"Категория уровня 1\". Измените одно из них (обычно второе).',  # noqa
+                'Поле \"Категория уровня 2\" не соответствует полю \"Категория уровня 1\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
         # код текущего девайса, если есть, получен из формы
-        curr_dev_id = int(cleaned_data.get('id')) if cleaned_data.get('id') else None  # noqa
+        form_dev_id = int(cleaned_data.get('id')) if cleaned_data.get('id') else None  # noqa
         # код девайса, вышестоящего текущему, если есть, получен из формы
-        upper_dev_id = int(cleaned_data.get('upper_dev')) if cleaned_data.get('upper_dev') else None  # noqa
+        form_upperdev_id = int(cleaned_data.get('upper_dev')) if cleaned_data.get('upper_dev') else None  # noqa
         # проверка, что код вышестоящего девайса, если есть, соответствует хоть одному реальному девайсу  # noqa
-        if upper_dev_id and (upper_dev_id not in [int(item.pk) for item in devs]):  # noqa
+        if form_upperdev_id and (form_upperdev_id not in [int(item.pk) for item in devs]):  # noqa
             raise forms.ValidationError(
                 'Поле \"ID вышестоящего прибора (если есть)\" должно быть либо пусто, либо содержать валидный id',  # noqa
                 code='invalid_value'
             )
         # проверка, что код вышестоящего девайса, если есть, не указывает на сам текущий девайс  # noqa
-        if upper_dev_id  and curr_dev_id and upper_dev_id == curr_dev_id:  # noqa
+        if form_upperdev_id  and form_dev_id and form_upperdev_id == form_dev_id:  # noqa
             raise forms.ValidationError(
                 'Поле \"ID вышестоящего прибора (если есть)\" не должно совпадать с полем \"ID\"',  # noqa
                 code='invalid_value'
             )
         # флаг возможности наличия вышестоящего девайса для текущего, получен из БД  # noqa
-        from_db_dev_type_upp_fl = dev_type.upper_dev_flag if dev_type.upper_dev_flag else None  # noqa
-
-        if not ((from_db_dev_type_upp_fl is True and upper_dev_id is not None) or  # noqa
-                (from_db_dev_type_upp_fl is False and upper_dev_id is None) or
-                from_db_dev_type_upp_fl is None):
+        db_uppfl = db_type.upper_dev_flag if db_type.upper_dev_flag else None  # noqa
+        # проверка, что в форме соответствуют друг другу: флаг возможности наличия вышестоящего девайса для текущего, полученный из БД, и он же, полученный из формы  # noqa
+        if not ((db_uppfl is True and form_upperdev_id is not None) or  # noqa
+                (db_uppfl is False and form_upperdev_id is None) or  # noqa
+                db_uppfl is None):
             raise forms.ValidationError(
                 'Поле \"Тип прибора" не соответствует полю \"ID вышестоящего прибора (если есть)\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
-
+        # проверка, что заполнено поле тип собственника
         check_single('source')
-        form_dev_flag = check_single('serial_flag')
-        from_db_dev_type_ser_flag = dev_type.serial_flag if dev_type.serial_flag else None  # noqa
-
-        if not ((from_db_dev_type_ser_flag is True and form_dev_flag == 1) or  # noqa
-                (from_db_dev_type_ser_flag is False and form_dev_flag == 2) or  # noqa
-                (from_db_dev_type_ser_flag is None and form_dev_flag == 3)):  # noqa
+        # проверка что заполнено поле флага по типу девайса в плане сер.номера и получение этого поля из формы # noqa
+        form_serflag = check_single('serial_flag')
+        # получение флага типа девайса в плане наличия сер.номера из БД
+        db_serflag = db_type.serial_flag if db_type.serial_flag else None  # noqa
+        # проверка, что в форме соответствуют друг другу: флаг возможности наличия серийного номера для текущего, полученный из БД, и он же, полученный из формы  # noqa
+        if not ((db_serflag is True and form_serflag == 1) or  # noqa
+                (db_serflag is False and form_serflag == 2) or  # noqa
+                (db_serflag is None and form_serflag == 3)):  # noqa
             raise forms.ValidationError(
                 'Поле \"Тип прибора\" не соотвтствует полю \"Девайсы текущего типа т.с., в плане наличия сер.номера\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
-
+        # серийный номер девайса, получен из формы
         form_serial = cleaned_data.get('serial') if cleaned_data.get('serial') else None  # noqa
-
-        if not ((from_db_dev_type_ser_flag is True and form_serial is not None) or  # noqa
-                (from_db_dev_type_ser_flag is False and form_serial is None) or
-                (from_db_dev_type_ser_flag is None)):
+        # проверка, что наличие/отсутствие серийного номера девайса в форме соответствует флагу типа данного девайса в БД  # noqa
+        if not ((db_serflag is True and form_serial is not None) or  # noqa
+                (db_serflag is False and form_serial is None) or
+                (db_serflag is None)):
             raise forms.ValidationError(
-                'Поле \"Тип прибора\" не соотвтствует полю \"Серийный номер\". Измените одно из них (обычно второе).',  # noqa
+                'Поле \"Тип прибора\" не соответствует полю \"Серийный номер\". Измените одно из них (обычно второе).',  # noqa
+                code='invalid_fieldset'
+            )
+        # проверка что заполнено поле флага по принадлежности к СИ и получение этого поля из формы # noqa
+        form_siflag = check_single('si_flag')
+        # получение флага типа девайса по принадлежности к СИ из БД
+        db_siflag = db_type.si_flag if db_type.si_flag else None
+        # проверка, что в форме соответствуют друг другу: флаг по принадлежности к СИ текущего, полученный из БД, и он же, полученный из формы  # noqa
+        if not ((db_siflag is True and form_siflag == 1) or
+                (db_siflag is False and form_siflag == 2) or
+                (db_siflag is None and form_siflag == 3)):
+            raise forms.ValidationError(
+                'Поле \"Тип прибора\" не соотвтствует полю \"Девайсы текущего типа т.с., в плане отнесения к СИ\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
 
