@@ -80,6 +80,30 @@ class DevDetailForm(forms.Form):
         required=False,
         # help_text='Серийный номер'
     )
+    si_flag = forms.ChoiceField(
+        choices=[],
+        label='Девайсы текущего типа т.с., в плане отнесения к СИ',
+        required=True,
+        # help_text='Текущий тип т.с., в плане отнесения к СИ'
+    )
+    is_si = forms.ChoiceField(
+        choices=[],
+        label='Является ли текущее т.с. СИ',
+        required=True,
+        # help_text='Является ли текущее т.с. СИ'
+    )
+    status_use = forms.ChoiceField(
+        choices=[],
+        label='Статус по использованию',
+        required=True,
+        # help_text='Статус по использованию'
+    )
+    service_type = forms.ChoiceField(
+        choices=[],
+        label='Статус по централизованному т.о./ремонту',
+        required=True,
+        # help_text='Статус по централизованному т.о./ремонту'
+    )
     acc1_rtu = forms.ChoiceField(
         choices=[],
         label='(За)баланс, главный №1, т.орган, в к-м стоит на, если он РТУ',
@@ -373,35 +397,11 @@ class DevDetailForm(forms.Form):
         required=False,
         # help_text='Примечание 1'
     )
-    si_flag = forms.ChoiceField(
-        choices=[],
-        label='Девайсы текущего типа т.с., в плане отнесения к СИ',
-        required=True,
-        # help_text='Текущий тип т.с., в плане отнесения к СИ'
-    )
-    is_si = forms.ChoiceField(
-        choices=[],
-        label='Является ли текущее т.с. СИ',
-        required=True,
-        # help_text='Является ли текущее т.с. СИ'
-    )
-    status_use = forms.ChoiceField(
-        choices=[],
-        label='Статус по использованию',
-        required=True,
-        # help_text='Статус по использованию'
-    )
     note3 = forms.CharField(
         label='Намерения использовать в будущем в ином месте (если есть)',
         max_length=200,
         required=False,
         # help_text='Намерения использовать в будущем в ином месте (если есть)'
-    )
-    service_type = forms.ChoiceField(
-        choices=[],
-        label='Статус по централизованному т.о./ремонту',
-        required=True,
-        # help_text='Статус по централизованному т.о./ремонту'
     )
     id = forms.IntegerField(
         label='ID',
@@ -434,9 +434,9 @@ class DevDetailForm(forms.Form):
         oezs_choices = EMPTY_OBJ + [(item.pk, item.title) for item in oezs]
         ztks_choices = EMPTY_OBJ + [(item.pk, item.title) for item in ztks]
         serial_flag_choices = EMPTY_OBJ + [
-            (1, 'Могут иметь сер.номер, или нет'),
-            (2, 'Обязаны иметь сер.номер'),
-            (3, 'Обязаны не иметь сер.номер')
+            (1, 'Обязаны иметь сер.номер'),
+            (2, 'Обязаны не иметь сер.номер'),
+            (3, 'Могут иметь сер.номер, или нет'),
         ]
         is_si_choices = EMPTY_OBJ + [
             (1, 'Не подлежит к отнесению к СИ/инд'),
@@ -444,9 +444,9 @@ class DevDetailForm(forms.Form):
             (3, 'Является индикатором')
         ]
         si_flag_choices = EMPTY_OBJ + [
-            (1, 'Могут относиться к СИ/инд, или нет'),
-            (2, 'Обязаны относиться к  СИ/инд'),
-            (3, 'Обязаны не относиться к СИ/инд')
+            (1, 'Обязаны быть либо СИ, либо инд'),
+            (2, 'Обязаны не быть ни СИ, ни инд'),
+            (3, 'Могут быть СИ, быть инд, либо ни тем ни другим')
         ]
         self.fields['type'].choices = EMPTY_OBJ + [
             (item.pk, item.title) for item in dev_types
@@ -526,36 +526,78 @@ class DevDetailForm(forms.Form):
 
         cleaned_data: dict = super().clean()
 
-        dev_type = check_single('type')
+        # код типа девайса, получен из формы
+        dev_type_code = check_single('type')
+        # объект типа девайса, получен из БД по коду, полученному из формы
+        dev_type = dev_types.get(pk=dev_type_code)
+        # код категории L2 типа девайса, получен из формы
         cat_l2 = check_single('cat_l2')
-        cat_l1 = check_single('cat_l1')
-
-        curr_dev_type_catl2 = dev_types.get(pk=dev_type).category.pk
-        if curr_dev_type_catl2 != cat_l2:
+        # код категории L2 типа девайса, получен из БД по коду типа девайса, полученному из формы  # noqa
+        dev_type_catl2 = int(dev_types.get(pk=dev_type_code).category.pk)
+        # проверка, что в форме соответствуют друг другу: код типа девайса и код его L2  # noqa
+        if dev_type_catl2 != cat_l2:
             raise forms.ValidationError(
                 'Поле \"Тип прибора\" не соовтетствует полю \"Категория уровня 2\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
-
-        curr_catl2_cat_l1 = dev_types.get(pk=dev_type).category.cat_l1.pk
-        if curr_catl2_cat_l1 != cat_l1:
+        # код категории L1 типа девайса, получен из формы
+        cat_l1 = check_single('cat_l1')
+        # код категории L1 типа девайса, полчен из БД по коду типа девайса, полученному из формы  # noqa
+        dev_type_cat_l1 = int(dev_type.category.cat_l1.pk)
+        # проверка, что в форме соответствуют друг другу: код типа девайса и код его L1  # noqa
+        if dev_type_cat_l1 != cat_l1:
             raise forms.ValidationError(
                 'Поле \"Категория уровня 2\" не соовтетствует полю \"Категория уровня 1\". Измените одно из них (обычно второе).',  # noqa
                 code='invalid_fieldset'
             )
-
-        upper_dev_id = cleaned_data.get('upper_dev') if cleaned_data.get('upper_dev') else None  # noqa
-
-        if upper_dev_id and (upper_dev_id not in [item.pk for item in devs]):
+        # код текущего девайса, если есть, получен из формы
+        curr_dev_id = int(cleaned_data.get('id')) if cleaned_data.get('id') else None  # noqa
+        # код девайса, вышестоящего текущему, если есть, получен из формы
+        upper_dev_id = int(cleaned_data.get('upper_dev')) if cleaned_data.get('upper_dev') else None  # noqa
+        # проверка, что код вышестоящего девайса, если есть, соответствует хоть одному реальному девайсу  # noqa
+        if upper_dev_id and (upper_dev_id not in [int(item.pk) for item in devs]):  # noqa
             raise forms.ValidationError(
                 'Поле \"ID вышестоящего прибора (если есть)\" должно быть либо пусто, либо содержать валидный id',  # noqa
                 code='invalid_value'
             )
+        # проверка, что код вышестоящего девайса, если есть, не указывает на сам текущий девайс  # noqa
+        if upper_dev_id  and curr_dev_id and upper_dev_id == curr_dev_id:  # noqa
+            raise forms.ValidationError(
+                'Поле \"ID вышестоящего прибора (если есть)\" не должно совпадать с полем \"ID\"',  # noqa
+                code='invalid_value'
+            )
+        # флаг возможности наличия вышестоящего девайса для текущего, получен из БД  # noqa
+        from_db_dev_type_upp_fl = dev_type.upper_dev_flag if dev_type.upper_dev_flag else None  # noqa
+
+        if not ((from_db_dev_type_upp_fl is True and upper_dev_id is not None) or  # noqa
+                (from_db_dev_type_upp_fl is False and upper_dev_id is None) or
+                from_db_dev_type_upp_fl is None):
+            raise forms.ValidationError(
+                'Поле \"Тип прибора" не соответствует полю \"ID вышестоящего прибора (если есть)\". Измените одно из них (обычно второе).',  # noqa
+                code='invalid_fieldset'
+            )
 
         check_single('source')
-        check_single('serial_flag')
+        form_dev_flag = check_single('serial_flag')
+        from_db_dev_type_ser_flag = dev_type.serial_flag if dev_type.serial_flag else None  # noqa
 
-        # проверить, что значение поля serial_flag бьется с текущим типом девайса
+        if not ((from_db_dev_type_ser_flag is True and form_dev_flag == 1) or  # noqa
+                (from_db_dev_type_ser_flag is False and form_dev_flag == 2) or  # noqa
+                (from_db_dev_type_ser_flag is None and form_dev_flag == 3)):  # noqa
+            raise forms.ValidationError(
+                'Поле \"Тип прибора\" не соотвтствует полю \"Девайсы текущего типа т.с., в плане наличия сер.номера\". Измените одно из них (обычно второе).',  # noqa
+                code='invalid_fieldset'
+            )
+
+        form_serial = cleaned_data.get('serial') if cleaned_data.get('serial') else None  # noqa
+
+        if not ((from_db_dev_type_ser_flag is True and form_serial is not None) or  # noqa
+                (from_db_dev_type_ser_flag is False and form_serial is None) or
+                (from_db_dev_type_ser_flag is None)):
+            raise forms.ValidationError(
+                'Поле \"Тип прибора\" не соотвтствует полю \"Серийный номер\". Измените одно из них (обычно второе).',  # noqa
+                code='invalid_fieldset'
+            )
 
         return cleaned_data
 
