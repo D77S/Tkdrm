@@ -2,6 +2,7 @@
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
+import datetime
 
 from core.constants import (
     CUSTCHOICES,
@@ -1171,7 +1172,7 @@ class DevTypes(models.Model):
 
 class Device(models.Model):
     """Модель объекта прибора (технического средства)."""
-
+    # Тип прибора.
     type = models.ForeignKey(
         to=DevTypes,
         null=False,
@@ -1180,12 +1181,28 @@ class Device(models.Model):
         verbose_name='Тип прибора',
         related_name='dev_type_to_dev_obj'
     )
+    # Серийный номер.
     serial = models.CharField(
          max_length=255,
          unique=False,
          null=True,
          blank=False,
          verbose_name='Серийный номер'
+    )
+    # Дата изготовления (выпуска, производства).
+    date_prod = models.DateField(
+        null=False,
+        blank=True,
+        default=datetime.date(1990, 1, 1),
+        verbose_name='Дата изготовления'
+    )
+    # Дата последнего ввода в эксплуатацию (при поставке или при
+    # продлении срока службы, но не при ремонте)
+    date_expl = models.DateField(
+        null=False,
+        blank=True,
+        default=datetime.date(1990, 1, 1),
+        verbose_name='Дата ввода'
     )
     # Субъект учета по (за)балансу, 1-го типа
     cp1_acc = models.ForeignKey(to=CustPlace1Acc,
@@ -1213,6 +1230,8 @@ class Device(models.Model):
         CustPlaceToLocation,
         through='RelToDev'
     )
+    # Подтип. Резервное поле, желательно избегать использования,
+    # а вместо него использовать связь от поля type.
     sub_type = models.CharField(
         max_length=255,
         default=None,
@@ -1221,6 +1240,7 @@ class Device(models.Model):
         blank=False,
         verbose_name='Подтип'
     )
+    # Вышестоящий прибор (если есть).
     upper_id = models.ForeignKey(to='Device',
                                  null=True,
                                  blank=True,
@@ -1228,14 +1248,21 @@ class Device(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='Вышестоящий девайс',
                                  related_name='to_upper_level')
-    # Является ли СИ конкретный экземпляр
+    # Является ли СИ конкретный экземпляр.
     is_si = models.BooleanField(
         null=True,
         blank=False,
         default=False,
         verbose_name='СИ или индикатор'
     )
-    # статус по эксплуатации
+    # Является ли "учебным ТС" конкретный экземпляр.
+    is_stud = models.BooleanField(
+        null=False,
+        blank=False,
+        default=False,
+        verbose_name='Учебное ТС'
+    )
+    # Статус по эксплуатации.
     status_use = models.ForeignKey(to=StatusTypes,
                                    null=False,
                                    blank=False,
@@ -1243,12 +1270,12 @@ class Device(models.Model):
                                    verbose_name='Статус эксплуатации',
                                    related_name='status_use_to_dev')
 
-    # статус по модернизации 12 лет
-    # (только для СТСО)
+    # Статус по модернизации с продлением срока службы.
+    # (Предварительно: только для СТСО.)
     @property
     def mod_flag(self):
         return True  # !!!!!!!!!!!
-    # примечание note1: район объекта
+    # Примечание note1: район объекта.
     note1 = models.CharField(
         max_length=255,
         default=None,
@@ -1257,7 +1284,7 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание1'
     )
-    # примечание note2: просто примечание, старые письма и т.д.
+    # Примечание note2: просто примечание, старые письма и т.д.
     note2 = models.CharField(
         max_length=255,
         default=None,
@@ -1266,7 +1293,7 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание2'
     )
-    # примечание note3: предложения по дальнейшему использованию, если есть
+    # Примечание note3: предложения по дальнейшему использованию, если есть.
     note3 = models.CharField(
         max_length=255,
         default=None,
