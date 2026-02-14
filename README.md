@@ -24,6 +24,8 @@ ToDo:
 Форкнуть репозиторий.
 Создать venv. Установить в него зависимости.
 
-Из папки tkdrm/tkdrm1
-запустить скрипт парсинга из Эксель
-командой python manage.py import3
+cd tkdrm1
+python manage.py makemigrations
+python manage.py migrate
+python manage.py import3
+python manage.py runserver

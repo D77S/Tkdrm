@@ -76,15 +76,15 @@ Table CustPlace1Use{
   stanalone_allowed boolean
 }
 
-Table CustPlace2{
-  id integer [primary key]
-  title varchar
-  code varchar
-  level varchar
-  upper_id integer [not null, ref: > CustPlace2.id]
-  ztk_allowed boolean
-  stanalone_allowed boolean
-}
+// Table CustPlace2{
+//   id integer [primary key]
+//   title varchar
+//   code varchar
+//   level varchar
+//   upper_id integer [not null, ref: > CustPlace2.id]
+//   ztk_allowed boolean
+//   stanalone_allowed boolean
+// }
 
 Table SourceTypes{
   id integer [primary key]
@@ -114,7 +114,7 @@ Table LocationOfUse{
 Table CustPlaceToLocation{
   id integer [primary key]
   cust_pl1 integer [not null, ref: > CustPlace1Use.id]
-  cust_pl2 integer [not null, ref: > CustPlace2.id]
+// cust_pl2 integer [not null, ref: > CustPlace2.id]
   loc integer [not null, ref: > LocationOfUse.id]
   is_main_for_cust boolean
 }
@@ -145,7 +145,7 @@ Table Device{
   type integer [not null, ref: > DevTypes.id]
   serial varchar
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
-  cp2_acc integer [not null, ref: > CustPlace2.id]
+// cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
   sub_type varchar
   upper_id integer [ref: > Device.id]
