@@ -134,10 +134,27 @@ Table DevTypes{
   id integer [primary key]
   title varchar
   category integer [not null, ref: > DevCatsL2.id]
+  lifetime integer
   serial_flag varchar
   upper_dev_flag boolean
   si_flag boolean
   sub_types JSON
+}
+
+Table Contracts{
+  id integer [primary key]
+  title varchar
+  number integer
+  date_of date
+  date_start date
+  date_end date
+}
+
+Table DevToContrs{
+  id integer [primary key]
+  contr_to_dev [not null, ref: > Device.id]
+  dev_to_contr [not null, ref: > Contracts.id]
+  exact_date date
 }
 
 Table Device{
@@ -146,6 +163,7 @@ Table Device{
   serial varchar
   date_prod date
   date_expl date
+  date_verif date
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
 // cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]

@@ -21,6 +21,8 @@ from core.constants import (
 )
 from core.models import (CustHouse,
                          CustPost,
+                         Contracts,
+                         DevToContrs,
                          Device,
                          LocationOfUse,
                          Ppr,
@@ -117,6 +119,8 @@ class Command(BaseCommand):
             """."""
             # delete
             RelToDev.objects.all().delete()
+            DevToContrs.objects.all().delete()
+            Contracts.objects.all().delete()
             Device.objects.all().delete()
             DevTypes.objects.all().delete()
             DevCatsL2.objects.all().delete()
@@ -175,73 +179,75 @@ class Command(BaseCommand):
                 [
                     'Янтарь-1С',  # title
                     DevCatsL2.objects.get(title='СТСО'),  # category
+                    12,  # lifetime
                     True,  # serail_flag
                     False,  # upper_dev_flag
                     True,  # si_flag
                     None  # sub_types
                 ],
-                ['Янтарь-1СН', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1СН', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2С', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2С', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2СН', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2СН', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['ВН-СН', DevCatsL2.objects.get(title='ВН'),
+                ['ВН-СН', DevCatsL2.objects.get(title='ВН'), 2,
                  None, True, False, None],
-                ['Янтарь-1А', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1А', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2А', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2А', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['ВН-А', DevCatsL2.objects.get(title='ВН'),
+                ['ВН-А', DevCatsL2.objects.get(title='ВН'), 2,
                  None, True, False, None],
-                ['Янтарь-1П', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1П', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-1П1', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1П1', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-1П2', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1П2', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-1П3', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1П3', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-1У', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1У', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-ПБ', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-ПБ', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2П', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2П', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2П1', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2П1', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2П2', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2П2', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2П3', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2П3', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['ВН-П', DevCatsL2.objects.get(title='ВН'),
+                ['ВН-П', DevCatsL2.objects.get(title='ВН'), 2,
                  None, True, False, None],
-                ['ВН-ПБ', DevCatsL2.objects.get(title='ВН'),
+                ['ВН-ПБ', DevCatsL2.objects.get(title='ВН'), 2,
                  None, True, False, None],
-                ['Янтарь-1Ж', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1Ж', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-1Ж2', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-1Ж2', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2Ж', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2Ж', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['Янтарь-2Ж2', DevCatsL2.objects.get(title='СТСО'),
+                ['Янтарь-2Ж2', DevCatsL2.objects.get(title='СТСО'), 12,
                  True, False, True, None],
-                ['ВН-Ж', DevCatsL2.objects.get(title='ВН'),
+                ['ВН-Ж', DevCatsL2.objects.get(title='ВН'), 2,
                  None, True, False, None],
-                ['ССД', DevCatsL2.objects.get(title='Телеком'),
+                ['ССД', DevCatsL2.objects.get(title='Телеком'), 2,
                  None, False, False, None],
-                ['АРМ', DevCatsL2.objects.get(title='Телеком'),
+                ['АРМ', DevCatsL2.objects.get(title='Телеком'), 2,
                  None, False, False, None],
-                ['АРМ/ССД', DevCatsL2.objects.get(title='Телеком'),
+                ['АРМ/ССД', DevCatsL2.objects.get(title='Телеком'), 2,
                  None, False, False, None],
             ]
             dev_types_objs = [DevTypes(
                 title=item[0],
                 category=item[1],
-                serial_flag=item[2],
-                upper_dev_flag=item[3],
-                si_flag=item[4],
-                sub_types=item[5]
+                lifetime=item[2],
+                serial_flag=item[3],
+                upper_dev_flag=item[4],
+                si_flag=item[5],
+                sub_types=item[6]
             ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
 

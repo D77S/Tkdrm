@@ -3,6 +3,7 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 import datetime
+import dateutil
 
 # from core.constants import (
 #     CUSTCHOICES,
@@ -1129,6 +1130,12 @@ class DevTypes(models.Model):
         verbose_name='Категория прибора',
         related_name='dev_cat_to_dev_type'
     )
+    lifetime = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        default=2,
+        verbose_name='Срок службы'
+    )
     # Признак серийного номера:
     # True: он обязан быть у объекта;
     # False: его обязано не быть у объекта;
@@ -1150,11 +1157,9 @@ class DevTypes(models.Model):
         blank=True,
         verbose_name='Признак наличия вышестоящего девайса'
     )
-    # Признак принадлежности к СИ.
-    # True: все девайсы данного типа обязаны быть либо СИ,
-    # либо инд);
-    # False: все девайсы данного типа обязаны не быть ни СИ,
-    # ни инд);
+    # Признак принадлежности к СИ или инд.
+    # True: все девайсы данного типа обязаны быть либо СИ, либо инд;
+    # False: все девайсы данного типа обязаны не быть ни СИ, ни инд;
     # None: девайсы данного типа могут как иметь, так и не иметь его
     # (могут быть либо СИ, либо инд, либо ни тем ни другим).
     si_flag = models.BooleanField(
@@ -1183,6 +1188,55 @@ class DevTypes(models.Model):
         return f'прибор типа {self.title}'
 
 
+class Contracts(models.Model):
+    """Модель переченя централизованных гос.контрактов,
+    по которым с приборами что-то делалось
+    (ремонт, модернизация, продление ресурса, тех.обсл.)."""
+    #  Название гос.контракта.
+    title = models.CharField(
+        max_length=255,
+        default='Новый гос.контракт',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название'
+    )
+    #  Номер гос.контракта.
+    number = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Номер гос.контракта'
+    )
+    # Дата заключения гос.контракта.
+    date_of = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата заключения гос.контракта'
+    )
+    # Дата начала действий по гос.контракту.
+    date_start = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата начала действий по гос.контракту'
+    )
+    # Дата окончания действий по гос.контракту.
+    date_end = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата окончания действий по гос.контракту'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект гос.контракта'
+        verbose_name_plural = 'Объекты гос.контрактов'
+
+    def __str__(self):
+        """."""
+        return f'Гос.контракт с названием: {self.title}'
+
+
 class Device(models.Model):
     """Модель объекта прибора (технического средства)."""
     # Тип прибора.
@@ -1202,7 +1256,9 @@ class Device(models.Model):
          blank=False,
          verbose_name='Серийный номер'
     )
-    # Дата изготовления (выпуска, производства).
+    # Дата изготовления (выпуска, производства)
+    # или дата последнего продления срока службы,
+    # смотря что было позднее.
     date_prod = models.DateField(
         null=False,
         blank=True,
@@ -1210,12 +1266,30 @@ class Device(models.Model):
         verbose_name='Дата изготовления'
     )
     # Дата последнего ввода в эксплуатацию (при поставке или при
-    # продлении срока службы, но не при ремонте)
+    # перемещении, но не при ремонте)
     date_expl = models.DateField(
         null=False,
         blank=True,
-        default=datetime.date(1990, 1, 1),
+        default=datetime.date(1991, 1, 1),
         verbose_name='Дата ввода'
+    )
+
+    # Дата истечения срока службы
+    @property
+    def date_prod_expired(self):
+        delta = self.type.lifetime
+        return self.date_prod + dateutil.relativedelta.relativedelta(
+            years=delta
+        )
+    # Дата последней поверки. Актуально только если
+    # is_si=True and is_stud=False and status_use=1 and dev_type.si_flag=True
+    # , в этом случае должно обязательно присутствовать и быть в нужном
+    # диапазоне.
+    # В иных случаях может либо быть Null, либо быть любым.
+    date_verif = models.DateField(
+        null=True,
+        blank=True,
+        default=datetime.date(1992, 1, 1),
     )
     # Субъект учета по (за)балансу, 1-го типа
     cp1_acc = models.ForeignKey(to=CustPlace1Acc,
@@ -1242,6 +1316,11 @@ class Device(models.Model):
     rels_of_work = models.ManyToManyField(
         CustPlaceToLocation,
         through='RelToDev'
+    )
+    # Вхождение в гос.контракты
+    rels_of_contrs = models.ManyToManyField(
+        Contracts,
+        through='DevToContrs'
     )
     # Подтип. Резервное поле, желательно избегать использования,
     # а вместо него использовать связь от поля type.
@@ -1341,6 +1420,44 @@ class Device(models.Model):
     def __str__(self):
         """."""
         return f'Объект прибора с id={self.id}'
+
+
+class DevToContrs(models.Model):
+    """Модель-промежутка M2M приборов и контрактов."""
+    contr_to_dev = models.ForeignKey(to=Device,
+                                     null=False,
+                                     blank=False,
+                                     on_delete=models.PROTECT,
+                                     verbose_name='прибор',
+                                     related_name='from_dev_to_contr')
+    dev_to_contr = models.ForeignKey(to=Contracts,
+                                     null=False,
+                                     blank=False,
+                                     on_delete=models.PROTECT,
+                                     verbose_name='гос.контракт',
+                                     related_name='from_contr_to_dev')
+    exact_date = models.DateField(
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name='Точная дата участия прибора в гос.контракте'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект промежутки'
+        verbose_name_plural = 'объекты промежутки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['contr_to_dev', 'dev_to_contr'],
+                name='unique_dev_contr'
+            )
+        ]
+
+    def __str__(self):
+        """."""
+        return f'Объект промежутки с id={self.id}'
 
 
 class RelToDev(models.Model):
