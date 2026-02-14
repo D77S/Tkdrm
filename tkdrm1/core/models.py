@@ -709,77 +709,77 @@ class CustPlace1Use(models.Model):
         return f'промежутка с id={self.id}'
 
 
-class CustPlace2(models.Model):
-    """Модель объекта т.органа второго типа."""
+# class CustPlace2(models.Model):
+#     """Модель объекта т.органа второго типа."""
 
-    title = models.CharField(
-        max_length=255,
-        unique=False,  # !!!!!!
-        null=True,
-        verbose_name='Название'
-    )
-    code = models.CharField(
-       max_length=8,
-       unique=True,
-       null=True,
-       blank=False,
-       validators=[RegexValidator(regex=r'^1\d{7}$')],
-       verbose_name='Код т.органа'
-    )
-    address = models.CharField(
-        max_length=255,
-        default='-',
-        unique=False,
-        null=False,
-        blank=True,
-        verbose_name='Почтовый адрес'
-    )
-    level = models.CharField(choices=CUSTCHOICES,
-                             verbose_name='Уровень т.органа',
-                             max_length=1,
-                             null=False,
-                             blank=False
-                             )
-    upper_id = models.ForeignKey(to='CustPlace2',
-                                 null=True,
-                                 blank=True,
-                                 on_delete=models.RESTRICT,
-                                 verbose_name='Вышестоящий т. орган',
-                                 related_name='to_upper_level')
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=True,
-        verbose_name='Признак разрешения работать без локации'
-        # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ.
-        # Рекомендуется выставить в True для:
-        # всех РТУ, всех таможен, всех внутренних(!) постов.
-    )
+#     title = models.CharField(
+#         max_length=255,
+#         unique=False,  # !!!!!!
+#         null=True,
+#         verbose_name='Название'
+#     )
+#     code = models.CharField(
+#        max_length=8,
+#        unique=True,
+#        null=True,
+#        blank=False,
+#        validators=[RegexValidator(regex=r'^1\d{7}$')],
+#        verbose_name='Код т.органа'
+#     )
+#     address = models.CharField(
+#         max_length=255,
+#         default='-',
+#         unique=False,
+#         null=False,
+#         blank=True,
+#         verbose_name='Почтовый адрес'
+#     )
+#     level = models.CharField(choices=CUSTCHOICES,
+#                              verbose_name='Уровень т.органа',
+#                              max_length=1,
+#                              null=False,
+#                              blank=False
+#                              )
+#     upper_id = models.ForeignKey(to='CustPlace2',
+#                                  null=True,
+#                                  blank=True,
+#                                  on_delete=models.RESTRICT,
+#                                  verbose_name='Вышестоящий т. орган',
+#                                  related_name='to_upper_level')
+#     ztk_allowed = models.BooleanField(
+#         null=False,
+#         blank=False,
+#         default=False,
+#         verbose_name='Признак разрешения работать в ЗТК'
+#         # Имеются в виду ЗТК т.н. отдельно-существующие.
+#         # Не находящиеся на территории какого-либо
+#         # пункта пропуска, ММПО, ОЭЗ.
+#     )
+#     standalone_allowed = models.BooleanField(
+#         null=False,
+#         blank=False,
+#         default=True,
+#         verbose_name='Признак разрешения работать без локации'
+#         # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
+#         # каком-либо ПП, ММПО, СЭЗ, ОЭЗ.
+#         # Рекомендуется выставить в True для:
+#         # всех РТУ, всех таможен, всех внутренних(!) постов.
+#     )
 
-    def save(self, *args, **kwargs):
-        """."""
-        temp = super().save(*args, **kwargs)
-        return temp  # noqa
+#     def save(self, *args, **kwargs):
+#         """."""
+#         temp = super().save(*args, **kwargs)
+#         return temp  # noqa
 
-    class Meta:
-        """."""
+#     class Meta:
+#         """."""
 
-        verbose_name = 'Т.орган второго типа'
-        verbose_name_plural = 'Т.органы второго типа'
+#         verbose_name = 'Т.орган второго типа'
+#         verbose_name_plural = 'Т.органы второго типа'
 
-    def __str__(self):
-        """."""
-        return f'таможенный орган 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
+#     def __str__(self):
+#         """."""
+#         return f'таможенный орган 2-го типа, {self.level}-го уровня, являющийся: {self.title}'  # noqa
 
 
 class SourceTypes(models.Model):
@@ -983,12 +983,12 @@ class CustPlaceToLocation(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='т. орган_1',
                                  related_name='to_cp1')
-    cust_pl2 = models.ForeignKey(to=CustPlace2,
-                                 null=False,
-                                 blank=False,
-                                 on_delete=models.RESTRICT,
-                                 verbose_name='т. орган_2',
-                                 related_name='to_cp2')
+    # cust_pl2 = models.ForeignKey(to=CustPlace2,
+    #                              null=False,
+    #                              blank=False,
+    #                              on_delete=models.RESTRICT,
+    #                              verbose_name='т. орган_2',
+    #                              related_name='to_cp2')
     loc = models.ForeignKey(to=LocationOfUse,
                             null=True,
                             blank=False,
@@ -1022,8 +1022,11 @@ class CustPlaceToLocation(models.Model):
         verbose_name_plural = 'Отношения т.органа к локации эксплуатации'
         constraints = [
             models.UniqueConstraint(
-                fields=['cust_pl1', 'cust_pl2', 'loc'],
-                name='unique_cp1_cp2_loc'
+                fields=[
+                    'cust_pl1',
+                    # 'cust_pl2',
+                    'loc'],
+                name='unique_cp_loc'
             ),
             models.UniqueConstraint(
                 fields=['cust_pl1',],
@@ -1034,11 +1037,10 @@ class CustPlaceToLocation(models.Model):
 
     def __str__(self):
         """."""
-        # temp = 'Отношение т.органа 1-го типа {curr1} и 2-го типа {curr2} к '\
+        # temp = 'Отношение т.органа 1-го типа {curr1} к '\
         #        'локации эксплуатации {curr3}, с флагом приоритетности, равным {curr4}'  # noqa
         # return temp.format(
         #     curr1=self.cust_pl1,
-        #     curr2=self.cust_pl2,
         #     curr3=self.loc,
         #     curr4=self.is_main_for_cust
         # )
@@ -1211,13 +1213,13 @@ class Device(models.Model):
                                 on_delete=models.PROTECT,
                                 verbose_name='Учетчик-т.о. 1-го типа',
                                 related_name='cp1acc_to_dev')
-    # Субъект учета по (за)балансу, 2-го типа
-    cp2_acc = models.ForeignKey(to=CustPlace2,
-                                null=False,
-                                blank=False,
-                                on_delete=models.PROTECT,
-                                verbose_name='Учетчик-т.о. 2-го типа',
-                                related_name='cp2acc_to_dev')
+    # # Субъект учета по (за)балансу, 2-го типа
+    # cp2_acc = models.ForeignKey(to=CustPlace2,
+    #                             null=False,
+    #                             blank=False,
+    #                             on_delete=models.PROTECT,
+    #                             verbose_name='Учетчик-т.о. 2-го типа',
+    #                             related_name='cp2acc_to_dev')
     # Источник собственности
     sour_type = models.ForeignKey(to=SourceTypes,
                                   null=False,

@@ -3,7 +3,7 @@ from .models import (
     Rtu,
     CustHouse,
     CustPost,
-    CustPlace2,
+    # CustPlace2,
     Device,
     SourceTypes,
 )
@@ -44,17 +44,17 @@ class CoreCustPostAdmin(admin.ModelAdmin):
     raw_id_fields = ('upper_id',)
 
 
-@admin.register(CustPlace2)
-class CoreCustPlace2Admin(admin.ModelAdmin):
-    list_display = ('title',
-                    'code',
-                    'upper_id')
-    # list_editable = ('code',
-    #                  'upper_id')
-    list_per_page = 14
-    ordering = ('title',)
-    list_filter = ('level',)
-    raw_id_fields = ('upper_id',)
+# @admin.register(CustPlace2)
+# class CoreCustPlace2Admin(admin.ModelAdmin):
+#     list_display = ('title',
+#                     'code',
+#                     'upper_id')
+#     # list_editable = ('code',
+#     #                  'upper_id')
+#     list_per_page = 14
+#     ordering = ('title',)
+#     list_filter = ('level',)
+#     raw_id_fields = ('upper_id',)
 
 
 @admin.register(SourceTypes)
