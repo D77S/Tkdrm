@@ -22,10 +22,9 @@ ToDo:
 
 
 Форкнуть репозиторий.
-Создать venv. Установить в него зависимости.
-
-cd tkdrm1
-python manage.py makemigrations
-python manage.py migrate
-python manage.py import3
-python manage.py runserver
+- Создать venv. Установить в него зависимости.
+- cd tkdrm1
+- python manage.py makemigrations
+- python manage.py migrate
+- python manage.py import3
+- python manage.py runserver
