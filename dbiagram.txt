@@ -144,17 +144,20 @@ Table Device{
   id integer [primary key]
   type integer [not null, ref: > DevTypes.id]
   serial varchar
+  date_prod date
+  date_expl date
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
 // cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
   sub_type varchar
   upper_id integer [ref: > Device.id]
   is_si boolean
+  is_stud boolean
   status_use integer [not null, ref: > StatusTypes.id]
+  service_type integer [not null, ref: > ServiceTypes.id]
   note1 varchar
   note2 varchar
   note3 varchar
-  service_type integer [not null, ref: > ServiceTypes.id]
 }
 
 Table RelToDev{
