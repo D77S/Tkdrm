@@ -152,8 +152,8 @@ Table Contracts{
 
 Table DevToContrs{
   id integer [primary key]
-  contr_to_dev [not null, ref: > Device.id]
-  dev_to_contr [not null, ref: > Contracts.id]
+  contr_to_dev integer [not null, ref: > Device.id]
+  dev_to_contr integer [not null, ref: > Contracts.id]
   exact_date date
 }
 
