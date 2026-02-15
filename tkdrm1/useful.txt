@@ -1,0 +1,4 @@
+fixtures
+python -Xutf8 manage.py dumpdata --exclude contenttypes --exclude auth.permission --indent 2 -o db.json
+scripts
+exec(open("shell_script.py", encoding="utf-8").read())

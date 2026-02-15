@@ -1,4 +1,5 @@
 """."""
+import datetime
 import math
 import os
 import pandas
@@ -656,7 +657,8 @@ class Command(BaseCommand):
                 curr_cpl: Union[Rtu, CustHouse, CustPost],
                 curr_site: Union[Ppr, Mmpo, Oez, Ztk]
         ) -> bool:
-            """."""
+            """Проверка верности сочетания флагов и наличия/отсутствия
+            субъекта эксплуатации прибора."""
             if curr_cpl.standalone_allowed is False and curr_site is None:
                 err_report(row=item[0],
                            reason='Некорректное сочетание флага '
@@ -667,6 +669,16 @@ class Command(BaseCommand):
                 err_report(row=item[0],
                            reason='Некорректное сочетание флага '
                            'ztk_allowed и того, что в строке ЗТК.')
+                return False
+            return True
+
+        def chk_valid_year(item: str) -> bool:
+            """."""
+            try:
+                int(item)
+            except Exception:
+                return False
+            if not (1990 < int(item) < 2100):
                 return False
             return True
 
@@ -870,7 +882,9 @@ class Command(BaseCommand):
             serv_types_list = [item.pk for item in ServiceTypes.objects.all().order_by('id')]  # noqa
             curr_serv_type = ServiceTypes.objects.get(pk=serv_types_list[int(curr_serv_flag)])  # noqa
 
-            # загрузка примечаний к девайсу
+            # загрузка второстепенных атрибутов прибора
+            year_prod = item[22] if item[22] != '' else None
+            year_expl = item[23] if item[23] != '' else None
             note1 = item[9] if item[9] != '' else None
             note2 = item[10] if item[10] != '' else None
             note3 = item[19] if item[19] != '' else None
@@ -915,9 +929,30 @@ class Command(BaseCommand):
             curr_dev.note3 = note3
             curr_dev.is_si = curr_is_si
 
+            if chk_valid_year(year_prod):
+                curr_dev.date_prod = datetime.date(
+                    day=1,
+                    month=1,
+                    year=int(year_prod)
+                )
+            elif curr_dev.upper_id:
+                curr_dev.date_prod = curr_dev.upper_id.date_prod
+
+            if chk_valid_year(year_expl):
+                curr_dev.date_expl = datetime.date(
+                    day=1,
+                    month=1,
+                    year=int(year_expl)
+                )
+            elif curr_dev.upper_id:
+                curr_dev.date_expl = curr_dev.upper_id.date_expl
+
             curr_dev.save()
             if temp_f is False:
-                print(f'Строка {item[0]}, девайс был не создан, а ретривен.')
+                print(
+                    f'Строка {item[0]}, девайс был не создан, '
+                    'а ретривен (и, возможно, апдейтчен).'
+                )
             return curr_dev
 
         def get_or_cr_curr_reltodev(
@@ -1156,6 +1191,8 @@ class Command(BaseCommand):
         all_ztks = Ztk.objects.all()
         ##########
         for item in tqdm(devs_pre_list):
+            # for subitem in enumerate(item):
+            #     print(f'{subitem=}')
             curr_mini_item = [
                 item[0],
                 [item[1], item[2], item[3]],
