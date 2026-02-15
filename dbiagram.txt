@@ -161,6 +161,7 @@ Table Device{
   id integer [primary key]
   type integer [not null, ref: > DevTypes.id]
   serial varchar
+  inventary varchar
   date_prod date
   date_expl date
   date_verif date

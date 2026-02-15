@@ -1255,13 +1255,21 @@ class Device(models.Model):
         verbose_name='Тип прибора',
         related_name='dev_type_to_dev_obj'
     )
-    # Серийный номер.
+    # Серийный номер (если есть).
     serial = models.CharField(
-         max_length=255,
-         unique=False,
-         null=True,
-         blank=False,
-         verbose_name='Серийный номер'
+        max_length=255,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Серийный номер'
+    )
+    # Инвентарный номер (если есть).
+    inventary = models.CharField(
+        max_length=255,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Инвентарный номер'
     )
     # Дата изготовления (выпуска, производства)
     # или дата последнего продления срока службы,
