@@ -1362,7 +1362,7 @@ class Device(models.Model):
         default=False,
         verbose_name='СИ или индикатор'
     )
-    # Является ли "учебным ТС" конкретный экземпляр.
+    # Является ли учебным ТС конкретный экземпляр.
     is_stud = models.BooleanField(
         null=False,
         blank=False,
@@ -1409,7 +1409,7 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание3'
     )
-    # статус по централизованному т.о./ремонту
+    # Cтатус по централизованному т.о./ремонту, подлежит ли прибор.
     service_type = models.ForeignKey(
         to=ServiceTypes,
         null=False,
