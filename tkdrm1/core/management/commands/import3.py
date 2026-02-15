@@ -1142,12 +1142,10 @@ class Command(BaseCommand):
                 curr_site = None
 
             curr_loc_use = get_curr_loc_use(curr_site)
-            # Внимание!! Проверка только по т.о. первого типа!!
-            # Иметь в виду, если будет решено перейти на т.о. второго типа.
+
             if not chk_flags(item, curr_cust_place_1, curr_site):
                 continue
-            # Внимание!! Только по т.о. первого типа!!
-            # Иметь в виду, если будет решено перейти на т.о. второго типа.
+
             get_or_cr_curr_cp_to_loc(curr_pl_1_use,
                                      curr_cust_place_1,
                                      curr_loc_use)

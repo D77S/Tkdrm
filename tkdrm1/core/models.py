@@ -1283,9 +1283,9 @@ class Device(models.Model):
         )
     # Дата последней поверки. Актуально только если
     # is_si=True and is_stud=False and status_use=1 and dev_type.si_flag=True
-    # , в этом случае должно обязательно присутствовать и быть в нужном
+    # , в этом случае должно быть не Null и быть в нужном
     # диапазоне.
-    # В иных случаях может либо быть Null, либо быть любым.
+    # В иных случаях может быть любым, в т.ч. Null.
     date_verif = models.DateField(
         null=True,
         blank=True,
@@ -1429,13 +1429,13 @@ class DevToContrs(models.Model):
                                      blank=False,
                                      on_delete=models.PROTECT,
                                      verbose_name='прибор',
-                                     related_name='from_dev_to_contr')
+                                     related_name='dev_to_contr')
     dev_to_contr = models.ForeignKey(to=Contracts,
                                      null=False,
                                      blank=False,
                                      on_delete=models.PROTECT,
                                      verbose_name='гос.контракт',
-                                     related_name='from_contr_to_dev')
+                                     related_name='contr_to_dev')
     exact_date = models.DateField(
         null=True,
         blank=True,
