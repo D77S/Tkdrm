@@ -4,10 +4,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 import datetime
 import dateutil
-
-# from core.constants import (
-#     CUSTCHOICES,
-# )
+# from users.models import TKDRMUser
 
 
 class Rtu(models.Model):
@@ -142,7 +139,7 @@ class CustHouse(models.Model):
                                  blank=False,
                                  on_delete=models.PROTECT,
                                  verbose_name='Вышестоящий т. орган',
-                                 related_name="cust_house_to_rtu")
+                                 related_name='from_ch_to_rtu')
 
     def save(self, *args, **kwargs):
         """Сохранение новой таможни.
@@ -1042,9 +1039,7 @@ class CustPlaceToLocation(models.Model):
         verbose_name_plural = 'Отношения т.органа к локации эксплуатации'
         constraints = [
             models.UniqueConstraint(
-                fields=[
-                    'cust_pl1',
-                    'loc'],
+                fields=['cust_pl1', 'loc'],
                 name='unique_cp_loc'
             ),
             models.UniqueConstraint(
@@ -1271,6 +1266,16 @@ class Device(models.Model):
         blank=False,
         verbose_name='Инвентарный номер'
     )
+    # Должностное лицо т.органа (одно), ответственное за его эксплуатацию
+    # holder = models.ForeignKey(
+    #     to=TKDRMUser,
+    #     null=True,
+    #     blank=True,
+    #     default=None,
+    #     on_delete=models.PROTECT,
+    #     verbose_name='Ответственный за экспл-ю',
+    #     related_name='from_man_to_dev'
+    # )
     # Дата изготовления (выпуска, производства)
     # или дата последнего продления срока службы,
     # смотря что было позднее.
@@ -1296,8 +1301,8 @@ class Device(models.Model):
         return self.date_prod + dateutil.relativedelta.relativedelta(
             years=delta
         )
-    # Дата последней поверки. Актуально только если
-    # is_si=True and is_stud=False and status_use=1 and dev_type.si_flag=True
+    # Дата окончания последней поверки. Актуально только если
+    # dev_type.si_flag=True and is_si=True and is_stud=False and status_use=1
     # , в этом случае должно быть не Null и быть в нужном
     # диапазоне.
     # В иных случаях может быть любым, в т.ч. Null.

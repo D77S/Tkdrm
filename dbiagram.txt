@@ -3,6 +3,25 @@
 // https://dbdiagram.io/d
 
 
+Table Departments{
+  id integer [primary key]
+  title varchar
+}
+
+Table TKDRMUser{
+  id integer [primary key]
+  username varchar
+  first_name varchar
+  pater_name varchar
+  last_name varchar
+  empl integer [not null, ref: > CustPlace1Use.id]
+  dept integer [not null, ref: > Departments.id]
+  email varchar
+  is_staff boolean
+  is_active boolean
+  date_joined date
+}
+
 Table Rtu{
   id integer [primary key]
   title varchar
