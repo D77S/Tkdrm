@@ -4,7 +4,7 @@ from django.core.validators import RegexValidator
 from django.db import models
 import datetime
 import dateutil
-# from users.models import TKDRMUser
+from users.models import TKDRMUser
 
 
 class Rtu(models.Model):
@@ -1267,15 +1267,15 @@ class Device(models.Model):
         verbose_name='Инвентарный номер'
     )
     # Должностное лицо т.органа (одно), ответственное за его эксплуатацию
-    # holder = models.ForeignKey(
-    #     to=TKDRMUser,
-    #     null=True,
-    #     blank=True,
-    #     default=None,
-    #     on_delete=models.PROTECT,
-    #     verbose_name='Ответственный за экспл-ю',
-    #     related_name='from_man_to_dev'
-    # )
+    holder = models.ForeignKey(
+        to=TKDRMUser,
+        null=True,
+        blank=True,
+        default=None,
+        on_delete=models.PROTECT,
+        verbose_name='Ответственный за экспл-ю',
+        related_name='from_man_to_dev'
+    )
     # Дата изготовления (выпуска, производства)
     # или дата последнего продления срока службы,
     # смотря что было позднее.

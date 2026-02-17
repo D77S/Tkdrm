@@ -181,6 +181,7 @@ Table Device{
   type integer [not null, ref: > DevTypes.id]
   serial varchar
   inventary varchar
+  holder integer [not null, ref: > TKDRMUser.id]
   date_prod date
   date_expl date
   date_verif date
