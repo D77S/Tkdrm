@@ -328,6 +328,8 @@ class Device(models.Model):
     @property
     def date_prod_expired(self):
         delta = self.type.lifetime
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # Запросить, было ли продление срока службы, если да - вернуть с него дату
         return self.date_prod + dateutil.relativedelta.relativedelta(
             years=delta
         )
@@ -340,6 +342,19 @@ class Device(models.Model):
         null=True,
         blank=True,
         default=datetime.date(1992, 1, 1),
+    )
+
+    # Номер категории расчетный
+    @property
+    def cat_number_c(self):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        return 1
+    # Номер категории фактический
+    cat_number_f = models.PositiveSmallIntegerField(
+        null=True,
+        default=None,
+        blank=True,
+        verbose_name='Номер категории фактический'
     )
     # Субъект учета по (за)балансу, 1-го типа
     cp1_acc = models.ForeignKey(to=CustPlace1Acc,

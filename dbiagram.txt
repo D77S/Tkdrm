@@ -188,6 +188,8 @@ Table Device{
   date_prod_expired date
   warr_period integer
   date_verif date
+  cat_number_c integer
+  cat_number_f integer
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
 // cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
