@@ -329,7 +329,8 @@ class Device(models.Model):
     def date_prod_expired(self):
         delta = self.type.lifetime
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # Запросить, было ли продление срока службы, если да - вернуть с него дату
+        # Запросить, было ли продление срока службы, если да -
+        # вернуть с него дату + delta
         return self.date_prod + dateutil.relativedelta.relativedelta(
             years=delta
         )
