@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from core.models import CustPlace1Use
+from custplaces.models import CustPlace1Use
 
 
 class Departments(models.Model):
