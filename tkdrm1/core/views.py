@@ -10,6 +10,10 @@ from django.shortcuts import get_object_or_404, render
 from core.constants import ALL_DEV_PAG
 from core.forms import DevDetailForm
 from core.models import (
+    Device,
+    RelToDev
+)
+from custplaces.models import (
     Rtu,
     CustHouse,
     CustPost,
@@ -19,9 +23,7 @@ from core.models import (
     Ztk,
     CustPlace1Use,
     CustPlaceToLocation,
-    LocationOfUse,
-    Device,
-    RelToDev
+    LocationOfUse
 )
 
 # def query_debugger(func):

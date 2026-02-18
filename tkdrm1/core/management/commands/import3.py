@@ -20,28 +20,28 @@ from core.constants import (
     SERVICE_TITLES,
     STATUS_TITLES
 )
-from core.models import (CustHouse,
-                         CustPost,
-                         Contracts,
+from core.models import (Contracts,
                          DevToContrs,
                          Device,
-                         LocationOfUse,
-                         Ppr,
-                         PprType,
-                         Mmpo,
-                         Oez,
-                         Ztk,
-                         Rtu,
                          SourceTypes,
                          ServiceTypes,
-                         CustPlace1Acc,
-                         CustPlace1Use,
-                         CustPlaceToLocation,
                          RelToDev,
                          DevTypes,
                          StatusTypes,
                          DevCatsL2,
                          DevCatsL1)
+from custplaces.models import (CustHouse,
+                               CustPost,
+                               LocationOfUse,
+                               Ppr,
+                               PprType,
+                               Mmpo,
+                               Oez,
+                               Ztk,
+                               Rtu,
+                               CustPlace1Acc,
+                               CustPlace1Use,
+                               CustPlaceToLocation)
 
 
 class Command(BaseCommand):

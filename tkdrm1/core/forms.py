@@ -1,12 +1,5 @@
 from django import forms
 from core.models import (
-    Rtu,
-    CustHouse,
-    CustPost,
-    Ppr,
-    Mmpo,
-    Oez,
-    Ztk,
     Device,
     DevTypes,
     DevCatsL2,
@@ -14,6 +7,15 @@ from core.models import (
     SourceTypes,
     StatusTypes,
     ServiceTypes,
+)
+from custplaces.models import (
+    Rtu,
+    CustHouse,
+    CustPost,
+    Ppr,
+    Mmpo,
+    Oez,
+    Ztk,
 )
 
 devs = Device.objects.all()

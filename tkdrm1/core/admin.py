@@ -1,11 +1,12 @@
 from django.contrib import admin
-from .models import (
+from custplaces.models import (
     Rtu,
     CustHouse,
     CustPost,
-    # CustPlace2,
+)
+from core.models import (
     Device,
-    SourceTypes,
+    SourceTypes
 )
 
 admin.site.empty_value_display = 'Не задано'
