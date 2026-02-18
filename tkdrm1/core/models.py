@@ -301,13 +301,27 @@ class Device(models.Model):
         default=datetime.date(1990, 1, 1),
         verbose_name='Дата изготовления'
     )
-    # Дата последнего ввода в эксплуатацию (при поставке или при
-    # перемещении, но не при ремонте)
+    # Дата ввода в эксплуатацию при поставке
     date_expl = models.DateField(
         null=False,
         blank=True,
         default=datetime.date(1991, 1, 1),
         verbose_name='Дата ввода'
+    )
+
+    # Дата ввода в эксплуатацию при продлении
+    # срока службы (если было, иначе равна date_expl)
+    @property
+    def date_prolong(self):
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # Запросить, было ли продление срока службы, если да - вернуть с него дату
+        return self.date_expl
+    # Гарантийный срок при поставке, месяцев
+    warr_period = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        default=24,
+        verbose_name='Срок гарантии при поставке'
     )
 
     # Дата истечения срока службы
@@ -348,6 +362,25 @@ class Device(models.Model):
                                   on_delete=models.PROTECT,
                                   verbose_name='Источник собственности',
                                   related_name='s_type_to_dev')
+    # Балансовая стоимость (в руб., если имеется, отдельно данной единицы)
+    cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name='Балансовая стоимость, руб.'
+    )
+    # Исправность. Прибор исправен, если все его составные части
+    # полностью исправны, а если у него есть нижестоящие
+    # (to_upper_level not Null), то и они все также.
+    # Если состояние неизвестно, то = Null.
+    condition = models.BooleanField(
+        null=True,
+        blank=False,
+        default=True,
+        verbose_name='Исправность'
+    )
     # Субъект пользования
     rels_of_work = models.ManyToManyField(
         CustPlaceToLocation,

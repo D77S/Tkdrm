@@ -184,10 +184,15 @@ Table Device{
   holder integer [not null, ref: > TKDRMUser.id]
   date_prod date
   date_expl date
+  date_prolong date
+  date_prod_expired date
+  warr_period integer
   date_verif date
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
 // cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
+  cost float
+  condition boolean
   sub_type varchar
   upper_id integer [ref: > Device.id]
   is_si boolean
