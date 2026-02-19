@@ -446,12 +446,6 @@ class Device(models.Model):
                                    on_delete=models.PROTECT,
                                    verbose_name='Статус эксплуатации',
                                    related_name='status_use_to_dev')
-
-    # Статус по модернизации с продлением срока службы.
-    # (Предварительно: только для СТСО.)
-    @property
-    def mod_flag(self):
-        return True  # !!!!!!!!!!!
     # Примечание note1: район объекта.
     note1 = models.CharField(
         max_length=255,
