@@ -293,8 +293,6 @@ class Device(models.Model):
         related_name='from_man_to_dev'
     )
     # Дата изготовления (выпуска, производства)
-    # или дата последнего продления срока службы,
-    # смотря что было позднее.
     date_prod = models.DateField(
         null=False,
         blank=True,
