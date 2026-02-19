@@ -329,6 +329,7 @@ class Device(models.Model):
     def date_prod_expired(self):
         delta = self.type.lifetime
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # дописать
         # Запросить, было ли продление срока службы, если да -
         # вернуть с него дату + delta
         return self.date_prod + dateutil.relativedelta.relativedelta(
@@ -349,7 +350,8 @@ class Device(models.Model):
     @property
     def cat_number_c(self):
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        return 1
+        # дописать
+        return 2
     # Номер категории фактический
     cat_number_f = models.PositiveSmallIntegerField(
         null=True,
