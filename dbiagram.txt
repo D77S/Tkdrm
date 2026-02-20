@@ -95,16 +95,6 @@ Table CustPlace1Use{
   stanalone_allowed boolean
 }
 
-// Table CustPlace2{
-//   id integer [primary key]
-//   title varchar
-//   code varchar
-//   level varchar
-//   upper_id integer [not null, ref: > CustPlace2.id]
-//   ztk_allowed boolean
-//   stanalone_allowed boolean
-// }
-
 Table SourceTypes{
   id integer [primary key]
   title varchar
@@ -127,13 +117,12 @@ Table LocationOfUse{
   oez integer [null, unique, ref: - Oez.id]
   ztk integer [null, unique, ref: - Ztk.id]
   is_ztk boolean
-  // custplaces integer [not null, ref: <> CustPlaceToLocation.id]
+  custplaces integer [not null, ref: <> CustPlaceToLocation.id]
 }
 
 Table CustPlaceToLocation{
   id integer [primary key]
   cust_pl1 integer [not null, ref: > CustPlace1Use.id]
-// cust_pl2 integer [not null, ref: > CustPlace2.id]
   loc integer [not null, ref: > LocationOfUse.id]
   is_main_for_cust boolean
 }
@@ -160,22 +149,6 @@ Table DevTypes{
   sub_types JSON
 }
 
-Table Contracts{
-  id integer [primary key]
-  title varchar
-  number integer
-  date_of date
-  date_start date
-  date_end date
-}
-
-Table DevToContrs{
-  id integer [primary key]
-  contr_to_dev integer [not null, ref: > Device.id]
-  dev_to_contr integer [not null, ref: > Contracts.id]
-  exact_date date
-}
-
 Table Device{
   id integer [primary key]
   type integer [not null, ref: > DevTypes.id]
@@ -191,7 +164,6 @@ Table Device{
   cat_number_c integer
   cat_number_f integer
   cp1_acc integer [not null, ref: > CustPlace1Acc.id]
-// cp2_acc integer [not null, ref: > CustPlace2.id]
   sour_type integer [not null, ref: > SourceTypes.id]
   cost float
   condition boolean
@@ -204,6 +176,28 @@ Table Device{
   note1 varchar
   note2 varchar
   note3 varchar
+}
+
+Table Contracts{
+  id integer [primary key]
+  title varchar
+  number integer
+  date_of date
+  date_start date
+  date_end date
+  multi boolean
+}
+
+Table DTCPotential{
+  id integer [primary key]
+  contr_to_dev integer [not null, ref: > Device.id]
+  dev_to_contr integer [not null, ref: > Contracts.id]
+}
+
+Table DTCReal{
+  id integer [primary key]
+  basis integer [not null, ref: > DTCPotential.id]
+  exact_moment datetime
 }
 
 Table RelToDev{

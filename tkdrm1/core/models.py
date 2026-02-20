@@ -206,55 +206,6 @@ class DevTypes(models.Model):
         return f'прибор типа {self.title}'
 
 
-class Contracts(models.Model):
-    """Модель переченя централизованных гос.контрактов,
-    по которым с приборами что-то делалось
-    (ремонт, модернизация, продление ресурса, тех.обсл.)."""
-    #  Название гос.контракта.
-    title = models.CharField(
-        max_length=255,
-        default='Новый гос.контракт',
-        unique=True,
-        null=False,
-        blank=False,
-        verbose_name='Название'
-    )
-    #  Номер гос.контракта.
-    number = models.PositiveSmallIntegerField(
-        null=False,
-        blank=False,
-        verbose_name='Номер гос.контракта'
-    )
-    # Дата заключения гос.контракта.
-    date_of = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name='Дата заключения гос.контракта'
-    )
-    # Дата начала действий по гос.контракту.
-    date_start = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name='Дата начала действий по гос.контракту'
-    )
-    # Дата окончания действий по гос.контракту.
-    date_end = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name='Дата окончания действий по гос.контракту'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект гос.контракта'
-        verbose_name_plural = 'Объекты гос.контрактов'
-
-    def __str__(self):
-        """."""
-        return f'Гос.контракт с названием: {self.title}'
-
-
 class Device(models.Model):
     """Модель объекта прибора (технического средства)."""
     # Тип прибора.
@@ -312,7 +263,8 @@ class Device(models.Model):
     @property
     def date_prolong(self):
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # Запросить, было ли продление срока службы, если да - вернуть с него дату
+        # Запросить, было ли продление срока службы,
+        # если да - вернуть с него дату
         return self.date_expl
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
@@ -404,11 +356,6 @@ class Device(models.Model):
     rels_of_work = models.ManyToManyField(
         CustPlaceToLocation,
         through='RelToDev'
-    )
-    # Вхождение в гос.контракты
-    rels_of_contrs = models.ManyToManyField(
-        Contracts,
-        through='DevToContrs'
     )
     # Подтип. Резервное поле, желательно избегать использования,
     # а вместо него использовать связь от поля type.
@@ -504,26 +451,82 @@ class Device(models.Model):
         return f'Объект прибора с id={self.id}'
 
 
-class DevToContrs(models.Model):
-    """Модель-промежутка M2M приборов и контрактов."""
+class Contracts(models.Model):
+    """Модель переченя централизованных гос.контрактов,
+    по которым с приборами что-то делалось
+    (ремонт, модернизация, продление ресурса, тех.обсл.)."""
+    #  Название гос.контракта.
+    title = models.CharField(
+        max_length=255,
+        default='Новый гос.контракт',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название'
+    )
+    #  Номер гос.контракта.
+    number = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Номер гос.контракта'
+    )
+    # Дата заключения гос.контракта.
+    date_of = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата заключения гос.контракта'
+    )
+    # Дата начала возможности действий по гос.контракту.
+    date_start = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата начала действий по гос.контракту'
+    )
+    # Дата окончания возможности действий по гос.контракту.
+    date_end = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата окончания действий по гос.контракту'
+    )
+    # Признак того, что по контракту действие с прибором
+    # совершается строго однократно. (Если False, то любое
+    # количество раз, от 0 до примерно 500.)
+    multi = models.BooleanField(
+        null=False,
+        blank=False,
+        default=True,
+        verbose_name='Признако однократности действи по контракту'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект гос.контракта'
+        verbose_name_plural = 'Объекты гос.контрактов'
+
+    def __str__(self):
+        """."""
+        return f'Гос.контракт с названием: {self.title}'
+
+
+class DTCPotential(models.Model):
+    """Модель-промежутка M2M приборов и контрактов.
+    Потенциально возможные действия с приборами по контрактам.
+    Пример: прибор входит (прописан) в контракте на ремонт
+    всех приборов. Входит строго один раз. Но это ещё не означает,
+    что с прибором по контракту были реальные ремонты."""
     contr_to_dev = models.ForeignKey(to=Device,
                                      null=False,
                                      blank=False,
                                      on_delete=models.PROTECT,
                                      verbose_name='прибор',
-                                     related_name='dev_to_contr')
+                                     related_name='f_dev_to_contr')
     dev_to_contr = models.ForeignKey(to=Contracts,
                                      null=False,
                                      blank=False,
                                      on_delete=models.PROTECT,
                                      verbose_name='гос.контракт',
-                                     related_name='contr_to_dev')
-    exact_date = models.DateField(
-        null=True,
-        blank=True,
-        default=None,
-        verbose_name='Точная дата участия прибора в гос.контракте'
-    )
+                                     related_name='f_contr_to_dev')
 
     class Meta:
         """."""
@@ -533,7 +536,43 @@ class DevToContrs(models.Model):
         constraints = [
             models.UniqueConstraint(
                 fields=['contr_to_dev', 'dev_to_contr'],
-                name='unique_dev_contr'
+                name='unique_dc_p'
+            )
+        ]
+
+    def __str__(self):
+        """."""
+        return f'Объект промежутки с id={self.id}'
+
+
+class DTCReal(models.Model):
+    """Модель-промежутка M2M приборов и контрактов.
+    Реальные действия с приборами по контрактам.
+    Пример: прибор реально подвергся действию по контракту,
+    какое-то количество раз, в какие-то даты."""
+    basis = models.ForeignKey(to=DTCPotential,
+                              null=False,
+                              blank=False,
+                              on_delete=models.PROTECT,
+                              verbose_name='Основание',
+                              related_name='from_dtcp_to_dtcr')
+    exact_moment = models.DateTimeField(
+        null=False,
+        blank=False,
+        auto_now_add=True,
+        verbose_name=('Точная дата и время реального участия ' +
+                      'прибора в гос.контракте')
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект промежутки'
+        verbose_name_plural = 'объекты промежутки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['basis', 'exact_moment'],
+                name='unique_dc_real'
             )
         ]
 
