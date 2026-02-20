@@ -495,7 +495,7 @@ class Contracts(models.Model):
         null=False,
         blank=False,
         default=True,
-        verbose_name='Признако однократности действи по контракту'
+        verbose_name='Признако однократности действий с прибором по контракту'
     )
 
     class Meta:

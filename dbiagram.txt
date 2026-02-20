@@ -1,7 +1,5 @@
-// Use DBML to define your database structure
 // Docs: https://dbdiagram.io/docs
 // https://dbdiagram.io/d
-
 
 Table Departments{
   id integer [primary key]
