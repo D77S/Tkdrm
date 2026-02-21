@@ -168,7 +168,7 @@ class DevTypes(models.Model):
     # (например, видеокамера имеет вышестоящий объект: Янтарь)
     # True: все девайсы данного типа обязаны его иметь;
     # False: все девайсы данного типа обязаны его не иметь;
-    # None: девайсы данного типа могут как иметь, так и не иметь его.
+    # None: все девайсы данного типа могут как иметь, так и не иметь его.
     upper_dev_flag = models.BooleanField(
         null=True,
         default=False,
@@ -204,6 +204,176 @@ class DevTypes(models.Model):
     def __str__(self):
         """."""
         return f'прибор типа {self.title}'
+
+
+class Doings(models.Model):
+    """Виды возможных действий с приборами по контрактам."""
+    #  Название действия.
+    title = models.CharField(
+        max_length=255,
+        default='Новое действие',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название действия'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект возможного действия с прибором по контракту'
+        verbose_name_plural = 'Объекты в. д. с п. по к.'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title'],
+                name='unique_title'
+            ),
+        ]
+
+    def __str__(self):
+        """."""
+        return f'Действие по к., имя действия: {self.title}'
+
+
+class Contracts(models.Model):
+    """Модель переченя централизованных гос.контрактов,
+    по которым с приборами что-то делалось
+    (ремонт, модернизация, продление ресурса, тех.обсл.)."""
+    #  Название гос.контракта.
+    title = models.CharField(
+        max_length=255,
+        default='Новый гос.контракт',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название'
+    )
+    #  Номер гос.контракта.
+    number = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Номер гос.контракта'
+    )
+    # Дата заключения гос.контракта.
+    date_of = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата заключения гос.контракта'
+    )
+    # Дата начала возможности действий по гос.контракту.
+    date_start = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата начала действий по гос.контракту'
+    )
+    # Дата окончания возможности действий по гос.контракту.
+    date_end = models.DateField(
+        null=False,
+        blank=False,
+        verbose_name='Дата окончания действий по гос.контракту'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект гос.контракта'
+        verbose_name_plural = 'Объекты гос.контрактов'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['title', 'number', 'date_of'],
+                name='unique_tnd'
+            ),
+        ]
+
+    def __str__(self):
+        """."""
+        return f'Гос.контракт с названием: {self.title}'
+
+
+class RelContrDoing(models.Model):
+    """Виды связей действий и контрактов."""
+    #  Какое действие.
+    to_doing = models.ForeignKey(
+        to=Doings,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Действие по контракту',
+        related_name='from_doings'
+    )
+    # По какому контракту.
+    to_contract = models.ForeignKey(
+        to=Contracts,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Контракт',
+        related_name='from_contracts'
+    )
+    # Сколько минимально раз должно делаться.
+    min_count = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Минимально, раз'
+    )
+    # Сколько максимально раз должно делаться.
+    max_count = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Максимально, раз'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект связи действия и контракта'
+        verbose_name_plural = 'Объекты связи действия и контракта'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['to_doing', 'to_contract'],
+                name='unique_dc'
+            ),
+        ]
+
+    def __str__(self):
+        """."""
+        return f'Объект связи с номером: {self.id}'
+
+
+class DTCReal(models.Model):
+    """Модель-промежутка M2M приборов и контрактов.
+    Реальные действия с приборами по контрактам.
+    Пример: прибор реально подвергся действию по контракту,
+    какое-то количество раз, в какие-то даты."""
+    basis = models.ForeignKey(to='DTCPotential',
+                              null=False,
+                              blank=False,
+                              on_delete=models.PROTECT,
+                              verbose_name='Основание',
+                              related_name='from_dtcp_to_dtcr')
+    exact_moment = models.DateTimeField(
+        null=False,
+        blank=False,
+        auto_now_add=True,
+        verbose_name=('Точная дата и время реального действия ' +
+                      ' с прибором по контракту')
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект промежутки'
+        verbose_name_plural = 'объекты промежутки'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['basis', 'exact_moment'],
+                name='unique_dc_real'
+            )
+        ]
+
+    def __str__(self):
+        """."""
+        return f'Объект промежутки с id={self.id}'
 
 
 class Device(models.Model):
@@ -319,13 +489,6 @@ class Device(models.Model):
                                 on_delete=models.PROTECT,
                                 verbose_name='Учетчик-т.о. 1-го типа',
                                 related_name='cp1acc_to_dev')
-    # # Субъект учета по (за)балансу, 2-го типа
-    # cp2_acc = models.ForeignKey(to=CustPlace2,
-    #                             null=False,
-    #                             blank=False,
-    #                             on_delete=models.PROTECT,
-    #                             verbose_name='Учетчик-т.о. 2-го типа',
-    #                             related_name='cp2acc_to_dev')
     # Источник собственности
     sour_type = models.ForeignKey(to=SourceTypes,
                                   null=False,
@@ -351,11 +514,6 @@ class Device(models.Model):
         blank=False,
         default=True,
         verbose_name='Исправность'
-    )
-    # Субъект пользования
-    rels_of_work = models.ManyToManyField(
-        CustPlaceToLocation,
-        through='RelToDev'
     )
     # Подтип. Резервное поле, желательно избегать использования,
     # а вместо него использовать связь от поля type.
@@ -396,6 +554,25 @@ class Device(models.Model):
                                    on_delete=models.PROTECT,
                                    verbose_name='Статус эксплуатации',
                                    related_name='status_use_to_dev')
+    # Cтатус по централизованному т.о./ремонту, подлежит ли прибор.
+    service_type = models.ForeignKey(
+        to=ServiceTypes,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Статус по централизованному т.о./ремонту',
+        related_name='serv_to_dev'
+    )
+    # M2M-поля
+    # Субъект пользования
+    rels_of_work = models.ManyToManyField(
+        CustPlaceToLocation,
+        through='RelToDev'
+    )
+    rels_of_contracts = models.ManyToManyField(
+        RelContrDoing,
+        through='DTCPotential',
+    )
     # Примечание note1: район объекта.
     note1 = models.CharField(
         max_length=255,
@@ -423,15 +600,6 @@ class Device(models.Model):
         blank=False,
         verbose_name='Примечание3'
     )
-    # Cтатус по централизованному т.о./ремонту, подлежит ли прибор.
-    service_type = models.ForeignKey(
-        to=ServiceTypes,
-        null=False,
-        blank=False,
-        on_delete=models.PROTECT,
-        verbose_name='Статус по централизованному т.о./ремонту',
-        related_name='serv_to_dev'
-    )
 
     class Meta:
         """."""
@@ -449,122 +617,6 @@ class Device(models.Model):
     def __str__(self):
         """."""
         return f'Объект прибора с id={self.id}'
-
-
-class Doings(models.Model):
-    """Виды возможных действий с приборами по контрактам."""
-    #  Название действия.
-    title = models.CharField(
-        max_length=255,
-        default='Новое действие',
-        unique=True,
-        null=False,
-        blank=False,
-        verbose_name='Название действия'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект возможного действия с прибором по контракту'
-        verbose_name_plural = 'Объекты в. д. с п. по к.'
-
-    def __str__(self):
-        """."""
-        return f'Действие по к., имя действия: {self.title}'
-
-
-class Contracts(models.Model):
-    """Модель переченя централизованных гос.контрактов,
-    по которым с приборами что-то делалось
-    (ремонт, модернизация, продление ресурса, тех.обсл.)."""
-    #  Название гос.контракта.
-    title = models.CharField(
-        max_length=255,
-        default='Новый гос.контракт',
-        unique=True,
-        null=False,
-        blank=False,
-        verbose_name='Название'
-    )
-    #  Номер гос.контракта.
-    number = models.PositiveSmallIntegerField(
-        null=False,
-        blank=False,
-        verbose_name='Номер гос.контракта'
-    )
-    # Дата заключения гос.контракта.
-    date_of = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name='Дата заключения гос.контракта'
-    )
-    # Дата начала возможности действий по гос.контракту.
-    date_start = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name='Дата начала действий по гос.контракту'
-    )
-    # Дата окончания возможности действий по гос.контракту.
-    date_end = models.DateField(
-        null=False,
-        blank=False,
-        verbose_name='Дата окончания действий по гос.контракту'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект гос.контракта'
-        verbose_name_plural = 'Объекты гос.контрактов'
-
-    def __str__(self):
-        """."""
-        return f'Гос.контракт с названием: {self.title}'
-
-
-class RelContrDoing(models.Model):
-    """Виды связей действий и контрактов."""
-    #  Какое действие.
-    to_doing = models.ForeignKey(
-        to=Doings,
-        null=False,
-        blank=False,
-        on_delete=models.PROTECT,
-        verbose_name='Действие по контракту',
-        related_name='from_doings'
-    )
-    # По какому контракту.
-    to_contract = models.ForeignKey(
-        to=Contracts,
-        null=False,
-        blank=False,
-        on_delete=models.PROTECT,
-        verbose_name='Контракт',
-        related_name='from_contracts'
-    )
-    # Сколько минимально раз должно делаться.
-    min_count = models.PositiveSmallIntegerField(
-        null=False,
-        blank=False,
-        verbose_name='Минимально, раз'
-    )
-    # Сколько максимально раз должно делаться.
-    max_count = models.PositiveSmallIntegerField(
-        null=False,
-        blank=False,
-        verbose_name='Максимально, раз'
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'Объект связи действия и контракта'
-        verbose_name_plural = 'Объекты связи действия и контракта'
-
-    def __str__(self):
-        """."""
-        return f'Объект связи с номером: {self.id}'
 
 
 class DTCPotential(models.Model):
@@ -595,44 +647,8 @@ class DTCPotential(models.Model):
         verbose_name_plural = 'объекты промежутки'
         constraints = [
             models.UniqueConstraint(
-                fields=['contr_to_dev', 'dev_to_contr'],
-                name='unique_dc_p'
-            )
-        ]
-
-    def __str__(self):
-        """."""
-        return f'Объект промежутки с id={self.id}'
-
-
-class DTCReal(models.Model):
-    """Модель-промежутка M2M приборов и контрактов.
-    Реальные действия с приборами по контрактам.
-    Пример: прибор реально подвергся действию по контракту,
-    какое-то количество раз, в какие-то даты."""
-    basis = models.ForeignKey(to=DTCPotential,
-                              null=False,
-                              blank=False,
-                              on_delete=models.PROTECT,
-                              verbose_name='Основание',
-                              related_name='from_dtcp_to_dtcr')
-    exact_moment = models.DateTimeField(
-        null=False,
-        blank=False,
-        auto_now_add=True,
-        verbose_name=('Точная дата и время реального действия ' +
-                      ' с прибором по контракту')
-    )
-
-    class Meta:
-        """."""
-
-        verbose_name = 'объект промежутки'
-        verbose_name_plural = 'объекты промежутки'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['basis', 'exact_moment'],
-                name='unique_dc_real'
+                fields=['dev', 'reltocd'],
+                name='unique_dr'
             )
         ]
 

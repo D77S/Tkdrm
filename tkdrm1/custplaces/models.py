@@ -4,24 +4,14 @@ from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 
 
-class Rtu(models.Model):
-    """Модель РТУ."""
-
+class BaseCPModel(models.Model):
     title = models.CharField(
         max_length=255,
-        default='Новое РТУ',
-        unique=True,
+        default='Новый таможенный орган',
+        unique=False,
         null=False,
         blank=False,
         verbose_name='Название'
-    )
-    code = models.CharField(
-        max_length=8,
-        unique=True,
-        null=True,
-        blank=False,
-        validators=[RegexValidator(regex=r'^1\d{2}00000$')],
-        verbose_name='Код т.органа'
     )
     address = models.CharField(
         max_length=255,
@@ -31,24 +21,42 @@ class Rtu(models.Model):
         blank=True,
         verbose_name='Почтовый адрес'
     )
+    # Признак, что данному т.о. органу разрешено
+    # эксплуатировать приборы в ЗТК.
+    # Имеются в виду ЗТК т.н. отдельно-существующие.
+    # Не находящиеся на территории какого-либо
+    # пункта пропуска, ММПО, ОЭЗ.
     ztk_allowed = models.BooleanField(
         null=False,
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
     )
+    # Признак, что данному т.о. органу разрешено
+    # эксплуатировать приборы без локации.
+    # Не в каком-либо ПП, ММПО, СЭЗ, ОЭЗ.
+    # Рекомендуется выставить в True для:
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
         default=True,
         verbose_name='Признак разрешения работать без локации'
-        # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ.
-        # Рекомендуется выставить в True для:
-        # всех РТУ, всех таможен, всех внутренних(!) постов.
+    )
+
+    class Meta:
+        abstract = True
+
+
+class Rtu(BaseCPModel):
+    """Модель РТУ."""
+
+    code = models.CharField(
+        max_length=8,
+        unique=True,
+        null=True,
+        blank=False,
+        validators=[RegexValidator(regex=r'^1\d{2}00000$')],
+        verbose_name='Код т.органа'
     )
 
     def save(self, *args, **kwargs):
@@ -85,17 +93,9 @@ class Rtu(models.Model):
         return f'РТУ: {self.title}'
 
 
-class CustHouse(models.Model):
+class CustHouse(BaseCPModel):
     """Модель таможни."""
 
-    title = models.CharField(
-        max_length=255,
-        default='Новая таможня',
-        unique=False,  # !!!!!
-        null=False,
-        blank=False,
-        verbose_name='Название'
-    )
     code = models.CharField(
         max_length=8,
         unique=True,
@@ -103,33 +103,6 @@ class CustHouse(models.Model):
         blank=False,
         validators=[RegexValidator(regex=r'^1\d{4}000$')],
         verbose_name='Код т.органа'
-    )
-    address = models.CharField(
-        max_length=255,
-        default='-',
-        unique=False,
-        null=False,
-        blank=True,
-        verbose_name='Почтовый адрес'
-    )
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=True,
-        verbose_name='Признак разрешения работать без локации'
-        # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ.
-        # Рекомендуется выставить в True для:
-        # всех РТУ, всех таможен, всех внутренних(!) постов.
     )
     upper_id = models.ForeignKey(to=Rtu,
                                  null=False,
@@ -172,16 +145,9 @@ class CustHouse(models.Model):
         return f'таможня: {self.title}'
 
 
-class CustPost(models.Model):
+class CustPost(BaseCPModel):
     """Модель таможенного поста."""
 
-    title = models.CharField(
-        max_length=255,
-        default='Новый пост',
-        unique=False,  # !!!!!!
-        null=False,
-        verbose_name='Название'
-    )
     code = models.CharField(
         max_length=8,
         unique=True,
@@ -189,33 +155,6 @@ class CustPost(models.Model):
         blank=False,
         validators=[RegexValidator(regex=r'^1\d{7}$')],
         verbose_name='Код т.органа'
-    )
-    address = models.CharField(
-        max_length=255,
-        default='-',
-        unique=False,
-        null=False,
-        blank=True,
-        verbose_name='Почтовый адрес'
-    )
-    ztk_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать в ЗТК'
-        # Имеются в виду ЗТК т.н. отдельно-существующие.
-        # Не находящиеся на территории какого-либо
-        # пункта пропуска, ММПО, ОЭЗ.
-    )
-    standalone_allowed = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Признак разрешения работать без локации'
-        # Признак, что данному т.органу разрешено эксплуатировать приборы НЕ в
-        # каком-либо ПП, ММПО, СЭЗ, ОЭЗ.
-        # Рекомендуется выставить в True для:
-        # всех РТУ, всех таможен, всех внутренних(!) постов.
     )
     upper_id = models.ForeignKey(to=CustHouse,
                                  null=True,
@@ -272,7 +211,7 @@ class PprType(models.Model):
         max_length=255,
         unique=True,
         null=False,
-        verbose_name='Название'
+        verbose_name='Тип пункта пропуска'
     )
 
     class Meta:

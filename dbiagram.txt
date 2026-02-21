@@ -1,25 +1,6 @@
 // Docs: https://dbdiagram.io/docs
 // https://dbdiagram.io/d
 
-Table Departments{
-  id integer [primary key]
-  title varchar
-}
-
-Table TKDRMUser{
-  id integer [primary key]
-  username varchar
-  first_name varchar
-  pater_name varchar
-  last_name varchar
-  empl integer [not null, ref: > CustPlace1Use.id]
-  dept integer [not null, ref: > Departments.id]
-  email varchar
-  is_staff boolean
-  is_active boolean
-  date_joined date
-}
-
 Table Rtu{
   id integer [primary key]
   title varchar
@@ -93,6 +74,41 @@ Table CustPlace1Use{
   stanalone_allowed boolean
 }
 
+Table LocationOfUse{
+  id integer [primary key]
+  ppr integer [null, unique, ref: - Ppr.id]
+  mmpo integer [null, unique, ref: - Mmpo.id]
+  oez integer [null, unique, ref: - Oez.id]
+  ztk integer [null, unique, ref: - Ztk.id]
+  is_ztk boolean
+}
+
+Table CustPlaceToLocation{
+  id integer [primary key]
+  cust_pl1 integer [not null, ref: > CustPlace1Use.id]
+  loc integer [not null, ref: > LocationOfUse.id]
+  is_main_for_cust boolean
+}
+
+Table Departments{
+  id integer [primary key]
+  title varchar
+}
+
+Table TKDRMUser{
+  id integer [primary key]
+  username varchar
+  first_name varchar
+  pater_name varchar
+  last_name varchar
+  empl integer [not null, ref: > CustPlace1Use.id]
+  dept integer [not null, ref: > Departments.id]
+  email varchar
+  is_staff boolean
+  is_active boolean
+  date_joined date
+}
+
 Table SourceTypes{
   id integer [primary key]
   title varchar
@@ -106,23 +122,6 @@ Table StatusTypes{
 Table ServiceTypes{
   id integer [primary key]
   title varchar
-}
-
-Table LocationOfUse{
-  id integer [primary key]
-  ppr integer [null, unique, ref: - Ppr.id]
-  mmpo integer [null, unique, ref: - Mmpo.id]
-  oez integer [null, unique, ref: - Oez.id]
-  ztk integer [null, unique, ref: - Ztk.id]
-  is_ztk boolean
-  custplaces integer [not null, ref: <> CustPlaceToLocation.id]
-}
-
-Table CustPlaceToLocation{
-  id integer [primary key]
-  cust_pl1 integer [not null, ref: > CustPlace1Use.id]
-  loc integer [not null, ref: > LocationOfUse.id]
-  is_main_for_cust boolean
 }
 
 Table DevCatsL1{
@@ -147,6 +146,33 @@ Table DevTypes{
   sub_types JSON
 }
 
+Table Doings{
+  id integer [primary key]
+  title varchar
+}
+
+Table Contracts{
+  id integer [primary key]
+  title varchar
+  date_of date
+  date_start date
+  date_end date
+}
+
+Table RelContrDoing{
+  id integer [primary key]
+  to_doing integer [not null, ref: > Doings.id]
+  to_contract integer [not null, ref: > Contracts.id]
+  min_count integer
+  max_count integer
+}
+
+Table DTCReal{
+  id integer [primary key]
+  basis integer [not null, ref: > DTCPotential.id]
+  exact_moment datetime
+}
+
 Table Device{
   id integer [primary key]
   type integer [not null, ref: > DevTypes.id]
@@ -156,8 +182,8 @@ Table Device{
   date_prod date
   date_expl date
   date_prolong date
-  date_prod_expired date
   warr_period integer
+  date_prod_expired date
   date_verif date
   cat_number_c integer
   cat_number_f integer
@@ -176,26 +202,10 @@ Table Device{
   note3 varchar
 }
 
-Table Contracts{
-  id integer [primary key]
-  title varchar
-  number integer
-  date_of date
-  date_start date
-  date_end date
-  multi boolean
-}
-
 Table DTCPotential{
   id integer [primary key]
-  contr_to_dev integer [not null, ref: > Device.id]
-  dev_to_contr integer [not null, ref: > Contracts.id]
-}
-
-Table DTCReal{
-  id integer [primary key]
-  basis integer [not null, ref: > DTCPotential.id]
-  exact_moment datetime
+  dev integer [not null, ref: > Device.id]
+  reltocontr integer [not null, ref: > RelContrDoing.id]
 }
 
 Table RelToDev{

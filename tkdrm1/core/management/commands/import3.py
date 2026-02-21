@@ -20,9 +20,14 @@ from core.constants import (
     SERVICE_TITLES,
     STATUS_TITLES
 )
-from core.models import (Contracts,
-                         DevToContrs,
+from users.models import (TKDRMUser,
+                          Departments)
+from core.models import (DTCPotential,
                          Device,
+                         DTCReal,
+                         RelContrDoing,
+                         Contracts,
+                         Doings,
                          SourceTypes,
                          ServiceTypes,
                          RelToDev,
@@ -119,25 +124,37 @@ class Command(BaseCommand):
         def clear_n_init():
             """."""
             # delete
+            # core app
             RelToDev.objects.all().delete()
-            DevToContrs.objects.all().delete()
-            Contracts.objects.all().delete()
+            DTCPotential.objects.all().delete()
             Device.objects.all().delete()
+            DTCReal.objects.all().delete()
+            RelContrDoing.objects.all().delete()
+            Contracts.objects.all().delete()
+            Doings.objects.all().delete()
             DevTypes.objects.all().delete()
             DevCatsL2.objects.all().delete()
             DevCatsL1.objects.all().delete()
+            ServiceTypes.objects.all().delete()
+            StatusTypes.objects.all().delete()
+            SourceTypes.objects.all().delete()
+            # users app
+            TKDRMUser.objects.all().delete()
+            Departments.objects.all().delete()
+            # custplace app
             CustPlaceToLocation.objects.all().delete()
-            Ppr.objects.all().delete()
-            Mmpo.objects.all().delete()
-            Oez.objects.all().delete()
+            LocationOfUse.objects.all().delete()
+            CustPlace1Use.objects.all().delete()
+            CustPlace1Acc.objects.all().delete()
             Ztk.objects.all().delete()
+            Oez.objects.all().delete()
+            Mmpo.objects.all().delete()
+            Ppr.objects.all().delete()
             PprType.objects.all().delete()
             CustPost.objects.all().delete()
             CustHouse.objects.all().delete()
             Rtu.objects.all().delete()
-            SourceTypes.objects.all().delete()
-            StatusTypes.objects.all().delete()
-            ServiceTypes.objects.all().delete()
+
             # create initial
             tnp_obj_1 = Rtu.objects.create(
                 title='ТНП',
