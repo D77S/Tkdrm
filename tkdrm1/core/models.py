@@ -451,6 +451,29 @@ class Device(models.Model):
         return f'Объект прибора с id={self.id}'
 
 
+class Doings(models.Model):
+    """Виды возможных действий с приборами по контрактам."""
+    #  Название действия.
+    title = models.CharField(
+        max_length=255,
+        default='Новое действие',
+        unique=True,
+        null=False,
+        blank=False,
+        verbose_name='Название действия'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект возможного действия с прибором по контракту'
+        verbose_name_plural = 'Объекты в. д. с п. по к.'
+
+    def __str__(self):
+        """."""
+        return f'Действие по к., имя действия: {self.title}'
+
+
 class Contracts(models.Model):
     """Модель переченя централизованных гос.контрактов,
     по которым с приборами что-то делалось
@@ -488,15 +511,6 @@ class Contracts(models.Model):
         blank=False,
         verbose_name='Дата окончания действий по гос.контракту'
     )
-    # Признак того, что по контракту действие с прибором
-    # совершается строго однократно. (Если False, то любое
-    # количество раз, от 0 до примерно 500.)
-    multi = models.BooleanField(
-        null=False,
-        blank=False,
-        default=True,
-        verbose_name='Признако однократности действий с прибором по контракту'
-    )
 
     class Meta:
         """."""
@@ -509,24 +523,70 @@ class Contracts(models.Model):
         return f'Гос.контракт с названием: {self.title}'
 
 
+class RelContrDoing(models.Model):
+    """Виды связей действий и контрактов."""
+    #  Какое действие.
+    to_doing = models.ForeignKey(
+        to=Doings,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Действие по контракту',
+        related_name='from_doings'
+    )
+    # По какому контракту.
+    to_contract = models.ForeignKey(
+        to=Contracts,
+        null=False,
+        blank=False,
+        on_delete=models.PROTECT,
+        verbose_name='Контракт',
+        related_name='from_contracts'
+    )
+    # Сколько минимально раз должно делаться.
+    min_count = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Минимально, раз'
+    )
+    # Сколько максимально раз должно делаться.
+    max_count = models.PositiveSmallIntegerField(
+        null=False,
+        blank=False,
+        verbose_name='Максимально, раз'
+    )
+
+    class Meta:
+        """."""
+
+        verbose_name = 'Объект связи действия и контракта'
+        verbose_name_plural = 'Объекты связи действия и контракта'
+
+    def __str__(self):
+        """."""
+        return f'Объект связи с номером: {self.id}'
+
+
 class DTCPotential(models.Model):
-    """Модель-промежутка M2M приборов и контрактов.
+    """Модель-промежутка M2M приборов и действий по контрактам.
     Потенциально возможные действия с приборами по контрактам.
     Пример: прибор входит (прописан) в контракте на ремонт
-    всех приборов. Входит строго один раз. Но это ещё не означает,
-    что с прибором по контракту были/будут реальные ремонты."""
-    contr_to_dev = models.ForeignKey(to=Device,
-                                     null=False,
-                                     blank=False,
-                                     on_delete=models.PROTECT,
-                                     verbose_name='прибор',
-                                     related_name='f_dev_to_contr')
-    dev_to_contr = models.ForeignKey(to=Contracts,
-                                     null=False,
-                                     blank=False,
-                                     on_delete=models.PROTECT,
-                                     verbose_name='гос.контракт',
-                                     related_name='f_contr_to_dev')
+    всех приборов. Входит строго один раз.
+    Объект модели - потенциальное, но не реальное,
+    действие с прибором по контракту.
+    Поэтому в объекте модели нет таймстампа."""
+    dev = models.ForeignKey(to=Device,
+                            null=False,
+                            blank=False,
+                            on_delete=models.PROTECT,
+                            verbose_name='прибор',
+                            related_name='f_dev_to_doing')
+    reltocd = models.ForeignKey(to=RelContrDoing,
+                                null=False,
+                                blank=False,
+                                on_delete=models.PROTECT,
+                                verbose_name='действие',
+                                related_name='f_doing_to_dev')
 
     class Meta:
         """."""
@@ -560,8 +620,8 @@ class DTCReal(models.Model):
         null=False,
         blank=False,
         auto_now_add=True,
-        verbose_name=('Точная дата и время реального участия ' +
-                      'прибора в гос.контракте')
+        verbose_name=('Точная дата и время реального действия ' +
+                      ' с прибором по контракту')
     )
 
     class Meta:
