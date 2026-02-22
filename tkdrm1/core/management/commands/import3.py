@@ -3,12 +3,16 @@ import datetime
 import math
 import os
 import pandas
+import random
 import re
+import string
 import sys
 from tqdm import tqdm
 from typing import Union
+from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 from django.db.models import QuerySet
+from django.utils import timezone
 
 from core.constants import (
     PATTERN1,
@@ -18,7 +22,9 @@ from core.constants import (
     STANDALONE_CODES,
     SOURCE_TITLES,
     SERVICE_TITLES,
-    STATUS_TITLES
+    STATUS_TITLES,
+    DOING1,
+    CONTRACT1
 )
 from users.models import (TKDRMUser,
                           Departments)
@@ -55,20 +61,17 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         """."""
 
+        User = get_user_model()
+
         def get_frame() -> pandas.DataFrame:
             """."""
-            current_excel_files_list = [x for x in os.listdir() if (
-                x.endswith('.xlsx') or
-                x.endswith('.xls') or
-                x.endswith('.xlsm')
-            )]
-            if len(current_excel_files_list) != 1:
-                print('Excel-файлов в текущей папке не найдено '
-                      'или найдено больше одного.')
+            if not os.path.exists('__база СТСО.xlsm'):
+                print('В текущем каталоге не найден файл __база СТСО.xlsm, '
+                      'программы завершена.')
                 sys.exit()
-            print('Excel-файл успешно найден и единственный.')
+            print('В текущем каталоге найден файл __база СТСО.xlsm.')
             try:
-                data = pandas.read_excel(current_excel_files_list[0],
+                data = pandas.read_excel('__база СТСО.xlsm',
                                          skiprows=6,
                                          #  nrows=2,
                                          header=None,
@@ -126,9 +129,9 @@ class Command(BaseCommand):
             # delete
             # core app
             RelToDev.objects.all().delete()
+            DTCReal.objects.all().delete()
             DTCPotential.objects.all().delete()
             Device.objects.all().delete()
-            DTCReal.objects.all().delete()
             RelContrDoing.objects.all().delete()
             Contracts.objects.all().delete()
             Doings.objects.all().delete()
@@ -156,25 +159,21 @@ class Command(BaseCommand):
             Rtu.objects.all().delete()
 
             # create initial
-            tnp_obj_1 = Rtu.objects.create(
-                title='ТНП',
-                code=None
-            )
-            CustHouse.objects.create(
-                title='ТНП',
-                code=None,
-                upper_id=tnp_obj_1
-            )
-
+            # custplace app
+            tnp_obj_1 = Rtu.objects.create(title='ТНП', code=None)
+            CustHouse.objects.create(title='ТНП', code=None, upper_id=tnp_obj_1)  # noqa
+            ppr_types_titles = ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП', 'СПП']  # noqa
+            ppr_types_objs = [PprType(title=item) for item in ppr_types_titles]
+            PprType.objects.bulk_create(objs=ppr_types_objs)
+            # users app
+            Departments.objects.create(title='ОТКДРМ')
+            # core app
             source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
             SourceTypes.objects.bulk_create(objs=source_objs)
-
-            service_objs = [ServiceTypes(title=i) for i in SERVICE_TITLES]
-            ServiceTypes.objects.bulk_create(objs=service_objs)
-
             status_objs = [StatusTypes(title=i) for i in STATUS_TITLES]
             StatusTypes.objects.bulk_create(objs=status_objs)
-
+            service_objs = [ServiceTypes(title=i) for i in SERVICE_TITLES]
+            ServiceTypes.objects.bulk_create(objs=service_objs)
             DevCatsL1.objects.create(title='Стационарные')
             DevCatsL1.objects.create(title='Переносные')
             dev_cats_l2_titles = [
@@ -192,7 +191,6 @@ class Command(BaseCommand):
                 DevCatsL2(title=item[0],
                           cat_l1=item[1]) for item in dev_cats_l2_titles]
             DevCatsL2.objects.bulk_create(objs=dev_cats_l2_objs)
-
             dev_types_titles = [
                 [
                     'Янтарь-1С',  # title
@@ -269,10 +267,35 @@ class Command(BaseCommand):
             ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
 
-            ppr_types_titles = ['АПП', 'ВПП', 'ЖДПП', 'МПП',
-                                'ППП', 'РПП', 'СПП']
-            ppr_types_objs = [PprType(title=item) for item in ppr_types_titles]
-            PprType.objects.bulk_create(objs=ppr_types_objs)
+            doing1 = Doings.objects.create(title=DOING1)
+
+            contract11 = Contracts.objects.create(
+                title=CONTRACT1,
+                number=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                date_start=datetime.date(year=2012, month=1, day=1),
+                date_end=datetime.date(year=2013, month=6, day=1)
+            )
+            contract12 = Contracts.objects.create(
+                title=CONTRACT1,
+                number=2,
+                date_of=datetime.date(year=2013, month=6, day=1),
+                date_start=datetime.date(year=2013, month=6, day=1),
+                date_end=datetime.date(year=2014, month=6, day=1)
+            )
+
+            RelContrDoing.objects.create(
+                to_doing=doing1,
+                to_contract=contract11,
+                min_count=1,
+                max_count=1
+            )
+            RelContrDoing.objects.create(
+                to_doing=doing1,
+                to_contract=contract12,
+                min_count=1,
+                max_count=1
+            )
 
         def pre_valid_tests(row):
             """."""
@@ -785,12 +808,13 @@ class Command(BaseCommand):
                 item: list[Union[list[str], str]],
                 all_dev_types: QuerySet[DevTypes],
                 curr_pl_1_acc: CustPlace1Acc,
+                curr_holder: TKDRMUser,
                 all_sour_types: QuerySet,
                 all_status_types: QuerySet
         ) -> Device:
             """."""
 
-            # Определение типа девайса
+            # Определение типа девайса и срока гарантии
             if (item[13] != '' and
                item[13] in [
                    '1П1', '1П2', '1П3', '1У', 'ПБ', '2П1', '2П2', '2П3']):
@@ -799,6 +823,10 @@ class Command(BaseCommand):
                 curr_dev_type_temp = item[13]
             else:
                 curr_dev_type_temp = item[12]
+            if re.match('Янтарь', curr_dev_type_temp):
+                curr_dev_warr = 24
+            else:
+                curr_dev_warr = 18
             try:
                 curr_dev_type = all_dev_types.get(
                     title=curr_dev_type_temp
@@ -941,10 +969,13 @@ class Command(BaseCommand):
                     upper_id=curr_upper_id,
                     service_type=curr_serv_type
                 )
+            # Дозаполнение некоторых полей созданного девайса, затем сохранение
             curr_dev.note1 = note1
             curr_dev.note2 = note2
             curr_dev.note3 = note3
             curr_dev.is_si = curr_is_si
+            curr_dev.warr_period = curr_dev_warr
+            curr_dev.holder = curr_holder
 
             if chk_valid_year(year_prod):
                 curr_dev.date_prod = datetime.date(
@@ -964,7 +995,9 @@ class Command(BaseCommand):
             elif curr_dev.upper_id:
                 curr_dev.date_expl = curr_dev.upper_id.date_expl
 
+            # Сохранение
             curr_dev.save()
+
             if temp_f is False:
                 print(
                     f'Строка {item[0]}, девайс был не создан, '
@@ -994,6 +1027,28 @@ class Command(BaseCommand):
                     )
                 return temp2_rel_to_dev.first()
 
+        def cr_rel_to_contrs(
+                item,
+                pos,
+                contr_num,
+                date_of
+        ):
+            """Создание (если возможно) связей приборов и контрактов."""
+            if item[pos] == '':
+                return
+            try:
+                temp_data = datetime.datetime.strptime(item[pos], '%d.%m.%Y')  # noqa
+            except Exception:
+                err_report(row=item[0], reason=f'столбец {pos}, ошибка даты')
+                return
+            temp_contract = Contracts.objects.get(number=contr_num, date_of=date_of)  # noqa
+            temp_relcd = RelContrDoing.objects.get(to_contract=temp_contract)
+            temp_dtcp = DTCPotential.objects.create(dev=curr_dev, reltocd=temp_relcd)  # noqa
+            temp_data = temp_data.replace(hour=0, minute=0, second=0)
+            temp_data = timezone.make_aware(temp_data)
+            DTCReal.objects.create(basis=temp_dtcp, exact_moment=temp_data)
+            return
+
         def err_report(
                 row: str = None,
                 reason: str = None,
@@ -1016,11 +1071,9 @@ class Command(BaseCommand):
             for i in data.values]
         data_3 = clean_data_second(data_2)
 
-        del_flag = None
-        while not (del_flag == 'y' or del_flag == 'n'):
-            del_flag = input('Очищать таблицы в БД (y/n)?')
-        if del_flag == 'y':
-            clear_n_init()
+        print('Очистка таблиц в БД.')
+
+        clear_n_init()
 
         print('Pre-valid тесты начаты.')
         for item in data_3:
@@ -1029,7 +1082,7 @@ class Command(BaseCommand):
                 sys.exit()
         print('Pre-valid тесты успешно завершены.')
 
-        print('Начало создания/апдейта перечня РТУ.')
+        print('Начало создания перечня РТУ.')
         rtu_pre_list = [
             [
                 row[0],
@@ -1045,9 +1098,9 @@ class Command(BaseCommand):
         for item in rtu_pre_list:
             get_or_create_rtu(item)
         all_rtus_1 = Rtu.objects.all()
-        print('Успешное завершение создания/апдейта перечня РТУ.')
+        print('Успешное завершение создания перечня РТУ.')
 
-        print('Начало создания/апдейта перечня таможен.')
+        print('Начало создания перечня таможен.')
         ch_pre_list = [
             [row[0],
              [row[1], row[2]],
@@ -1066,9 +1119,9 @@ class Command(BaseCommand):
                 continue
             get_or_create_ch(item, upp_rtu_1)
         all_ch_1 = CustHouse.objects.all()
-        print('Успешное завершение создания/апдейта перечня таможен.')
+        print('Успешное завершение создания перечня таможен.')
 
-        print('Начало создания/апдейта перечня т.постов.')
+        print('Начало создания перечня т.постов.')
         cp_pre_list = [
             [
                 row[0],
@@ -1098,9 +1151,9 @@ class Command(BaseCommand):
                 continue
             get_or_create_cp(item, upper_ch_1)
             all_cp_1 = CustPost.objects.all()
-        print('Успешное завершение создания/апдейта перечня т.постов.')
+        print('Успешное завершение создания перечня т.постов.')
 
-        print('Начало создания/апдейта перечня пунктов пропуска, '
+        print('Начало создания перечня пунктов пропуска, '
               'ММПО, ОЭЗ, ЗТК.')
         sites_pre_list = [
             [row[0],
@@ -1194,10 +1247,10 @@ class Command(BaseCommand):
             get_or_cr_curr_cp_to_loc(curr_pl_1_use,
                                      curr_cust_place_1,
                                      curr_loc_use)
-        print('Успешное завершение создания/апдейта перечня пунктов '
+        print('Успешное завершение создания перечня пунктов '
               'пропуска, ММПО, ОЭЗ, ЗТК.')
 
-        print('Начало создания/апдейта перечня девайсов.')
+        print('Начало создания перечня девайсов.')
         devs_pre_list = [row for row in data_3 if row[11] == 'служебная']
         all_dev_types = DevTypes.objects.all()
         all_sour_types = SourceTypes.objects.all()
@@ -1208,8 +1261,6 @@ class Command(BaseCommand):
         all_ztks = Ztk.objects.all()
         ##########
         for item in tqdm(devs_pre_list):
-            # for subitem in enumerate(item):
-            #     print(f'{subitem=}')
             curr_mini_item = [
                 item[0],
                 [item[1], item[2], item[3]],
@@ -1259,10 +1310,31 @@ class Command(BaseCommand):
                            reason='curr_cpl_to_loc не распознан '
                            'и девайс пропущен')
                 continue
+            #########
+            # Попытка поиска в БД первого попавшегося юзера
+            # с текущим т.органом.
+            # Если нет ни одного - создается.
+            if not User.objects.filter(
+                empl=curr_pl_1_use
+            ).first():
+                username = ''.join(random.choices(string.ascii_lowercase, k=5))
+                user = User.objects.create_user(
+                    username=username,
+                    first_name='Иван',
+                    last_name='Иванов',
+                    email='a@a.com',
+                    password='123',
+                    empl=curr_pl_1_use,
+                    dept=Departments.objects.first()
+                )
+            else:
+                user = User.objects.filter(empl=curr_pl_1_use).first()
             ##########
+            # Создание связей по эксплуатации прибора
             curr_dev = get_curr_dev(item=item,
                                     all_dev_types=all_dev_types,
                                     curr_pl_1_acc=curr_pl_1_acc,
+                                    curr_holder=user,
                                     all_sour_types=all_sour_types,
                                     all_status_types=all_status_types
                                     )
@@ -1272,4 +1344,11 @@ class Command(BaseCommand):
                 continue
             get_or_cr_curr_reltodev(to_rel=curr_cpl_to_loc,
                                     to_dev=curr_dev)
-        print('Успешное завершение создания/апдейта перечня девайсов.')
+            ##########
+            # Создание связей по вхождению прибора в контракты
+            cr_rel_to_contrs(item=item, pos=27, contr_num=1, date_of=datetime.date(year=2012, month=1, day=1))  # noqa
+            cr_rel_to_contrs(item=item, pos=28, contr_num=1, date_of=datetime.date(year=2012, month=1, day=1))  # noqa
+            cr_rel_to_contrs(item=item, pos=32, contr_num=2, date_of=datetime.date(year=2013, month=6, day=1))  # noqa
+            cr_rel_to_contrs(item=item, pos=33, contr_num=2, date_of=datetime.date(year=2013, month=6, day=1))  # noqa
+
+        print('Успешное завершение создания перечня девайсов.')

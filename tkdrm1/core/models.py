@@ -1,5 +1,6 @@
 """."""
 from django.db import models
+from django.utils import timezone
 import datetime
 import dateutil
 from custplaces.models import (
@@ -243,7 +244,7 @@ class Contracts(models.Model):
     title = models.CharField(
         max_length=255,
         default='Новый гос.контракт',
-        unique=True,
+        unique=False,
         null=False,
         blank=False,
         verbose_name='Название'
@@ -354,7 +355,7 @@ class DTCReal(models.Model):
     exact_moment = models.DateTimeField(
         null=False,
         blank=False,
-        auto_now_add=True,
+        default=timezone.now,
         verbose_name=('Точная дата и время реального действия ' +
                       ' с прибором по контракту')
     )
@@ -564,11 +565,12 @@ class Device(models.Model):
         related_name='serv_to_dev'
     )
     # M2M-поля
-    # Субъект пользования
+    # По использованию кем-то где-то
     rels_of_work = models.ManyToManyField(
         CustPlaceToLocation,
         through='RelToDev'
     )
+    # По вхождению в контракты какие-то каким-то образом
     rels_of_contracts = models.ManyToManyField(
         RelContrDoing,
         through='DTCPotential',
