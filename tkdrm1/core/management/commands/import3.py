@@ -283,6 +283,27 @@ class Command(BaseCommand):
                 date_start=datetime.date(year=2013, month=6, day=1),
                 date_end=datetime.date(year=2014, month=6, day=1)
             )
+            contract13 = Contracts.objects.create(
+                title=CONTRACT1,
+                number=3,
+                date_of=datetime.date(year=2014, month=6, day=1),
+                date_start=datetime.date(year=2014, month=6, day=1),
+                date_end=datetime.date(year=2015, month=6, day=1)
+            )
+            contract14 = Contracts.objects.create(
+                title=CONTRACT1,
+                number=4,
+                date_of=datetime.date(year=2015, month=6, day=1),
+                date_start=datetime.date(year=2015, month=6, day=1),
+                date_end=datetime.date(year=2015, month=12, day=31)
+            )
+            contract15 = Contracts.objects.create(
+                title=CONTRACT1,
+                number=5,
+                date_of=datetime.date(year=2016, month=1, day=1),
+                date_start=datetime.date(year=2016, month=1, day=1),
+                date_end=datetime.date(year=2016, month=6, day=1)
+            )
 
             RelContrDoing.objects.create(
                 to_doing=doing1,
@@ -293,6 +314,24 @@ class Command(BaseCommand):
             RelContrDoing.objects.create(
                 to_doing=doing1,
                 to_contract=contract12,
+                min_count=1,
+                max_count=1
+            )
+            RelContrDoing.objects.create(
+                to_doing=doing1,
+                to_contract=contract13,
+                min_count=1,
+                max_count=1
+            )
+            RelContrDoing.objects.create(
+                to_doing=doing1,
+                to_contract=contract14,
+                min_count=1,
+                max_count=1
+            )
+            RelContrDoing.objects.create(
+                to_doing=doing1,
+                to_contract=contract15,
                 min_count=1,
                 max_count=1
             )
@@ -1038,15 +1077,21 @@ class Command(BaseCommand):
                 return
             try:
                 temp_data = datetime.datetime.strptime(item[pos], '%d.%m.%Y')  # noqa
+                data_flag = True
             except Exception:
+                data_flag = False
+            if not (data_flag is True or item[pos] == '00.00.0000'):
                 err_report(row=item[0], reason=f'столбец {pos}, ошибка даты')
                 return
             temp_contract = Contracts.objects.get(number=contr_num, date_of=date_of)  # noqa
-            temp_relcd = RelContrDoing.objects.get(to_contract=temp_contract)
+            temp_relcd = RelContrDoing.objects.filter(
+                to_contract=temp_contract
+                ).first()
             temp_dtcp = DTCPotential.objects.create(dev=curr_dev, reltocd=temp_relcd)  # noqa
-            temp_data = temp_data.replace(hour=0, minute=0, second=0)
-            temp_data = timezone.make_aware(temp_data)
-            DTCReal.objects.create(basis=temp_dtcp, exact_moment=temp_data)
+            if data_flag:
+                temp_data = temp_data.replace(hour=0, minute=0, second=0)
+                temp_data = timezone.make_aware(temp_data)
+                DTCReal.objects.create(basis=temp_dtcp, exact_moment=temp_data)
             return
 
         def err_report(
@@ -1063,12 +1108,22 @@ class Command(BaseCommand):
 
         # Main begin
         data = get_frame()
-        data_2 = [
-            [
-                '' if isinstance(j, float) and math.isnan(j) else
-                str(j) for j in i
-                ]
-            for i in data.values]
+        data_2 = []
+        for i in data.values:
+            data_2_temp = []
+            for j in i:
+                if isinstance(j, int):
+                    data_2_temp.append(str(j))
+                elif isinstance(j, float) and math.isnan(j):
+                    data_2_temp.append('')
+                elif isinstance(j, float):
+                    data_2_temp.append(str(int(j)))
+                elif isinstance(j, str):
+                    data_2_temp.append(str(j))
+                else:
+                    data_2_temp.append('')
+            data_2.append(data_2_temp)
+        # !!!!!!!!
         data_3 = clean_data_second(data_2)
 
         print('Очистка таблиц в БД.')
@@ -1346,9 +1401,26 @@ class Command(BaseCommand):
                                     to_dev=curr_dev)
             ##########
             # Создание связей по вхождению прибора в контракты
+            # 2012
+            # M1-1
             cr_rel_to_contrs(item=item, pos=27, contr_num=1, date_of=datetime.date(year=2012, month=1, day=1))  # noqa
+            # 2013
+            # M1-2
             cr_rel_to_contrs(item=item, pos=28, contr_num=1, date_of=datetime.date(year=2012, month=1, day=1))  # noqa
+            # M2-1
             cr_rel_to_contrs(item=item, pos=32, contr_num=2, date_of=datetime.date(year=2013, month=6, day=1))  # noqa
+            # 2014
+            # M2-2
             cr_rel_to_contrs(item=item, pos=33, contr_num=2, date_of=datetime.date(year=2013, month=6, day=1))  # noqa
+            # M3-1
+            cr_rel_to_contrs(item=item, pos=35, contr_num=3, date_of=datetime.date(year=2014, month=6, day=1))  # noqa
+            # 2015
+            # M3-2
+            cr_rel_to_contrs(item=item, pos=37, contr_num=3, date_of=datetime.date(year=2014, month=6, day=1))  # noqa
+            # M4
+            cr_rel_to_contrs(item=item, pos=39, contr_num=4, date_of=datetime.date(year=2015, month=6, day=1))  # noqa
+            # 2016
+            # M5
+            cr_rel_to_contrs(item=item, pos=41, contr_num=5, date_of=datetime.date(year=2016, month=1, day=1))  # noqa
 
         print('Успешное завершение создания перечня девайсов.')

@@ -7,6 +7,7 @@ from custplaces.models import (
     CustPlace1Acc,
     CustPlaceToLocation
 )
+from core.constants import DOING1
 from users.models import TKDRMUser
 
 
@@ -434,8 +435,8 @@ class Device(models.Model):
     @property
     def date_prolong(self):
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # Запросить, было ли продление срока службы,
-        # если да - вернуть с него дату
+        # Запросить, были ли продления срока службы,
+        # если да - вернуть дату с последнего.
         return self.date_expl
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
@@ -472,7 +473,34 @@ class Device(models.Model):
     def cat_number_c(self):
         # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # дописать
-        return 2
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        today = datetime.date.today()
+        date_warr_end = self.date_expl + dateutil.relativedelta.relativedelta(
+            months=self.warr_period
+        )
+        date_expl_end_init = self.date_expl + dateutil.relativedelta.relativedelta(years=self.type.lifetime)  # noqa
+        dates_expl_end = []
+        dates_expl_end.append(date_expl_end_init)
+        # получить коллекцию всех объектов модели DTCPotencial, которые ссылаются на self  # noqa
+        # оставить из них только те, на кого ссылается хотя бы один объект модели DTCReal  # noqa
+        # оставить только уникальные
+        # dtcpotencials = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
+        # temp_set_1 = set()
+        # for item in dtcpotencials:
+        #     last_real = item.from_dtcp_to_dtcr.filter('exact_moment').first()
+        #     temp_set_1.add(item.reltocd)
+        # temp_set_2 = set()
+        # for item in temp_set_1:
+        #     if item.to_doing.title == DOING1:
+        #         temp_set_2.add(item)
+        date_expl_end = dates_expl_end.sort(reverse=True)[0]
+        if self.date_expl <= today <= date_warr_end:
+            return 1
+        if date_warr_end < today <= date_expl_end:
+            return 2
+        if date_expl_end < today:
+            return 3
+        return None
     # Номер категории фактический
     cat_number_f = models.PositiveSmallIntegerField(
         null=True,
