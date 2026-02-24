@@ -430,7 +430,7 @@ class Device(models.Model):
         verbose_name='Дата ввода'
     )
 
-    # Дата ввода в эксплуатацию при продлении
+    # Дата ввода в эксплуатацию при последнем продлении
     # срока службы (если было, иначе равна date_expl)
     @property
     def date_prolong(self):
