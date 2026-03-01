@@ -1431,6 +1431,7 @@ class Command(BaseCommand):
                 user = User.objects.create_user(
                     username=username,
                     first_name='Иван',
+                    pater_name='Иванович',
                     last_name='Иванов',
                     email='a@a.com',
                     password='123',

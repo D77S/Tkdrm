@@ -389,6 +389,16 @@ class Device(models.Model):
         verbose_name='Тип прибора',
         related_name='dev_type_to_dev_obj'
     )
+    # Подтип. Резервное поле, желательно избегать использования,
+    # а вместо него использовать связь от поля type.
+    sub_type = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Подтип'
+    )
     # Серийный номер (если есть).
     serial = models.CharField(
         max_length=255,
@@ -446,7 +456,7 @@ class Device(models.Model):
             if curr_doing_t == DOING1:
                 temp_list.append(date1)
         temp_list.sort(reverse=True)
-        last_date = temp_list[0]
+        last_date = None if not temp_list else temp_list[0]
         if last_date is None:
             return date_expl
         return max(last_date, date_expl)
@@ -474,7 +484,7 @@ class Device(models.Model):
             if curr_doing_t == DOING1:
                 temp_list.append(date1)
         temp_list.sort(reverse=True)
-        last_date = temp_list[0]
+        last_date = None if not temp_list else temp_list[0]
         if last_date is None:
             date_expl_new = date_expl
         else:
@@ -520,7 +530,7 @@ class Device(models.Model):
             if curr_doing_t == DOING1:
                 temp_list.append(date1)
         temp_list.sort(reverse=True)
-        last_date = temp_list[0]
+        last_date = None if not temp_list else temp_list[0]
 
         if last_date is None:
             date_expl_new = date_expl
@@ -577,16 +587,6 @@ class Device(models.Model):
         blank=False,
         default=True,
         verbose_name='Исправность'
-    )
-    # Подтип. Резервное поле, желательно избегать использования,
-    # а вместо него использовать связь от поля type.
-    sub_type = models.CharField(
-        max_length=255,
-        default=None,
-        unique=False,
-        null=True,
-        blank=False,
-        verbose_name='Подтип'
     )
     # Вышестоящий прибор (если есть).
     upper_id = models.ForeignKey(to='Device',

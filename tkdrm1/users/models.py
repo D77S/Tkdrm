@@ -67,4 +67,4 @@ class TKDRMUser(AbstractUser):
 
     def __str__(self):
         """."""
-        return f'объект юзера с id={self.id}'
+        return f'Объект юзера с id={self.id}'
