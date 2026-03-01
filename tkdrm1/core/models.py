@@ -441,7 +441,7 @@ class Device(models.Model):
     )
 
     # Вычисляемое поле.
-    # Дата ввода в эксплуатацию при продлении
+    # Дата ввода в эксплуатацию при последнем продлении
     # срока службы (если было, иначе равна date_expl)
     @property
     def date_prolong(self):
@@ -458,8 +458,10 @@ class Device(models.Model):
         temp_list.sort(reverse=True)
         last_date = None if not temp_list else temp_list[0]
         if last_date is None:
-            return date_expl
-        return max(last_date, date_expl)
+            date_ret = date_expl
+        else:
+            date_ret = max(last_date, date_expl)
+        return date_ret.date()
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
         null=False,
@@ -490,7 +492,8 @@ class Device(models.Model):
         else:
             date_expl_new = max(last_date, date_expl)
 
-        return date_expl_new + dateutil.relativedelta.relativedelta(years=delta)  # noqa
+        date_ret = date_expl_new + dateutil.relativedelta.relativedelta(years=delta)  # noqa
+        return date_ret.date()
     # Дата окончания последней поверки. Актуально только если
     # dev_type.si_flag=True and is_si=True and is_stud=False and status_use=1
     # , в этом случае должно быть не Null и быть в нужном

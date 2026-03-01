@@ -1059,6 +1059,7 @@ class Command(BaseCommand):
             curr_dev.is_si = curr_is_si
             curr_dev.warr_period = curr_dev_warr
             curr_dev.holder = curr_holder
+            curr_dev.cat_number_f = curr_dev.cat_number_c
 
             if chk_valid_year(year_prod):
                 curr_dev.date_prod = datetime.date(
@@ -1591,5 +1592,9 @@ class Command(BaseCommand):
                 title_of=CONTRACT1,
                 doing=Doings.objects.get(title=DOING1)
             )
+
+            # Попытка апдейта фактической категории девайса
+            curr_dev.cat_number_f = curr_dev.cat_number_c
+            curr_dev.save()
 
         print('Успешное завершение создания перечня девайсов.')
