@@ -1,54 +1,117 @@
 {% extends "base.html" %}
   {% block content %}
     <h4 class="pb-2 mb-0">Детализация по выбранному техническому средству</h4>
-    <p></p>
-    <table class="table-bordered table-sm">
-      <thead>
-        <tr style="border: 3px solid black;">
-          <th scope="col" valign="top" width="3%" cellspacing="0" cellpadding="4" class="col-4" style="border: 3px solid black;" colspan=2>Свойство</th>
-          <th scope="col" valign="top" style="text-align: left" class="col-8">Значение</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr>
-          <th colspan=2>Тип</th>
-          <td>{{  dev.type.title  }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Подтип (если есть)</th>
-          <td>{{  dev.sub_type|default_if_none:"Отсутствует"  }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Категория уровня 2</th>
-          <td>{{ dev.type.category.title|default_if_none:"Отсутствует" }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Категория уровня 1</th>
-          <td>{{ dev.type.category.cat_l2.title|default_if_none:"Отсутствует" }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Вышестоящее тех.средств (если есть)</th>
-          <td>
-            {% if dev.upper_id %}
-              {{ dev.upper_id.type.title }}, сер. номер {{ dev.upper_id.serial }}
-            {% else %}
-              Отсутствует
-            {% endif %}
-          </td>
-        </tr>
-        <tr>
-          <th colspan=2>Собственник</th>
-          <td>{{  dev.sour_type.title  }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Серийный номер (если есть)</th>
-          <td>{{  dev.serial|default_if_none:"Отсутствует" }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Где стоит на учёте по балансу или забалансу</th>
-          <td>Таможенный орган "{{  dev_cpl_acc_fin.title  }}"
-          </td>
-        </tr>
+    <p>
+      Тип: {{  dev.type.title  }}
+    </p>
+    <p>
+      Подтип (если есть): {{ dev.sub_type|default_if_none:"Отсутствует" }}
+    </p>
+      <p>
+        Срок службы типа, лет: {{ dev.type.lifetime }}
+        <div class="ms-4">
+          Вышестоящий тип: {{ dev.type.category.title }}
+          <div class="ms-4">
+            Вышестоящий тип: {{ dev.type.category.cat_l1.title }}
+          </div>
+        </div>
+      </p>
+    <p>
+      Cерийный номер (если есть): {{  dev.serial|default_if_none:"Отсутствует" }}
+    </p>
+    <p>
+    Инвентарный номер (если есть): {{  dev.inventary|default_if_none:"Отсутствует" }}
+    </p>
+    <p>
+      Должностное лицо, ответственное за эксплуатацию (если есть):
+      <div class="ms-4">
+        {% if dev.holder is None %}
+          Отсутствует
+        {% else %}
+          ФИО:
+          {{ dev.holder.first_name }}
+          {{ dev.holder.pater_name|default_if_none:", отчество не указано, " }}
+          {{ dev.holder.last_name }}
+          <br>
+          Таможенный орган:
+          {% if dev.holder.empl.rtu is not None %}
+            {{ dev.holder.empl.rtu.title }}
+          {% elif dev.holder.empl.custhouse is not None %}
+            {{ dev.holder.empl.custhouse.title }}
+          {% else %}
+            {{ dev.holder.empl.custpost.title }}
+          {% endif %}
+          <br>
+          Отдел:
+          {{ dev.holder.dept.title }}
+        {% endif %}
+      </div>
+    </p>
+    <p>
+      Дата изготовления (выпуска, производства): {{ dev.date_prod }}
+    </p>
+    <p>
+      Дата ввода в эксплуатацию первоначальная при поставке: {{ dev.date_expl }}
+    </p>
+    <p>
+      Дата ввода в эксплуатацию при последнем продлении срока службы (если было хотя бы одно, иначе - при поставке): {{ dev.date_prolong }}
+    </p>
+    <p>
+      Гарантийный срок при поставке, месяцев: {{ dev.warr_period }}
+    </p>
+    <p>
+      Дата истечения срока службы (с учетом его последнего продления, если было): {{ dev.date_prod_expired }}
+    </p>
+    <p>
+      Дата окончания последней поверки (если есть): {{ dev.date_verif }}
+    </p>
+    <p>
+      Номер категории расчетный (от 1 до 3): {{ dev.cat_number_c }}
+    </p>
+    <p>
+      Номер категории фактический (от 1 до 4, если есть): {{ dev.cat_number_f|default_if_none:"Отсутствует" }}
+    </p>
+    <p>
+      Таможенный орган, в котором числится в оперативном управлении (на балансовом учете), либо на забалансовом учете:
+      {% if dev.cp1_acc.rtu is not None %}
+        {{ dev.cp1_acc.rtu.title }}
+      {% elif dev.cp1_acc.custhouse is not None %}
+        {{ dev.cp1_acc.custhouse.title }}
+      {% else %}
+        {{ dev.cp1_acc.custpost.title }}
+      {% endif %}
+    </p>
+    <p>
+      Источник собственности: {{ dev.sour_type.title }}
+    </p>
+    <p>
+      Величина балансовой стоимости (если есть, отдельно от прочих), руб.: {{ dev.cost|default_if_none:"Отсутствует" }}
+    </p>
+    <p>
+      Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно):
+      {% if dev.condition is True %}
+        Исправно
+      {% elif dev.condition is False %}
+        Неисправно
+      {% else %}
+        Данных нет
+      {% endif %}
+    </p>
+    <p>
+      Вышестоящий прибор (если есть):
+      {% if dev.upper_id is not None %}
+        {{ dev.upper_id.type.title }}, серийный номер {{ dev.upper_id.serial }}
+      {% else %}
+        Отсутствует
+      {% endif %}
+    </p>
+
+
+
+<br><br><br><br><br><br>
+
+
+
         {% if total_count > 0 %}
           <tr>
             <th rowspan={{ total_rowspan }}>Где находится в эксплуатации</th>
@@ -93,18 +156,6 @@
           <th colspan=2>Примечание. В каком участке объекта эксплуатируется (если есть информация)</th>
           <td>{{ dev.note1|default_if_none:"Отсутствует" }}</td>
         </tr>
-        {% if dev.type.si_flag is True %}
-        <tr>
-          <th colspan=2>Подлежит отнесению к СИ либо к индикаторам и является</th>
-          <td>
-            {% if dev.is_si is True %}
-              СИ
-            {% else %}
-              индикатор
-            {% endif %}
-          </td>
-        </tr>
-        {% endif %}
         <tr>
           <th colspan=2>Статуc по использованию</th>
           <td>{{dev.status_use.title }}</td>
@@ -121,7 +172,6 @@
           <th colspan=2>ID в БД</th>
           <td>{{ dev.id }}</td>
         </tr>
-      </tbody>
-    </table>
+    <br>
     <input type="button" onclick="history.back();" value="Вернуться на предыдущую страницу"/>
   {% endblock %}

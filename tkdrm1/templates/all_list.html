@@ -38,9 +38,9 @@
         <td scope="row">{{ item.1.type.title|default_if_none:"--" }}</td>
         <td scope="row">{{ item.1.serial|default_if_none:"--" }}</td>
         <td scope="row">
-          <a class="mt-3 regular-link" href="{% url 'core:dev_detail' item.1.id %}">Подробно/Редактир</a>
-          <a class="mt-3 regular-link" href="{% url 'core:dev_create' %}">Создать</a>
-           Удалить</td>
+          <a class="mt-3 regular-link" href="{% url 'core:dev_detail' item.1.id %}">Подробно</a>
+          Создать
+          Удалить</td>
       </tr>
     {% endfor %}
   </tbody>

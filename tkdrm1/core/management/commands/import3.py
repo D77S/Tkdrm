@@ -24,7 +24,10 @@ from core.constants import (
     SERVICE_TITLES,
     STATUS_TITLES,
     DOING1,
-    CONTRACT1
+    DOING2,
+    DOING3,
+    CONTRACT1,
+    CONTRACT2
 )
 from users.models import (TKDRMUser,
                           Departments)
@@ -267,15 +270,26 @@ class Command(BaseCommand):
             ) for item in dev_types_titles]
             DevTypes.objects.bulk_create(objs=dev_types_objs)
 
-            doing1 = Doings.objects.create(title=DOING1)
-
+            # Создание всех контрактов
+            # 2012
+            # по м-продлению ср.службы
             contract11 = Contracts.objects.create(
                 title=CONTRACT1,
                 number=1,
                 date_of=datetime.date(year=2012, month=1, day=1),
                 date_start=datetime.date(year=2012, month=1, day=1),
-                date_end=datetime.date(year=2013, month=6, day=1)
+                date_end=datetime.date(year=2013, month=6, day=30)
             )
+            # по одновременно т.о. и ремонту
+            contract21 = Contracts.objects.create(
+                title=CONTRACT2,
+                number=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                date_start=datetime.date(year=2012, month=1, day=1),
+                date_end=datetime.date(year=2013, month=6, day=30)
+            )
+            # 2013
+            # по м-продлению ср.службы
             contract12 = Contracts.objects.create(
                 title=CONTRACT1,
                 number=2,
@@ -283,6 +297,8 @@ class Command(BaseCommand):
                 date_start=datetime.date(year=2013, month=6, day=1),
                 date_end=datetime.date(year=2014, month=6, day=1)
             )
+            # 2014
+            # по м-продлению ср.службы
             contract13 = Contracts.objects.create(
                 title=CONTRACT1,
                 number=3,
@@ -290,6 +306,8 @@ class Command(BaseCommand):
                 date_start=datetime.date(year=2014, month=6, day=1),
                 date_end=datetime.date(year=2015, month=6, day=1)
             )
+            # 2015
+            # по м-продлению ср.службы
             contract14 = Contracts.objects.create(
                 title=CONTRACT1,
                 number=4,
@@ -297,6 +315,8 @@ class Command(BaseCommand):
                 date_start=datetime.date(year=2015, month=6, day=1),
                 date_end=datetime.date(year=2015, month=12, day=31)
             )
+            # 2016
+            # по м-продлению ср.службы
             contract15 = Contracts.objects.create(
                 title=CONTRACT1,
                 number=5,
@@ -305,32 +325,56 @@ class Command(BaseCommand):
                 date_end=datetime.date(year=2016, month=6, day=1)
             )
 
+            # Создание всех отношений между контрактами и действиями по ним
+            # 2012
+            # по м-продлению ср.службы
             RelContrDoing.objects.create(
-                to_doing=doing1,
+                to_doing=Doings.objects.get_or_create(title=DOING1)[0],
                 to_contract=contract11,
                 min_count=1,
                 max_count=1
             )
+            # по одновременно т.о. и ремонту
             RelContrDoing.objects.create(
-                to_doing=doing1,
+                to_doing=Doings.objects.get_or_create(title=DOING2)[0],
+                to_contract=contract21,
+                min_count=1,
+                max_count=1
+            )
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING3)[0],
+                to_contract=contract21,
+                min_count=0,
+                max_count=500
+            )
+            # 2013
+            # по м-продлению ср.службы
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING1)[0],
                 to_contract=contract12,
                 min_count=1,
                 max_count=1
             )
+            # 2014
+            # по м-продлению ср.службы
             RelContrDoing.objects.create(
-                to_doing=doing1,
+                to_doing=Doings.objects.get_or_create(title=DOING1)[0],
                 to_contract=contract13,
                 min_count=1,
                 max_count=1
             )
+            # 2015
+            # по м-продлению ср.службы
             RelContrDoing.objects.create(
-                to_doing=doing1,
+                to_doing=Doings.objects.get_or_create(title=DOING1)[0],
                 to_contract=contract14,
                 min_count=1,
                 max_count=1
             )
+            # 2016
+            # по м-продлению ср.службы
             RelContrDoing.objects.create(
-                to_doing=doing1,
+                to_doing=Doings.objects.get_or_create(title=DOING1)[0],
                 to_contract=contract15,
                 min_count=1,
                 max_count=1
@@ -1015,6 +1059,7 @@ class Command(BaseCommand):
             curr_dev.is_si = curr_is_si
             curr_dev.warr_period = curr_dev_warr
             curr_dev.holder = curr_holder
+            curr_dev.cat_number_f = curr_dev.cat_number_c
 
             if chk_valid_year(year_prod):
                 curr_dev.date_prod = datetime.date(
@@ -1067,27 +1112,38 @@ class Command(BaseCommand):
                 return temp2_rel_to_dev.first()
 
         def cr_rel_to_contrs(
-                item,
+                curr_dev,
+                item0,
+                item_pos,
                 pos,
                 contr_num,
-                date_of
+                date_of,
+                title_of,
+                doing,
         ):
             """Создание (если возможно) связей приборов и контрактов."""
-            if item[pos] == '':
+            if item_pos == '':
                 return
             try:
-                temp_data = datetime.datetime.strptime(item[pos], '%d.%m.%Y')  # noqa
+                temp_data = datetime.datetime.strptime(item_pos, '%d.%m.%Y')  # noqa
                 data_flag = True
             except Exception:
                 data_flag = False
-            if not (data_flag is True or item[pos] == '00.00.0000'):
-                err_report(row=item[0], reason=f'столбец {pos}, ошибка даты')
+            if not (data_flag or item_pos == '00.00.0000'):  # noqa
+                err_report(row=item0, reason=f'столбец {pos}, ошибка даты')
                 return
-            temp_contract = Contracts.objects.get(number=contr_num, date_of=date_of)  # noqa
-            temp_relcd = RelContrDoing.objects.filter(
-                to_contract=temp_contract
-                ).first()
+
+            temp_contract = Contracts.objects.get(
+                title=title_of,
+                number=contr_num,
+                date_of=date_of
+            )
+            temp_relcd = RelContrDoing.objects.get(
+                to_contract=temp_contract,
+                to_doing=doing
+            )
             temp_dtcp = DTCPotential.objects.create(dev=curr_dev, reltocd=temp_relcd)  # noqa
+
             if data_flag:
                 temp_data = temp_data.replace(hour=0, minute=0, second=0)
                 temp_data = timezone.make_aware(temp_data)
@@ -1376,6 +1432,7 @@ class Command(BaseCommand):
                 user = User.objects.create_user(
                     username=username,
                     first_name='Иван',
+                    pater_name='Иванович',
                     last_name='Иванов',
                     email='a@a.com',
                     password='123',
@@ -1402,25 +1459,142 @@ class Command(BaseCommand):
             ##########
             # Создание связей по вхождению прибора в контракты
             # 2012
-            # M1-1
-            cr_rel_to_contrs(item=item, pos=27, contr_num=1, date_of=datetime.date(year=2012, month=1, day=1))  # noqa
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[27],
+                pos=27,
+                contr_num=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
             # 2013
-            # M1-2
-            cr_rel_to_contrs(item=item, pos=28, contr_num=1, date_of=datetime.date(year=2012, month=1, day=1))  # noqa
-            # M2-1
-            cr_rel_to_contrs(item=item, pos=32, contr_num=2, date_of=datetime.date(year=2013, month=6, day=1))  # noqa
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[28],
+                pos=28,
+                contr_num=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
+            # по одновременно т.о. и ремонту
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[29],
+                pos=29,
+                contr_num=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                title_of=CONTRACT2,
+                doing=Doings.objects.get(title=DOING2)
+            )
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[30],
+                pos=30,
+                contr_num=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                title_of=CONTRACT2,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[31],
+                pos=31,
+                contr_num=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                title_of=CONTRACT2,
+                doing=Doings.objects.get(title=DOING2)
+            )
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[32],
+                pos=32,
+                contr_num=1,
+                date_of=datetime.date(year=2012, month=1, day=1),
+                title_of=CONTRACT2,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[33],
+                pos=33,
+                contr_num=2,
+                date_of=datetime.date(year=2013, month=6, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
             # 2014
-            # M2-2
-            cr_rel_to_contrs(item=item, pos=33, contr_num=2, date_of=datetime.date(year=2013, month=6, day=1))  # noqa
-            # M3-1
-            cr_rel_to_contrs(item=item, pos=35, contr_num=3, date_of=datetime.date(year=2014, month=6, day=1))  # noqa
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[34],
+                pos=34,
+                contr_num=2,
+                date_of=datetime.date(year=2013, month=6, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[36],
+                pos=36,
+                contr_num=3,
+                date_of=datetime.date(year=2014, month=6, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
             # 2015
-            # M3-2
-            cr_rel_to_contrs(item=item, pos=37, contr_num=3, date_of=datetime.date(year=2014, month=6, day=1))  # noqa
-            # M4
-            cr_rel_to_contrs(item=item, pos=39, contr_num=4, date_of=datetime.date(year=2015, month=6, day=1))  # noqa
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[38],
+                pos=38,
+                contr_num=3,
+                date_of=datetime.date(year=2014, month=6, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[40],
+                pos=40,
+                contr_num=4,
+                date_of=datetime.date(year=2015, month=6, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
             # 2016
-            # M5
-            cr_rel_to_contrs(item=item, pos=41, contr_num=5, date_of=datetime.date(year=2016, month=1, day=1))  # noqa
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[42],
+                pos=42,
+                contr_num=5,
+                date_of=datetime.date(year=2016, month=1, day=1),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
+
+            # Попытка апдейта фактической категории девайса
+            curr_dev.cat_number_f = curr_dev.cat_number_c
+            curr_dev.save()
 
         print('Успешное завершение создания перечня девайсов.')

@@ -389,6 +389,16 @@ class Device(models.Model):
         verbose_name='Тип прибора',
         related_name='dev_type_to_dev_obj'
     )
+    # Подтип. Резервное поле, желательно избегать использования,
+    # а вместо него использовать связь от поля type.
+    sub_type = models.CharField(
+        max_length=255,
+        default=None,
+        unique=False,
+        null=True,
+        blank=False,
+        verbose_name='Подтип'
+    )
     # Серийный номер (если есть).
     serial = models.CharField(
         max_length=255,
@@ -430,15 +440,28 @@ class Device(models.Model):
         verbose_name='Дата ввода'
     )
 
-    # Дата ввода в эксплуатацию при последнем продлении
-    # срока службы (если такие вообще были, иначе равна date_expl)
     # Вычисляемое поле.
+    # Дата ввода в эксплуатацию при последнем продлении
+    # срока службы (если было, иначе равна date_expl)
     @property
     def date_prolong(self):
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # Запросить, были ли продления срока службы,
-        # если да - вернуть дату с последнего.
-        return self.date_expl
+        date_expl = self.date_expl
+        date_expl = datetime.datetime.combine(date_expl, datetime.datetime.min.time())  # noqa
+        date_expl = timezone.make_aware(date_expl)
+        temps = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
+        temp_list = []
+        for item in temps:
+            date1 = item.from_dtcp_to_dtcr.order_by('-exact_moment').first().exact_moment  # noqa
+            curr_doing_t = item.reltocd.to_doing.title
+            if curr_doing_t == DOING1:
+                temp_list.append(date1)
+        temp_list.sort(reverse=True)
+        last_date = None if not temp_list else temp_list[0]
+        if last_date is None:
+            date_ret = date_expl
+        else:
+            date_ret = max(last_date, date_expl)
+        return date_ret.date()
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
         null=False,
@@ -447,18 +470,30 @@ class Device(models.Model):
         verbose_name='Срок гарантии при поставке'
     )
 
-    # Дата истечения срока службы.
     # Вычисляемое поле.
+    # Дата истечения срока службы
     @property
     def date_prod_expired(self):
         delta = self.type.lifetime
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # дописать
-        # Запросить, было ли продление срока службы, если да -
-        # вернуть с него дату + delta
-        return self.date_prod + dateutil.relativedelta.relativedelta(
-            years=delta
-        )
+        date_expl = self.date_expl
+        date_expl = datetime.datetime.combine(date_expl, datetime.datetime.min.time())  # noqa
+        date_expl = timezone.make_aware(date_expl)
+        temps = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
+        temp_list = []
+        for item in temps:
+            date1 = item.from_dtcp_to_dtcr.order_by('-exact_moment').first().exact_moment  # noqa
+            curr_doing_t = item.reltocd.to_doing.title
+            if curr_doing_t == DOING1:
+                temp_list.append(date1)
+        temp_list.sort(reverse=True)
+        last_date = None if not temp_list else temp_list[0]
+        if last_date is None:
+            date_expl_new = date_expl
+        else:
+            date_expl_new = max(last_date, date_expl)
+
+        date_ret = date_expl_new + dateutil.relativedelta.relativedelta(years=delta)  # noqa
+        return date_ret.date()
     # Дата окончания последней поверки. Актуально только если
     # dev_type.si_flag=True and is_si=True and is_stud=False and status_use=1
     # , в этом случае должно быть не Null и быть в нужном
@@ -470,38 +505,47 @@ class Device(models.Model):
         default=datetime.date(1992, 1, 1),
     )
 
-    # Номер категории расчетный.
     # Вычисляемое поле.
+    # Номер категории расчетный
     @property
     def cat_number_c(self):
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        # дописать
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        # дата сегодня
         today = datetime.date.today()
+        today = datetime.datetime.combine(today, datetime.datetime.min.time())  # noqa
+        today = timezone.make_aware(today)
+        # дата ввода при поставке
+        date_expl = self.date_expl
+        date_expl = datetime.datetime.combine(date_expl, datetime.datetime.min.time())  # noqa
+        date_expl = timezone.make_aware(date_expl)
+        # дата истечения гарантии
         date_warr_end = self.date_expl + dateutil.relativedelta.relativedelta(
             months=self.warr_period
         )
-        date_expl_end_init = self.date_expl + dateutil.relativedelta.relativedelta(years=self.type.lifetime)  # noqa
-        dates_expl_end = []
-        dates_expl_end.append(date_expl_end_init)
-        # получить коллекцию всех объектов модели DTCPotencial, которые ссылаются на self  # noqa
-        # оставить из них только те, на кого ссылается хотя бы один объект модели DTCReal  # noqa
-        # оставить только уникальные
-        # dtcpotencials = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
-        # temp_set_1 = set()
-        # for item in dtcpotencials:
-        #     last_real = item.from_dtcp_to_dtcr.filter('exact_moment').first()
-        #     temp_set_1.add(item.reltocd)
-        # temp_set_2 = set()
-        # for item in temp_set_1:
-        #     if item.to_doing.title == DOING1:
-        #         temp_set_2.add(item)
-        date_expl_end = dates_expl_end.sort(reverse=True)[0]
-        if self.date_expl <= today <= date_warr_end:
+        date_warr_end = datetime.datetime.combine(date_warr_end, datetime.datetime.min.time())  # noqa
+        date_warr_end = timezone.make_aware(date_warr_end)
+        # дата истечения срока службы с проверкой по возможным продлениям её
+        delta = self.type.lifetime
+        temps = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
+        temp_list = []
+        for item in temps:
+            date1 = item.from_dtcp_to_dtcr.order_by('-exact_moment').first().exact_moment  # noqa
+            curr_doing_t = item.reltocd.to_doing.title
+            if curr_doing_t == DOING1:
+                temp_list.append(date1)
+        temp_list.sort(reverse=True)
+        last_date = None if not temp_list else temp_list[0]
+
+        if last_date is None:
+            date_expl_new = date_expl
+        else:
+            date_expl_new = max(last_date, date_expl)
+        date_expl_expir = date_expl_new + dateutil.relativedelta.relativedelta(years=delta)  # noqa
+
+        if date_expl <= today <= date_warr_end:
             return 1
-        if date_warr_end < today <= date_expl_end:
+        if date_warr_end < today <= date_expl_expir:
             return 2
-        if date_expl_end < today:
+        if date_expl_expir < today:
             return 3
         return None
     # Номер категории фактический
@@ -546,16 +590,6 @@ class Device(models.Model):
         blank=False,
         default=True,
         verbose_name='Исправность'
-    )
-    # Подтип. Резервное поле, желательно избегать использования,
-    # а вместо него использовать связь от поля type.
-    sub_type = models.CharField(
-        max_length=255,
-        default=None,
-        unique=False,
-        null=True,
-        blank=False,
-        verbose_name='Подтип'
     )
     # Вышестоящий прибор (если есть).
     upper_id = models.ForeignKey(to='Device',

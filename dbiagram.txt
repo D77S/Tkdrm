@@ -176,6 +176,7 @@ Table DTCReal{
 Table Device{
   id integer [primary key]
   type integer [not null, ref: > DevTypes.id]
+  sub_type varchar
   serial varchar
   inventary varchar
   holder integer [not null, ref: > TKDRMUser.id]
@@ -191,7 +192,6 @@ Table Device{
   sour_type integer [not null, ref: > SourceTypes.id]
   cost float
   condition boolean
-  sub_type varchar
   upper_id integer [ref: > Device.id]
   is_si boolean
   is_stud boolean
