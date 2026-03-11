@@ -234,7 +234,7 @@ class Doings(models.Model):
 
     def __str__(self):
         """."""
-        return f'Действие по к., имя действия: {self.title}'
+        return f'Действие по контракту: {self.title}'
 
 
 class Contracts(models.Model):
@@ -289,7 +289,7 @@ class Contracts(models.Model):
 
     def __str__(self):
         """."""
-        return f'Гос.контракт с названием: {self.title}'
+        return f' {self.title}'
 
 
 class RelContrDoing(models.Model):
@@ -375,7 +375,7 @@ class DTCReal(models.Model):
 
     def __str__(self):
         """."""
-        return f'Объект промежутки с id={self.id}'
+        return f'Объект промежутки dtcreal с id={self.id}'
 
 
 class Device(models.Model):
@@ -502,7 +502,7 @@ class Device(models.Model):
     date_verif = models.DateField(
         null=True,
         blank=True,
-        default=datetime.date(1992, 1, 1),
+        default=None,
     )
 
     # Вычисляемое поле.

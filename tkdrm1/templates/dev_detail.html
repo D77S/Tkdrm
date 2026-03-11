@@ -1,177 +1,177 @@
 {% extends "base.html" %}
   {% block content %}
     <h4 class="pb-2 mb-0">Детализация по выбранному техническому средству</h4>
-    <p>
-      Тип: {{  dev.type.title  }}
-    </p>
-    <p>
-      Подтип (если есть): {{ dev.sub_type|default_if_none:"Отсутствует" }}
-    </p>
-      <p>
-        Срок службы типа, лет: {{ dev.type.lifetime }}
+    Тип: {{  dev.type.title  }}
+    <br>
+    Подтип (если есть): {{ dev.sub_type|default_if_none:"Отсутствует" }}
+    <br>
+    Срок службы типа, лет: {{ dev.type.lifetime }}
+    <br>
+    <div class="ms-4">
+      Вышестоящий тип: {{ dev.type.category.title }}
+      <div class="ms-4">
+        Вышестоящий тип: {{ dev.type.category.cat_l1.title }}
+      </div>
+    </div>
+    Cерийный номер (если есть): {{  dev.serial|default_if_none:"Отсутствует" }}
+    <br>
+    Инвентарный номер (если есть): {{  dev.inventary|default_if_none:"Отсутствует" }}
+    <br>
+    Должностное лицо, ответственное за эксплуатацию (если есть):
+    <div class="ms-4">
+      {% if dev.holder is None %}
+        Отсутствует
+      {% else %}
+        ФИО:
+        {{ dev.holder.first_name }}
+        {{ dev.holder.pater_name|default_if_none:", отчество не указано, " }}
+        {{ dev.holder.last_name }}
+        <br>
+        Таможенный орган, где лицо числится:
+        {% if dev.holder.empl.rtu is not None %}
+          {{ dev.holder.empl.rtu.title }}
+        {% elif dev.holder.empl.custhouse is not None %}
+          {{ dev.holder.empl.custhouse.title }}
+        {% else %}
+          {{ dev.holder.empl.custpost.title }}
+        {% endif %}
+        <br>
+        Отдел, где лицо числится:
+        {{ dev.holder.dept.title }}
+      {% endif %}
+      </div>
+    Дата изготовления (выпуска, производства): {{ dev.date_prod }}
+    <br>
+    Дата ввода в эксплуатацию первоначальная при поставке: {{ dev.date_expl }}
+    <br>
+    Дата ввода в эксплуатацию при последнем продлении срока службы (если было хотя бы одно, иначе - при поставке): {{ dev.date_prolong }}
+    <br>
+    Гарантийный срок при поставке, месяцев: {{ dev.warr_period }}
+    <br>
+    Дата истечения срока службы (с учетом его последнего продления, если было): {{ dev.date_prod_expired }}
+    <br>
+    Дата окончания последней поверки (если есть): {{ dev.date_verif|default_if_none:"Отсутствует" }}
+    <br>
+    Номер категории расчетный (от 1 до 3): {{ dev.cat_number_c }}
+    <br>
+    Номер категории фактический (от 1 до 4, если есть): {{ dev.cat_number_f|default_if_none:"Отсутствует" }}
+    <br>
+    Таможенный орган, в котором числится в оперативном управлении (на балансовом учете), либо на забалансовом учете:
+    {% if dev.cp1_acc.rtu is not None %}
+      {{ dev.cp1_acc.rtu.title }}
+    {% elif dev.cp1_acc.custhouse is not None %}
+      {{ dev.cp1_acc.custhouse.title }}
+    {% else %}
+      {{ dev.cp1_acc.custpost.title }}
+    {% endif %}
+    <br>
+    Источник собственности: {{ dev.sour_type.title }}
+    <br>
+    Величина балансовой стоимости (если есть, отдельно от прочих), руб.: {{ dev.cost|default_if_none:"Отсутствует" }}
+    <br>
+    Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно):
+    {% if dev.condition is True %}
+    Исправно
+    {% elif dev.condition is False %}
+      Неисправно
+    {% else %}
+      Данных нет
+    {% endif %}
+    <br>
+    Вышестоящий прибор (если есть):
+    {% if dev.upper_id is not None %}
+      {{ dev.upper_id.type.title }}, серийный номер {{ dev.upper_id.serial }}
+    {% else %}
+      Отсутствует
+    {% endif %}
+    <br>
+    Является ли средством измерения, либо индикатором, конкретный экземпляр:
+    {% if dev.is_si is True %}
+      Является СИ
+    {% elif dev.is_si is False %}
+      Не является СИ, а является индикатором
+    {% else %}
+      Не должен являться ни СИ, ни индикатором, либо нет данных
+    {% endif %}
+    <br>
+    Является ли учебным конкретный экземпляр:
+    {% if dev.is_stud is True %}
+      Является
+    {% elif dev.is_stud is False %}
+      Не является
+    {% else %}
+      Данных нет
+    {% endif %}
+    <br>
+    Статус по эксплуатации:
+    {{ dev.status_use.title }}
+    <br>
+    Статус по возможности включения в (де)централизованные контракты на т.о. и ремонт:
+    {{ dev.service_type.title }}
+    <br>
+    Сведения о том, какой там.орган и в каком месте эксплуатирует прибор:
+    <div class="ms-4">
+    {% for item in dev.from_dev.all %}
+      Таможенный орган: {{ item.to_rel.cust_pl1.to_cp.title }}
+      <div class="ms-4">
+        {% if item.to_rel.loc is not None %}
+          Эксплуатирует в:
+          {{ item.to_rel.loc.to_site }}
+        {% else %}
+          Эксплуатирует вне какого-либо п.пропуска, ММПО, ЗТК, ОЭЗ
+        {% endif %}
         <div class="ms-4">
-          Вышестоящий тип: {{ dev.type.category.title }}
+          И для данного там.органа данное место эксплуатации является:
+          {% if item.to_rel.is_main_for_cust is True %}
+            Основным
+          {% else %}
+            Не основным
+          {% endif %}
+        </div>
+      </div>
+    {% empty %}
+      Данных нет
+    {% endfor %}
+    </div>
+    Сведения о том, в какие централизованные контракты ранее включалось (включается):
+    <div class="ms-4">
+      {% for item in dev.f_dev_to_doing.all %}
+        По гос.контракту:
+        {{ item.reltocd.to_contract.title }}
+        , номер:
+        {{ item.reltocd.to_contract.number }}
+        , от:
+        {{ item.reltocd.to_contract.date_of }}
+        <div class="ms-4">
+          С прибором было запланировано действие:
+          {{ item.reltocd.to_doing.title }}
           <div class="ms-4">
-            Вышестоящий тип: {{ dev.type.category.cat_l1.title }}
+            И оно было совершено:
+            <div class="ms-4">
+              {% for item2 in item.from_dtcp_to_dtcr.all %}
+                {{ item2.exact_moment }}
+                <br>
+              {% empty %}
+                Данных нет, либо ни разу
+              {% endfor %}
+            </div>
           </div>
         </div>
-      </p>
-    <p>
-      Cерийный номер (если есть): {{  dev.serial|default_if_none:"Отсутствует" }}
-    </p>
-    <p>
-    Инвентарный номер (если есть): {{  dev.inventary|default_if_none:"Отсутствует" }}
-    </p>
-    <p>
-      Должностное лицо, ответственное за эксплуатацию (если есть):
-      <div class="ms-4">
-        {% if dev.holder is None %}
-          Отсутствует
-        {% else %}
-          ФИО:
-          {{ dev.holder.first_name }}
-          {{ dev.holder.pater_name|default_if_none:", отчество не указано, " }}
-          {{ dev.holder.last_name }}
-          <br>
-          Таможенный орган:
-          {% if dev.holder.empl.rtu is not None %}
-            {{ dev.holder.empl.rtu.title }}
-          {% elif dev.holder.empl.custhouse is not None %}
-            {{ dev.holder.empl.custhouse.title }}
-          {% else %}
-            {{ dev.holder.empl.custpost.title }}
-          {% endif %}
-          <br>
-          Отдел:
-          {{ dev.holder.dept.title }}
-        {% endif %}
-      </div>
-    </p>
-    <p>
-      Дата изготовления (выпуска, производства): {{ dev.date_prod }}
-    </p>
-    <p>
-      Дата ввода в эксплуатацию первоначальная при поставке: {{ dev.date_expl }}
-    </p>
-    <p>
-      Дата ввода в эксплуатацию при последнем продлении срока службы (если было хотя бы одно, иначе - при поставке): {{ dev.date_prolong }}
-    </p>
-    <p>
-      Гарантийный срок при поставке, месяцев: {{ dev.warr_period }}
-    </p>
-    <p>
-      Дата истечения срока службы (с учетом его последнего продления, если было): {{ dev.date_prod_expired }}
-    </p>
-    <p>
-      Дата окончания последней поверки (если есть): {{ dev.date_verif }}
-    </p>
-    <p>
-      Номер категории расчетный (от 1 до 3): {{ dev.cat_number_c }}
-    </p>
-    <p>
-      Номер категории фактический (от 1 до 4, если есть): {{ dev.cat_number_f|default_if_none:"Отсутствует" }}
-    </p>
-    <p>
-      Таможенный орган, в котором числится в оперативном управлении (на балансовом учете), либо на забалансовом учете:
-      {% if dev.cp1_acc.rtu is not None %}
-        {{ dev.cp1_acc.rtu.title }}
-      {% elif dev.cp1_acc.custhouse is not None %}
-        {{ dev.cp1_acc.custhouse.title }}
-      {% else %}
-        {{ dev.cp1_acc.custpost.title }}
-      {% endif %}
-    </p>
-    <p>
-      Источник собственности: {{ dev.sour_type.title }}
-    </p>
-    <p>
-      Величина балансовой стоимости (если есть, отдельно от прочих), руб.: {{ dev.cost|default_if_none:"Отсутствует" }}
-    </p>
-    <p>
-      Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно):
-      {% if dev.condition is True %}
-        Исправно
-      {% elif dev.condition is False %}
-        Неисправно
-      {% else %}
+      {% empty %}
         Данных нет
-      {% endif %}
-    </p>
-    <p>
-      Вышестоящий прибор (если есть):
-      {% if dev.upper_id is not None %}
-        {{ dev.upper_id.type.title }}, серийный номер {{ dev.upper_id.serial }}
-      {% else %}
-        Отсутствует
-      {% endif %}
-    </p>
-
-
-
-<br><br><br><br><br><br>
-
-
-
-        {% if total_count > 0 %}
-          <tr>
-            <th rowspan={{ total_rowspan }}>Где находится в эксплуатации</th>
-          </tr>
-        {% endif %}
-        {% if main_cpl_use_fin_count > 0  %}
-          <tr>
-            <th rowspan={{ main_rowspan }}>Основные эксплуатанты</th>
-          </tr>
-          {% for item in main_cpl_use_fin %}
-            <tr>
-              <td>
-                Таможенный орган "{{ item.0.title }}" эксплуатирует 
-                {% if item.1 %}
-                  в административном объекте "{{ item.2 }} {{ item.1.title }}"
-                {% else %}
-                  вне административного объекта
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        {% endif %}
-
-        {% if other_cpl_use_fin_count > 0  %}
-          <tr>
-            <th rowspan={{ other_rowspan }}>Дополнительные эксплуатанты</th>
-          </tr>
-          {% for item in other_cpl_use_fin %}
-            <tr>
-              <td>
-                Таможенный орган "{{ item.0.title }}" эксплуатирует 
-                {% if item.1 %}
-                  в административном объекте "{{ item.2 }} {{ item.1.title }}"
-                {% else %}
-                  вне административного объекта
-                {% endif %}
-              </td>
-            </tr>
-          {% endfor %}
-        {% endif %}
-        <tr>
-          <th colspan=2>Примечание. В каком участке объекта эксплуатируется (если есть информация)</th>
-          <td>{{ dev.note1|default_if_none:"Отсутствует" }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Статуc по использованию</th>
-          <td>{{dev.status_use.title }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Предложения по использованию в ином месте (если есть)</th>
-          <td>{{ dev.note3|default_if_none:"Отсутствует" }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>Включение в (де)централизованные контракты на т.о. и ремонт</th>
-          <td>{{ dev.service_type.title }}</td>
-        </tr>
-        <tr>
-          <th colspan=2>ID в БД</th>
-          <td>{{ dev.id }}</td>
-        </tr>
+      {% endfor %}
+    </div>
+    Примечение1 (район субъекта эксплуатации, если имеется и известно):
+    {{ dev.note1|default_if_none:"Отсутствует" }}
+    <br>
+    Примечение2 (иные примечания, если имеется и известно):
+    {{ dev.note2|default_if_none:"Отсутствует" }}
+    <br>
+    Примечение3 (сведения о месте следующей эксплуатации, если имеется и известно):
+    {{ dev.note3|default_if_none:"Отсутствует" }}
+    <br>
+    ID в БД:
+    {{ dev.id }}
     <br>
     <input type="button" onclick="history.back();" value="Вернуться на предыдущую страницу"/>
   {% endblock %}

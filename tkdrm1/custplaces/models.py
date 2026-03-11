@@ -222,7 +222,7 @@ class PprType(models.Model):
 
     def __str__(self):
         """."""
-        return f'типа пункта пропуска: {self.title}'
+        return f' {self.title}'
 
 
 class Ppr(models.Model):
@@ -279,7 +279,7 @@ class Ppr(models.Model):
 
     def __str__(self):
         """."""
-        return f'пункт пропуска: {self.title}'
+        return f'пункт пропуска, тип {self.pptype}, название {self.title}'
 
 
 class Mmpo(models.Model):
@@ -322,7 +322,7 @@ class Mmpo(models.Model):
 
     def __str__(self):
         """."""
-        return f'ММПО: {self.title}'
+        return f'ММПО {self.title}'
 
 
 class Oez(models.Model):
@@ -365,7 +365,7 @@ class Oez(models.Model):
 
     def __str__(self):
         """."""
-        return f'ОЭЗ: {self.title}'
+        return f'ОЭЗ {self.title}'
 
 
 class Ztk(models.Model):
@@ -408,7 +408,7 @@ class Ztk(models.Model):
 
     def __str__(self):
         """."""
-        return f'ЗТК: {self.title}'
+        return f'ЗТК {self.title}'
 
 
 class CustPlace1Acc(models.Model):
@@ -578,6 +578,19 @@ class CustPlace1Use(models.Model):
         # Для т.н. внутренних постов устанавливается в True
     )
 
+    # Вычисляемое поле.
+    # Локатор на один из типов т.органов.
+    @property
+    def to_cp(self):
+        if self.rtu:
+            return self.rtu
+        elif self.custhouse:
+            return self.custhouse
+        elif self.custpost:
+            return self.custpost
+        else:
+            return None
+
     def delete(self, *args, **kwargs):
         """."""
         temp = super().delete(*args, **kwargs)
@@ -694,6 +707,22 @@ class LocationOfUse(models.Model):
         default=False,
         verbose_name='Является ли ЗТК'
     )
+
+    # Вычисляемое поле.
+    # Локатор на один из типов локации пользования.
+    @property
+    def to_site(self):
+        if self.ppr:
+            return self.ppr
+        elif self.mmpo:
+            return self.mmpo
+        elif self.oez:
+            return self.oez
+        elif self.ztk:
+            return self.ztk
+        else:
+            return None
+
     custplaces = models.ManyToManyField(
         CustPlace1Use,
         through='CustPlaceToLocation'
@@ -784,12 +813,6 @@ class CustPlaceToLocation(models.Model):
                                  on_delete=models.RESTRICT,
                                  verbose_name='т. орган_1',
                                  related_name='to_cp1')
-    # cust_pl2 = models.ForeignKey(to=CustPlace2,
-    #                              null=False,
-    #                              blank=False,
-    #                              on_delete=models.RESTRICT,
-    #                              verbose_name='т. орган_2',
-    #                              related_name='to_cp2')
     loc = models.ForeignKey(to=LocationOfUse,
                             null=True,
                             blank=False,
@@ -842,4 +865,4 @@ class CustPlaceToLocation(models.Model):
         #     curr3=self.loc,
         #     curr4=self.is_main_for_cust
         # )
-        return f'Модель промежутки с id= {self.id}'
+        return f'Модель промежутки отношения там.органа с локацией, с id= {self.id}'  # noqa
