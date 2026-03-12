@@ -11,7 +11,7 @@ from tqdm import tqdm
 from typing import Union
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
-from django.db import connection
+# from django.db import connection
 from django.db.models import QuerySet
 from django.utils import timezone
 
@@ -364,6 +364,90 @@ class Command(BaseCommand):
                 date_start=datetime.date(year=2018, month=5, day=29),
                 date_end=datetime.date(year=2018, month=11, day=20)
             )
+            # 2019
+            # по т.о.
+            c_2019_t = Contracts.objects.create(
+                title=CONTRACT4,
+                number=104,
+                date_of=datetime.date(year=2019, month=7, day=3),
+                date_start=datetime.date(year=2019, month=7, day=15),
+                date_end=datetime.date(year=2019, month=11, day=20)
+            )
+            # по ремонту
+            c_2019_r = Contracts.objects.create(
+                title=CONTRACT3,
+                number=108,
+                date_of=datetime.date(year=2019, month=7, day=3),
+                date_start=datetime.date(year=2019, month=7, day=15),
+                date_end=datetime.date(year=2019, month=11, day=20)
+            )
+            # по м-светофор
+            c_2019_ms = Contracts.objects.create(
+                title=CONTRACT2,
+                number=134,
+                date_of=datetime.date(year=2019, month=8, day=27),
+                date_start=datetime.date(year=2019, month=9, day=11),
+                date_end=datetime.date(year=2019, month=11, day=20)
+            )
+            # 2020
+            # по т.о.
+            c_2020_t = Contracts.objects.create(
+                title=CONTRACT4,
+                number=50271,
+                date_of=datetime.date(year=2020, month=5, day=8),
+                date_start=datetime.date(year=2020, month=6, day=5),
+                date_end=datetime.date(year=2020, month=11, day=20)
+            )
+            # по ремонту1
+            c_2020_r1 = Contracts.objects.create(
+                title=CONTRACT3,
+                number=282,
+                date_of=datetime.date(year=2020, month=5, day=13),
+                date_start=datetime.date(year=2020, month=6, day=5),
+                date_end=datetime.date(year=2020, month=11, day=20)
+            )
+            # по ремонту2
+            c_2020_r2 = Contracts.objects.create(
+                title=CONTRACT3,
+                number=379,
+                date_of=datetime.date(year=2020, month=11, day=2),
+                date_start=datetime.date(year=2020, month=11, day=11),
+                date_end=datetime.date(year=2021, month=11, day=19)
+            )
+            # 2021
+            # по т.о.
+            c_2021_t = Contracts.objects.create(
+                title=CONTRACT4,
+                number=114,
+                date_of=datetime.date(year=2021, month=8, day=18),
+                date_start=datetime.date(year=2021, month=8, day=30),
+                date_end=datetime.date(year=2021, month=11, day=29)
+            )
+            # по ремонту
+            c_2021_r = Contracts.objects.create(
+                title=CONTRACT3,
+                number=115,
+                date_of=datetime.date(year=2021, month=8, day=23),
+                date_start=datetime.date(year=2021, month=8, day=30),
+                date_end=datetime.date(year=2022, month=11, day=21)
+            )
+            # 2022
+            # по т.о.
+            c_2022_t = Contracts.objects.create(
+                title=CONTRACT4,
+                number=424,
+                date_of=datetime.date(year=2022, month=10, day=3),
+                date_start=datetime.date(year=2022, month=10, day=7),
+                date_end=datetime.date(year=2022, month=11, day=29)
+            )
+            # по ремонту
+            c_2022_r = Contracts.objects.create(
+                title=CONTRACT3,
+                number=393,
+                date_of=datetime.date(year=2022, month=8, day=15),
+                date_start=datetime.date(year=2022, month=8, day=31),
+                date_end=datetime.date(year=2023, month=11, day=21)
+            )
 
             # Создание всех отношений между контрактами и действиями по ним
             # 2012
@@ -470,6 +554,80 @@ class Command(BaseCommand):
             RelContrDoing.objects.create(
                 to_doing=Doings.objects.get_or_create(title=DOING3)[0],
                 to_contract=c_2018_tr,
+                min_count=0,
+                max_count=500
+            )
+            # 2019
+            # по т.о.
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING4)[0],
+                to_contract=c_2019_t,
+                min_count=1,
+                max_count=1
+            )
+            # по ремонту
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING3)[0],
+                to_contract=c_2019_r,
+                min_count=0,
+                max_count=500
+            )
+            # по м-светофор
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING2)[0],
+                to_contract=c_2019_ms,
+                min_count=1,
+                max_count=1
+            )
+            # 2020
+            # по т.о.
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING4)[0],
+                to_contract=c_2020_t,
+                min_count=1,
+                max_count=1
+            )
+            # по ремонту1
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING3)[0],
+                to_contract=c_2020_r1,
+                min_count=0,
+                max_count=500
+            )
+            # по ремонту2
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING3)[0],
+                to_contract=c_2020_r2,
+                min_count=0,
+                max_count=500
+            )
+            # 2021
+            # по т.о.
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING4)[0],
+                to_contract=c_2021_t,
+                min_count=1,
+                max_count=1
+            )
+            # по ремонту
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING3)[0],
+                to_contract=c_2021_r,
+                min_count=0,
+                max_count=500
+            )
+            # 2022
+            # по т.о.
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING4)[0],
+                to_contract=c_2022_t,
+                min_count=1,
+                max_count=1
+            )
+            # по ремонту
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING3)[0],
+                to_contract=c_2022_r,
                 min_count=0,
                 max_count=500
             )
@@ -1758,6 +1916,120 @@ class Command(BaseCommand):
                 contr_num=74,
                 date_of=datetime.date(year=2018, month=5, day=28),
                 title_of=CONTRACT5,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            # 2019
+            # по т.о.
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[46],
+                pos=46,
+                contr_num=104,
+                date_of=datetime.date(year=2019, month=7, day=3),
+                title_of=CONTRACT4,
+                doing=Doings.objects.get(title=DOING4)
+            )
+            # по ремонту
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[47],
+                pos=47,
+                contr_num=108,
+                date_of=datetime.date(year=2019, month=7, day=3),
+                title_of=CONTRACT3,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            # по м-светофор
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[48],
+                pos=48,
+                contr_num=134,
+                date_of=datetime.date(year=2019, month=8, day=27),
+                title_of=CONTRACT2,
+                doing=Doings.objects.get(title=DOING2)
+            )
+            # 2020
+            # по т.о.
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[51],
+                pos=51,
+                contr_num=50271,
+                date_of=datetime.date(year=2020, month=5, day=8),
+                title_of=CONTRACT4,
+                doing=Doings.objects.get(title=DOING4)
+            )
+            # по ремонту1
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[49],
+                pos=49,
+                contr_num=282,
+                date_of=datetime.date(year=2020, month=5, day=13),
+                title_of=CONTRACT3,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            # по ремонту2
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[50],
+                pos=50,
+                contr_num=379,
+                date_of=datetime.date(year=2020, month=11, day=2),
+                title_of=CONTRACT3,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            # 2021
+            # по т.о.
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[54],
+                pos=54,
+                contr_num=114,
+                date_of=datetime.date(year=2021, month=8, day=18),
+                title_of=CONTRACT4,
+                doing=Doings.objects.get(title=DOING4)
+            )
+            # по ремонту
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[53],
+                pos=53,
+                contr_num=115,
+                date_of=datetime.date(year=2021, month=8, day=23),
+                title_of=CONTRACT3,
+                doing=Doings.objects.get(title=DOING3)
+            )
+            # 2022
+            # по т.о.
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[56],
+                pos=56,
+                contr_num=424,
+                date_of=datetime.date(year=2022, month=10, day=3),
+                title_of=CONTRACT4,
+                doing=Doings.objects.get(title=DOING4)
+            )
+            # по ремонту
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[55],
+                pos=55,
+                contr_num=393,
+                date_of=datetime.date(year=2022, month=8, day=15),
+                title_of=CONTRACT3,
                 doing=Doings.objects.get(title=DOING3)
             )
 
