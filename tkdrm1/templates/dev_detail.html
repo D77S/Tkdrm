@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load django_bootstrap5 %}
   {% block content %}
     <h4 class="pb-2 mb-0">Детализация по выбранному техническому средству</h4>
     Тип: {{  dev.type.title  }}
@@ -39,7 +40,7 @@
         Отдел, где лицо числится:
         {{ dev.holder.dept.title }}
       {% endif %}
-      </div>
+    </div>
     Дата изготовления (выпуска, производства): {{ dev.date_prod }}
     <br>
     Дата ввода в эксплуатацию первоначальная при поставке: {{ dev.date_expl }}
@@ -173,5 +174,11 @@
     ID в БД:
     {{ dev.id }}
     <br>
-    <input type="button" onclick="history.back();" value="Вернуться на предыдущую страницу"/>
+
+    <form>
+      <table>
+        {% bootstrap_form devdetailform %}
+      </table>
+    {% bootstrap_button button_type="button" content="Вернуться на предыдущую страницу" onclick="history.back()" %}
+    </form>
   {% endblock %}

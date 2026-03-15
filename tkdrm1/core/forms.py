@@ -125,11 +125,6 @@ class DevDetailForm(forms.Form):
         # help_text='(За)баланс, главный №1, т.орган, в к-м стоит на, если он т.пост'  # noqa
     )
     #
-    #
-    # Если решим, что т.орган, который (за)балансодержатель, может быть не единственный, то  # noqa
-    # сюда дописываем acc2_rtu, acc2_ch, acc2_cp, acc3_rtu, acc3_ch, acc3_cp, ...  # noqa
-    #
-    #
     use_main1_rtu = forms.ChoiceField(
         choices=[],
         label='Эксплуатация, главный №1, т.орган, в к-м, если он РТУ',
@@ -172,11 +167,6 @@ class DevDetailForm(forms.Form):
         required=True,
         # help_text='Эксплуатация, главный №1, локация, если она ЗТК'  # noqa
     )
-    #
-    #
-    # Если решим, что т.орган, который главный эксплуатант, может быть не единственный, то  # noqa
-    # сюда дописываем use_main2_rtu, use_main2_ch, use_main2_cp, use_main3_rtu, use_main3_ch, use_main3_cp, ...  # noqa
-    #
     #
     use_oth1_rtu = forms.ChoiceField(
         choices=[],

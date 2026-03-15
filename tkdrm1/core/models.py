@@ -445,22 +445,16 @@ class Device(models.Model):
     # срока службы (если было, иначе равна date_expl)
     @property
     def date_prolong(self):
-        date_expl = self.date_expl
-        date_expl = datetime.datetime.combine(date_expl, datetime.datetime.min.time())  # noqa
-        date_expl = timezone.make_aware(date_expl)
-        temps = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
-        temp_list = []
+        date_ret = self.date_expl
+        date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())  # noqa
+        date_ret = timezone.make_aware(date_ret)
+        temps = self.f_dev_to_doing.all()
         for item in temps:
-            date1 = item.from_dtcp_to_dtcr.order_by('-exact_moment').first().exact_moment  # noqa
-            curr_doing_t = item.reltocd.to_doing.title
-            if curr_doing_t == DOING1:
-                temp_list.append(date1)
-        temp_list.sort(reverse=True)
-        last_date = None if not temp_list else temp_list[0]
-        if last_date is None:
-            date_ret = date_expl
-        else:
-            date_ret = max(last_date, date_expl)
+            temps2 = list(item.from_dtcp_to_dtcr.all())
+            temps2.sort(key=lambda x: x.exact_moment, reverse=True)
+            temp2 = temps2[0] if temps2 else None
+            if temp2 and item.reltocd.to_doing.title == DOING1:
+                date_ret = max(temp2.exact_moment, date_ret)
         return date_ret.date()
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
@@ -475,24 +469,17 @@ class Device(models.Model):
     @property
     def date_prod_expired(self):
         delta = self.type.lifetime
-        date_expl = self.date_expl
-        date_expl = datetime.datetime.combine(date_expl, datetime.datetime.min.time())  # noqa
-        date_expl = timezone.make_aware(date_expl)
-        temps = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
-        temp_list = []
+        date_ret = self.date_expl
+        date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())  # noqa
+        date_ret = timezone.make_aware(date_ret)
+        temps = self.f_dev_to_doing.all()
         for item in temps:
-            date1 = item.from_dtcp_to_dtcr.order_by('-exact_moment').first().exact_moment  # noqa
-            curr_doing_t = item.reltocd.to_doing.title
-            if curr_doing_t == DOING1:
-                temp_list.append(date1)
-        temp_list.sort(reverse=True)
-        last_date = None if not temp_list else temp_list[0]
-        if last_date is None:
-            date_expl_new = date_expl
-        else:
-            date_expl_new = max(last_date, date_expl)
-
-        date_ret = date_expl_new + dateutil.relativedelta.relativedelta(years=delta)  # noqa
+            temps2 = list(item.from_dtcp_to_dtcr.all())
+            temps2.sort(key=lambda x: x.exact_moment, reverse=True)
+            temp2 = temps2[0] if temps2 else None
+            if temp2 and item.reltocd.to_doing.title == DOING1:
+                date_ret = max(temp2.exact_moment, date_ret)
+        date_ret = date_ret + dateutil.relativedelta.relativedelta(years=delta)  # noqa
         return date_ret.date()
     # Дата окончания последней поверки. Актуально только если
     # dev_type.si_flag=True and is_si=True and is_stud=False and status_use=1
@@ -525,27 +512,23 @@ class Device(models.Model):
         date_warr_end = timezone.make_aware(date_warr_end)
         # дата истечения срока службы с проверкой по возможным продлениям её
         delta = self.type.lifetime
-        temps = self.f_dev_to_doing.filter(from_dtcp_to_dtcr__isnull=False).distinct()  # noqa
-        temp_list = []
+        date_ret = self.date_expl
+        date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())  # noqa
+        date_ret = timezone.make_aware(date_ret)
+        temps = self.f_dev_to_doing.all()
         for item in temps:
-            date1 = item.from_dtcp_to_dtcr.order_by('-exact_moment').first().exact_moment  # noqa
-            curr_doing_t = item.reltocd.to_doing.title
-            if curr_doing_t == DOING1:
-                temp_list.append(date1)
-        temp_list.sort(reverse=True)
-        last_date = None if not temp_list else temp_list[0]
-
-        if last_date is None:
-            date_expl_new = date_expl
-        else:
-            date_expl_new = max(last_date, date_expl)
-        date_expl_expir = date_expl_new + dateutil.relativedelta.relativedelta(years=delta)  # noqa
+            temps2 = list(item.from_dtcp_to_dtcr.all())
+            temps2.sort(key=lambda x: x.exact_moment, reverse=True)
+            temp2 = temps2[0] if temps2 else None
+            if temp2 and item.reltocd.to_doing.title == DOING1:
+                date_ret = max(temp2.exact_moment, date_ret)
+        date_ret += dateutil.relativedelta.relativedelta(years=delta)
 
         if date_expl <= today <= date_warr_end:
             return 1
-        if date_warr_end < today <= date_expl_expir:
+        if date_warr_end < today <= date_ret:
             return 2
-        if date_expl_expir < today:
+        if date_ret < today:
             return 3
         return None
     # Номер категории фактический

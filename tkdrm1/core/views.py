@@ -4,27 +4,27 @@
 import time
 # from django.db import connection, reset_queries
 from django.core.paginator import Paginator
-from django.db.models import QuerySet
+
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, render
 from core.constants import ALL_DEV_PAG
 from core.forms import DevDetailForm
 from core.models import (
     Device,
-    RelToDev
+    RelToDev,
 )
-from custplaces.models import (
-    Rtu,
-    CustHouse,
-    CustPost,
-    Ppr,
-    Mmpo,
-    Oez,
-    Ztk,
-    CustPlace1Use,
-    CustPlaceToLocation,
-    LocationOfUse
-)
+# from custplaces.models import (
+#     Rtu,
+#     CustHouse,
+#     CustPost,
+#     Ppr,
+#     Mmpo,
+#     Oez,
+#     Ztk,
+#     CustPlace1Use,
+#     CustPlaceToLocation,
+#     LocationOfUse
+# )
 
 # def query_debugger(func):
 #     @functools.wraps(func)
@@ -144,10 +144,40 @@ def dev_detail(request, pk):
     одного уже существующего в БД девайса
     для цели ПРОСМОТРА."""
 
-    dev: Device = get_object_or_404(Device, pk=pk)
+    devs_qs = Device.objects.select_related(
+        'type__category__cat_l1',
+        'holder__dept',
+        'holder__empl__rtu',
+        'holder__empl__custhouse',
+        'holder__empl__custpost',
+        'cp1_acc__rtu',
+        'cp1_acc__custhouse',
+        'cp1_acc__custpost',
+        'sour_type',
+        'status_use',
+        'service_type',
+        'upper_id'
+    ).prefetch_related(
+        'f_dev_to_doing__from_dtcp_to_dtcr',
+        'f_dev_to_doing__reltocd__to_doing',
+        'f_dev_to_doing__reltocd__to_contract',
+        'from_dev__to_rel__cust_pl1__rtu',
+        'from_dev__to_rel__cust_pl1__custhouse',
+        'from_dev__to_rel__cust_pl1__custpost',
+        'from_dev__to_rel__loc__ppr__pptype',
+        'from_dev__to_rel__loc__mmpo',
+        'from_dev__to_rel__loc__oez',
+        'from_dev__to_rel__loc__ztk'
+    )
+    curr_dev: Device = get_object_or_404(devs_qs, pk=pk)
+
+    devdetailform = DevDetailForm()
+    for field in devdetailform.fields.values():
+        field.widget.attrs['disabled'] = 'disabled'
 
     context = {
-        'dev': dev,
+        'dev': curr_dev,
+        'devdetailform': devdetailform
     }
     template_name = 'dev_detail.html'
     return render(request, template_name, context)
