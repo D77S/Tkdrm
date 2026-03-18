@@ -176,9 +176,7 @@
     <br>
 
     <form>
-      <table>
-        {% bootstrap_form devdetailform %}
-      </table>
+      {% bootstrap_form devdetailform layout="horizontal" horizontal_label_class="col-md-3" horizontal_field_class="col-md-9"%}
     {% bootstrap_button button_type="button" content="Вернуться на предыдущую страницу" onclick="history.back()" %}
     </form>
   {% endblock %}

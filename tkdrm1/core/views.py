@@ -11,20 +11,9 @@ from core.constants import ALL_DEV_PAG
 from core.forms import DevDetailForm
 from core.models import (
     Device,
+    # DevTypes,
     RelToDev,
 )
-# from custplaces.models import (
-#     Rtu,
-#     CustHouse,
-#     CustPost,
-#     Ppr,
-#     Mmpo,
-#     Oez,
-#     Ztk,
-#     CustPlace1Use,
-#     CustPlaceToLocation,
-#     LocationOfUse
-# )
 
 # def query_debugger(func):
 #     @functools.wraps(func)
@@ -144,6 +133,11 @@ def dev_detail(request, pk):
     одного уже существующего в БД девайса
     для цели ПРОСМОТРА."""
 
+    #  Настроенная предзагрузка.
+    #  Из БД грузится 1 (один) интересующий объект,
+    #  но к нему select_related и prefetch_related
+    #  много дополнительной информации.
+    #  Всего в сумме 12 запросов.
     devs_qs = Device.objects.select_related(
         'type__category__cat_l1',
         'holder__dept',
@@ -171,7 +165,12 @@ def dev_detail(request, pk):
     )
     curr_dev: Device = get_object_or_404(devs_qs, pk=pk)
 
-    devdetailform = DevDetailForm()
+    #  Но при создании формы-наследника класса modelform,
+    #  предзагрузка не срабаывает, и происходит еще около 100 запросов к БД.
+    devdetailform = DevDetailForm(
+        instance=curr_dev,
+    )
+
     for field in devdetailform.fields.values():
         field.widget.attrs['disabled'] = 'disabled'
 
@@ -181,21 +180,3 @@ def dev_detail(request, pk):
     }
     template_name = 'dev_detail.html'
     return render(request, template_name, context)
-
-
-# def dev_create(request):
-#     """Вью-функция для цели СОЗДАНИЯ НОВОГО одного прибора."""
-#     if request.GET:
-#         devdetailform = DevDetailForm(request.GET)
-#         if devdetailform.is_valid():
-#             print('Form is valid')
-#         else:
-#             print('Form is not valid!')
-#     else:
-#         devdetailform = DevDetailForm()
-#     devdetailform.fields['id'].disabled = True
-#     context = {
-#         'devdetailform': devdetailform,
-#     }
-#     template_name = 'dev_detail2.html'
-#     return render(request, template_name, context)

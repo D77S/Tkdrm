@@ -205,7 +205,7 @@ class DevTypes(models.Model):
 
     def __str__(self):
         """."""
-        return f'прибор типа {self.title}'
+        return f'{self.title}'
 
 
 class Doings(models.Model):
@@ -422,7 +422,7 @@ class Device(models.Model):
         blank=True,
         default=None,
         on_delete=models.PROTECT,
-        verbose_name='Ответственный за экспл-ю',
+        verbose_name='Ответственный за эксплуатацию',
         related_name='from_man_to_dev'
     )
     # Дата изготовления (выпуска, производства)
@@ -432,12 +432,12 @@ class Device(models.Model):
         default=datetime.date(1990, 1, 1),
         verbose_name='Дата изготовления'
     )
-    # Дата ввода в эксплуатацию при поставке
+    # Дата ввода в эксплуатацию первичная с завода
     date_expl = models.DateField(
         null=False,
         blank=True,
         default=datetime.date(1991, 1, 1),
-        verbose_name='Дата ввода'
+        verbose_name='Дата ввода первичная с завода'
     )
 
     # Вычисляемое поле.
@@ -481,7 +481,7 @@ class Device(models.Model):
                 date_ret = max(temp2.exact_moment, date_ret)
         date_ret = date_ret + dateutil.relativedelta.relativedelta(years=delta)  # noqa
         return date_ret.date()
-    # Дата окончания последней поверки. Актуально только если
+    # Дата окончания последней поверки (если было). Актуально только если
     # dev_type.si_flag=True and is_si=True and is_stud=False and status_use=1
     # , в этом случае должно быть не Null и быть в нужном
     # диапазоне.
@@ -490,6 +490,7 @@ class Device(models.Model):
         null=True,
         blank=True,
         default=None,
+        verbose_name='Дата окончания последней поверки (если было)'
     )
 
     # Вычисляемое поле.
