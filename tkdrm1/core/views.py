@@ -165,18 +165,8 @@ def dev_detail(request, pk):
     )
     curr_dev: Device = get_object_or_404(devs_qs, pk=pk)
 
-    #  Но при создании формы-наследника класса modelform,
-    #  предзагрузка не срабаывает, и происходит еще около 100 запросов к БД.
-    devdetailform = DevDetailForm(
-        instance=curr_dev,
-    )
-
-    for field in devdetailform.fields.values():
-        field.widget.attrs['disabled'] = 'disabled'
-
     context = {
         'dev': curr_dev,
-        'devdetailform': devdetailform
     }
     template_name = 'dev_detail.html'
     return render(request, template_name, context)

@@ -465,7 +465,7 @@ class Device(models.Model):
     )
 
     # Вычисляемое поле.
-    # Дата истечения срока службы
+    # Дата истечения срока службы (с учетом его последнего продления, если было)
     @property
     def date_prod_expired(self):
         delta = self.type.lifetime
