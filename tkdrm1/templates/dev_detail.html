@@ -1,13 +1,17 @@
 {% extends "base.html" %}
 {% load django_bootstrap5 %}
   {% block content %}
-    <h2 class="pb-2 mb-0">Детализация по выбранному техническому средству и его взаимосвязь с гос.контрактами</h2>
-    <h4 class="pb-2 mb-0">Информация по экземпляру технического средства</h4>
+    <h2 class="pb-2 mb-0">Детализация по выбранному прибору и его взаимосвязь с гос.контрактами</h2>
+
+    {% comment %}
+    <!--
+
+    <h4 class="pb-2 mb-0">Информация по прибору</h4>
     <table class="table table-bordered table-hover align-middle">
       <tbody>
         <tr>
           <td>
-            Тип
+            Тип технического средства
           </td>
           <td>
             {{  dev.type.title  }}
@@ -184,13 +188,13 @@
         </tr>
         <tr>
           <td>
-            Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно)
+            Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно, да-исправно, нет-неисправно)
           </td>
           <td>
             {% if dev.condition is True %}
-              Исправно
+              Да
             {% elif dev.condition is False %}
-              Неисправно
+              Нет
             {% else %}
               Данных нет
             {% endif %}
@@ -210,7 +214,7 @@
         </tr>
         <tr>
           <td>
-            Является ли средством измерения утвержденного типа, либо индикатором, конкретный экземпляр
+            Является ли СИ конкретный экземпляр (да-СИ, нет-индикатор)
           </td>
           <td>
             {% if dev.is_si is True %}
@@ -246,7 +250,15 @@
         </tr>
         <tr>
           <td>
-            Сведения о том, какой там.орган и в каком месте эксплуатирует прибор
+            Статус по централизованному т.о./ремонту, подлежит ли прибор
+          </td>
+          <td>
+            {{ dev.service_type.title }}
+          </td>
+        </tr>
+        <tr>
+          <td>
+            Какой там.орган и в каком месте эксплуатирует прибор
           </td>
           <td>
             {% for item in dev.from_dev.all %}
@@ -273,22 +285,22 @@
       </tbody>
     </table>
 
-    <h4 class="pb-2 mb-0">Информация по вхождению экземпляра в гос.контракты</h4>
+    <h4 class="pb-2 mb-0">Информация по вхождению прибора в гос.контракты, потенциальному и реальному</h4>
 
     <table class="table table-bordered table-hover align-middle">
       <tbody>
         {% for item in dev.f_dev_to_doing.all %}
           <tr>
             <td>
-              По гос.контракту: {{ item.reltocd.to_contract.title }}, 
-              номер: {{ item.reltocd.to_contract.number }}, 
-              от: {{ item.reltocd.to_contract.date_of }}
+              По гос.контракту: "{{ item.reltocd.to_contract.title }}", 
+              номер {{ item.reltocd.to_contract.number }}, 
+              от {{ item.reltocd.to_contract.date_of }}
             </td>
             <td>
-              С прибором было запланировано, либо потенциально было возможно, действие: {{ item.reltocd.to_doing.title }}
+              С прибором было запланировано, либо потенциально было возможно, действие "{{ item.reltocd.to_doing.title }}"
             </td>
             <td>
-              И оно было совершено:
+              И оно (они) было(и) совершено(ы):
               <br>
               {% for item2 in item.from_dtcp_to_dtcr.all %}
                 {{ item2.exact_moment }}
@@ -304,7 +316,7 @@
       </tbody>
     </table>
   
-    <h4 class="pb-2 mb-0"> Примечания по экземпляру технического средства</h4>
+    <h4 class="pb-2 mb-0"> Примечания по прибору</h4>
 
     <table class="table table-bordered table-hover align-middle">
       <tbody>
@@ -334,6 +346,15 @@
         </tr>
       </tbody>
     </table>    
+
+    -->
+    {% endcomment %}
+
+    <h4 class="pb-2 mb-0">Информация по прибору</h4>
+
+    <form>
+      {% bootstrap_form dev_detail_form %}
+    </form>
 
     ID в БД:
     {{ dev.id }}

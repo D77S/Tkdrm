@@ -9,9 +9,7 @@
           style="text-align: center"
           class="col-7"
           colspan=3
-          title="У технического средства может быть не один эксплуатирующий таможенный орган.
-          Но, задано логикой, что из них основной - только один. Он и показан в данной таблице.
-          Остальные могут быть увидены по ссылке 'Подробнее'."
+          title="У технического средства может быть не один эксплуатирующий таможенный орган. Но, задано логикой, что из них основной - только один. Он и показан в данной таблице. Остальные, если они есть, могут быть увидены по ссылке 'Подробнее'."
           >
             Эксплуатирующий т.орган<br>
             <div style="font-weight: normal;" class="small">
@@ -20,7 +18,7 @@
       </th>
       <th scope="col" valign="top" class="col-1" rowspan=2>Название</th>
       <th scope="col" valign="top" class="col-1" rowspan=2>Номер</th>
-      <th scope="col" valign="top" class="col-2"rowspan=2>Дополнительно</th>
+      <th scope="col" valign="top" class="col-7" rowspan=2>Дополнительно</th>
     </tr>
     <tr>
       <th scope="col" valign="top">РТУ</th>
@@ -40,7 +38,14 @@
         <td scope="row">
           <a class="mt-3 regular-link" href="{% url 'core:dev_detail' item.1.id %}">Подробно</a>
           Создать
-          Удалить</td>
+          Редактировать
+          <form action="{% url 'core:dev_delete' item.1.id %}" method='POST' style='display: inline;'>
+            {% csrf_token %}
+            <button type="submit" style="background: none; border: none; padding: 0; color: #007bff; text-decoration: underline; cursor: pointer;">
+            Удалить
+            </button>
+          </form>
+        </td>
       </tr>
     {% endfor %}
   </tbody>

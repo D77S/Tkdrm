@@ -4,14 +4,13 @@
 import time
 # from django.db import connection, reset_queries
 from django.core.paginator import Paginator
-
+from django.forms.models import model_to_dict
 from django.http import HttpRequest
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
 from core.constants import ALL_DEV_PAG
 from core.forms import DevDetailForm
 from core.models import (
     Device,
-    # DevTypes,
     RelToDev,
 )
 
@@ -165,8 +164,20 @@ def dev_detail(request, pk):
     )
     curr_dev: Device = get_object_or_404(devs_qs, pk=pk)
 
+    instance = curr_dev
+    dev_detail_form = DevDetailForm(instance=instance)
+
     context = {
         'dev': curr_dev,
+        'dev_detail_form': dev_detail_form
     }
     template_name = 'dev_detail.html'
     return render(request, template_name, context)
+
+def dev_delete(request, pk):
+    """Вью-функция по удалению
+    одного уже существующего в БД девайса."""
+    instance=get_object_or_404(Device, pk=pk)
+    if request.method == 'POST':
+        instance.delete()
+    return redirect('core:all_list_by_cpl')

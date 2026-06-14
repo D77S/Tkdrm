@@ -29,7 +29,7 @@ class SourceTypes(models.Model):
 
     def __str__(self):
         """."""
-        return f'источник, являющийся: {self.title}'
+        return f'{self.title}'
 
 
 class StatusTypes(models.Model):
@@ -50,7 +50,7 @@ class StatusTypes(models.Model):
 
     def __str__(self):
         """."""
-        return f'статус по эксплуатации, являющийся: {self.title}'
+        return f'{self.title}'
 
 
 class ServiceTypes(models.Model):
@@ -76,7 +76,7 @@ class ServiceTypes(models.Model):
 
     def __str__(self):
         """."""
-        return f'вид действия, являющийся: {self.title}'
+        return f'{self.title}'
 
 
 class DevCatsL1(models.Model):
@@ -98,7 +98,7 @@ class DevCatsL1(models.Model):
 
     def __str__(self):
         """."""
-        return f'категория уровня 1: {self.title}'
+        return f'{self.title}'
 
 
 class DevCatsL2(models.Model):
@@ -128,7 +128,7 @@ class DevCatsL2(models.Model):
 
     def __str__(self):
         """."""
-        return f'категория уровня 2: {self.title}'
+        return f'{self.title}'
 
 
 class DevTypes(models.Model):
@@ -234,7 +234,7 @@ class Doings(models.Model):
 
     def __str__(self):
         """."""
-        return f'Действие по контракту: {self.title}'
+        return f'{self.title}'
 
 
 class Contracts(models.Model):
@@ -289,7 +289,7 @@ class Contracts(models.Model):
 
     def __str__(self):
         """."""
-        return f' {self.title}'
+        return f'номер {self.number}, от {self.date_of}'
 
 
 class RelContrDoing(models.Model):
@@ -339,7 +339,7 @@ class RelContrDoing(models.Model):
 
     def __str__(self):
         """."""
-        return f'Объект связи с номером: {self.id}'
+        return f'По контракту "{self.to_contract}" действие "{self.to_doing}"'
 
 
 class DTCReal(models.Model):
@@ -350,7 +350,7 @@ class DTCReal(models.Model):
     basis = models.ForeignKey(to='DTCPotential',
                               null=False,
                               blank=False,
-                              on_delete=models.PROTECT,
+                              on_delete=models.CASCADE,
                               verbose_name='Основание',
                               related_name='from_dtcp_to_dtcr')
     exact_moment = models.DateTimeField(
@@ -380,24 +380,25 @@ class DTCReal(models.Model):
 
 class Device(models.Model):
     """Модель объекта прибора (технического средства)."""
-    # Тип прибора.
+    # Тип технического средства.
     type = models.ForeignKey(
         to=DevTypes,
         null=False,
         blank=False,
         on_delete=models.PROTECT,
-        verbose_name='Тип прибора',
+        verbose_name='Тип технического средства',
         related_name='dev_type_to_dev_obj'
     )
-    # Подтип. Резервное поле, желательно избегать использования,
-    # а вместо него использовать связь от поля type.
+    # Подтип технического средства.
+    # Резервное поле, используется ТОЛЬКО если объект
+    # недостаточно конкретизированно описывается связью от поля type.
     sub_type = models.CharField(
         max_length=255,
         default=None,
         unique=False,
         null=True,
         blank=False,
-        verbose_name='Подтип'
+        verbose_name='Подтип технического средства'
     )
     # Серийный номер (если есть).
     serial = models.CharField(
@@ -405,7 +406,7 @@ class Device(models.Model):
         unique=False,
         null=True,
         blank=False,
-        verbose_name='Серийный номер'
+        verbose_name='Cерийный номер (если есть)'
     )
     # Инвентарный номер (если есть).
     inventary = models.CharField(
@@ -413,7 +414,7 @@ class Device(models.Model):
         unique=False,
         null=True,
         blank=False,
-        verbose_name='Инвентарный номер'
+        verbose_name='Инвентарный номер (если есть)'
     )
     # Должностное лицо т.органа (одно), ответственное за его эксплуатацию
     holder = models.ForeignKey(
@@ -422,7 +423,7 @@ class Device(models.Model):
         blank=True,
         default=None,
         on_delete=models.PROTECT,
-        verbose_name='Ответственный за эксплуатацию',
+        verbose_name='Должностное лицо, ответственное за эксплуатацию (если есть)',
         related_name='from_man_to_dev'
     )
     # Дата изготовления (выпуска, производства)
@@ -430,14 +431,14 @@ class Device(models.Model):
         null=False,
         blank=True,
         default=datetime.date(1990, 1, 1),
-        verbose_name='Дата изготовления'
+        verbose_name='Дата изготовления (выпуска, производства)'
     )
-    # Дата ввода в эксплуатацию первичная с завода
+    # Дата ввода в эксплуатацию первоначальная при поставке
     date_expl = models.DateField(
         null=False,
         blank=True,
         default=datetime.date(1991, 1, 1),
-        verbose_name='Дата ввода первичная с завода'
+        verbose_name='Дата ввода в эксплуатацию первоначальная при поставке'
     )
 
     # Вычисляемое поле.
@@ -532,12 +533,12 @@ class Device(models.Model):
         if date_ret < today:
             return 3
         return None
-    # Номер категории фактический
+    # Номер категории фактический (от 1 до 4, если есть)
     cat_number_f = models.PositiveSmallIntegerField(
         null=True,
         default=None,
         blank=True,
-        verbose_name='Номер категории фактический'
+        verbose_name='Номер категории фактический (от 1 до 4, если есть)'
     )
     # Субъект учета по (за)балансу.
     # Таможенный орган, в которое прибор либо находится
@@ -547,7 +548,7 @@ class Device(models.Model):
                                 null=False,
                                 blank=False,
                                 on_delete=models.PROTECT,
-                                verbose_name='Учетчик-т.о. 1-го типа',
+                                verbose_name='Таможенный орган, в котором числится в оперативном управлении (на балансовом учете), либо на забалансовом учете',
                                 related_name='cp1acc_to_dev')
     # Источник собственности
     sour_type = models.ForeignKey(to=SourceTypes,
@@ -563,7 +564,7 @@ class Device(models.Model):
         null=True,
         blank=True,
         default=None,
-        verbose_name='Балансовая стоимость, руб.'
+        verbose_name='Величина балансовой стоимости (если есть, отдельно от прочих), руб.'
     )
     # Исправность. Прибор исправен, если все его составные части
     # полностью исправны, а если у него есть нижестоящие
@@ -573,36 +574,36 @@ class Device(models.Model):
         null=True,
         blank=False,
         default=True,
-        verbose_name='Исправность'
+        verbose_name='Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно, да-исправно, нет-неисправно)'
     )
     # Вышестоящий прибор (если есть).
     upper_id = models.ForeignKey(to='Device',
                                  null=True,
                                  blank=True,
                                  default=None,
-                                 on_delete=models.RESTRICT,
-                                 verbose_name='Вышестоящий девайс',
+                                 on_delete=models.SET_NULL,
+                                 verbose_name='Вышестоящий прибор (если есть)',
                                  related_name='to_upper_level')
-    # Является ли СИ конкретный экземпляр.
+    # Является ли СИ конкретный экземпляр (да-СИ, нет-индикатор).
     is_si = models.BooleanField(
         null=True,
         blank=False,
         default=False,
-        verbose_name='СИ или индикатор'
+        verbose_name='Является ли СИ конкретный экземпляр (да-СИ, нет-индикатор)'
     )
-    # Является ли учебным ТС конкретный экземпляр.
+    # Яляется ли учебным конкретный экземпляр (да-учебный, нет-нет).
     is_stud = models.BooleanField(
-        null=False,
+        null=True,
         blank=False,
         default=False,
-        verbose_name='Учебное ТС'
+        verbose_name='Яляется ли учебным конкретный экземпляр (да-учебный, нет-нет)'
     )
     # Статус по эксплуатации.
     status_use = models.ForeignKey(to=StatusTypes,
                                    null=False,
                                    blank=False,
                                    on_delete=models.PROTECT,
-                                   verbose_name='Статус эксплуатации',
+                                   verbose_name='Статус по эксплуатации',
                                    related_name='status_use_to_dev')
     # Cтатус по централизованному т.о./ремонту, подлежит ли прибор.
     service_type = models.ForeignKey(
@@ -610,46 +611,48 @@ class Device(models.Model):
         null=False,
         blank=False,
         on_delete=models.PROTECT,
-        verbose_name='Статус по централизованному т.о./ремонту',
+        verbose_name='Статус по централизованному т.о./ремонту, подлежит ли прибор',
         related_name='serv_to_dev'
     )
     # M2M-поля
     # По использованию кем-то где-то
     rels_of_work = models.ManyToManyField(
         CustPlaceToLocation,
-        through='RelToDev'
+        through='RelToDev',
+        verbose_name='Какой там.орган и в каком месте эксплуатирует прибор'
     )
     # По вхождению в контракты какие-то каким-то образом
     rels_of_contracts = models.ManyToManyField(
         RelContrDoing,
         through='DTCPotential',
+        verbose_name='Информация по потенциальному вхождению прибора в гос.контракты'
     )
-    # Примечание note1: район объекта.
+    # Примечение1 (район субъекта эксплуатации, если имеется и известно).
     note1 = models.CharField(
         max_length=255,
         default=None,
         unique=False,
         null=True,
         blank=False,
-        verbose_name='Примечание1'
+        verbose_name='Примечение1 (район субъекта эксплуатации, если имеется и известно)'
     )
-    # Примечание note2: просто примечание, старые письма и т.д.
+    # Примечение2 (иные примечания, если имеется и известно).
     note2 = models.CharField(
         max_length=255,
         default=None,
         unique=False,
         null=True,
         blank=False,
-        verbose_name='Примечание2'
+        verbose_name='Примечение2 (иные примечания, если имеется и известно)'
     )
-    # Примечание note3: предложения по дальнейшему использованию, если есть.
+    # Примечение3 (сведения о месте следующей планируемой эксплуатации, если имеется и известно).
     note3 = models.CharField(
         max_length=255,
         default=None,
         unique=False,
         null=True,
         blank=False,
-        verbose_name='Примечание3'
+        verbose_name='Примечение3 (сведения о месте следующей планируемой эксплуатации, если имеется и известно)'
     )
 
     class Meta:
@@ -681,7 +684,7 @@ class DTCPotential(models.Model):
     dev = models.ForeignKey(to=Device,
                             null=False,
                             blank=False,
-                            on_delete=models.PROTECT,
+                            on_delete=models.CASCADE,
                             verbose_name='прибор',
                             related_name='f_dev_to_doing')
     reltocd = models.ForeignKey(to=RelContrDoing,
@@ -730,7 +733,7 @@ class RelToDev(models.Model):
     to_dev = models.ForeignKey(to=Device,
                                null=False,
                                blank=False,
-                               on_delete=models.PROTECT,
+                               on_delete=models.CASCADE,
                                verbose_name='прибор',
                                related_name='from_dev')
     is_main_for_dev = models.BooleanField(

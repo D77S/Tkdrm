@@ -90,7 +90,7 @@ class Rtu(BaseCPModel):
 
     def __str__(self):
         """."""
-        return f'РТУ: {self.title}'
+        return f'{self.title}'
 
 
 class CustHouse(BaseCPModel):
@@ -142,7 +142,7 @@ class CustHouse(BaseCPModel):
 
     def __str__(self):
         """."""
-        return f'таможня: {self.title}'
+        return f'{self.title}'
 
 
 class CustPost(BaseCPModel):
@@ -202,7 +202,7 @@ class CustPost(BaseCPModel):
 
     def __str__(self):
         """."""
-        return f'пост: {self.title}'
+        return f'{self.title}'
 
 
 class PprType(models.Model):
@@ -279,7 +279,7 @@ class Ppr(models.Model):
 
     def __str__(self):
         """."""
-        return f'пункт пропуска, тип {self.pptype}, название {self.title}'
+        return f'пункт(е) пропуска {self.pptype} {self.title}'
 
 
 class Mmpo(models.Model):
@@ -516,7 +516,7 @@ class CustPlace1Acc(models.Model):
 
     def __str__(self):
         """."""
-        temp = 'субъект учета для таможенного органа 1-го типа, такого названия: {curr}'  # noqa
+        temp = '{curr}'  # noqa
         if self.rtu is not None:
             return temp.format(curr=self.rtu)
         if self.custhouse is not None:
@@ -651,7 +651,7 @@ class CustPlace1Use(models.Model):
 
     def __str__(self):
         """."""
-        return f'промежутка с id={self.id}'
+        return f'{self.to_cp}'
 
 
 class LocationOfUse(models.Model):
@@ -785,14 +785,7 @@ class LocationOfUse(models.Model):
 
     def __str__(self):
         """."""
-        temp = 'объект локации такого названия: {curr}'  # noqa
-        if self.ppr is not None:
-            return temp.format(curr=self.ppr)
-        if self.mmpo is not None:
-            return temp.format(curr=self.mmpo)
-        if self.oez is not None:
-            return temp.format(curr=self.oez)
-        return temp.format(curr=self.ztk)
+        return f'{self.to_site}'
 
 
 class CustPlaceToLocation(models.Model):
@@ -858,11 +851,5 @@ class CustPlaceToLocation(models.Model):
 
     def __str__(self):
         """."""
-        # temp = 'Отношение т.органа 1-го типа {curr1} к '\
-        #        'локации эксплуатации {curr3}, с флагом приоритетности, равным {curr4}'  # noqa
-        # return temp.format(
-        #     curr1=self.cust_pl1,
-        #     curr3=self.loc,
-        #     curr4=self.is_main_for_cust
-        # )
-        return f'Модель промежутки отношения там.органа с локацией, с id= {self.id}'  # noqa
+        temp = 'основное' if self.is_main_for_cust else 'вспомогательное'
+        return f'{self.cust_pl1} эксплуатирует в {self.loc}, и для данного т.органа это {temp} место эксплуатации'  # noqa
