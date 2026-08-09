@@ -397,7 +397,7 @@ class Device(models.Model):
         default=None,
         unique=False,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name='Подтип технического средства'
     )
     # Серийный номер (если есть).
@@ -413,7 +413,7 @@ class Device(models.Model):
         max_length=255,
         unique=False,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name='Инвентарный номер (если есть)'
     )
     # Должностное лицо т.органа (одно), ответственное за его эксплуатацию
@@ -423,7 +423,7 @@ class Device(models.Model):
         blank=True,
         default=None,
         on_delete=models.PROTECT,
-        verbose_name='Должностное лицо, ответственное за эксплуатацию (если есть)',
+        verbose_name='Должностное лицо, ответственное за эксплуатацию (только одно, если таковое есть, с его отделом),',
         related_name='from_man_to_dev'
     )
     # Дата изготовления (выпуска, производства)
@@ -462,7 +462,7 @@ class Device(models.Model):
         null=False,
         blank=False,
         default=24,
-        verbose_name='Срок гарантии при поставке'
+        verbose_name='Срок гарантии при поставке (месяцев)'
     )
 
     # Вычисляемое поле.
@@ -633,7 +633,7 @@ class Device(models.Model):
         default=None,
         unique=False,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name='Примечение1 (район субъекта эксплуатации, если имеется и известно)'
     )
     # Примечение2 (иные примечания, если имеется и известно).
@@ -642,7 +642,7 @@ class Device(models.Model):
         default=None,
         unique=False,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name='Примечение2 (иные примечания, если имеется и известно)'
     )
     # Примечение3 (сведения о месте следующей планируемой эксплуатации, если имеется и известно).
@@ -651,7 +651,7 @@ class Device(models.Model):
         default=None,
         unique=False,
         null=True,
-        blank=False,
+        blank=True,
         verbose_name='Примечение3 (сведения о месте следующей планируемой эксплуатации, если имеется и известно)'
     )
 
@@ -670,7 +670,7 @@ class Device(models.Model):
 
     def __str__(self):
         """."""
-        return f'Объект прибора с id={self.id}'
+        return f'Прибор, тип {self.type}, сер.номер {self.serial}, id={self.id}'
 
 
 class DTCPotential(models.Model):

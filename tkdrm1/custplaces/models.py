@@ -852,4 +852,6 @@ class CustPlaceToLocation(models.Model):
     def __str__(self):
         """."""
         temp = 'основное' if self.is_main_for_cust else 'вспомогательное'
+        if self.loc is None:
+            return f'{self.cust_pl1} эксплуатирует вне какого-либо административного субъекта, и для данного т.органа это {temp} место эксплуатации'  # noqa
         return f'{self.cust_pl1} эксплуатирует в {self.loc}, и для данного т.органа это {temp} место эксплуатации'  # noqa

@@ -141,3 +141,61 @@ class DevDetailForm(forms.ModelForm):
         #  Для всех полей отключение редактирования, требуется только отображение
         for field_name in self.fields:
             self.fields[field_name].widget.attrs['disabled'] = 'disabled'
+
+
+class DevEditForm(forms.ModelForm):
+    #  Форма для отображения одного объекта Device для редактирования.
+    #
+    pass
+
+    class Meta:
+        model = Device
+        fields = [
+            'type',
+            'sub_type',
+            'serial',
+            'inventary',
+            'holder',
+            'date_prod',
+            'date_expl',
+            'warr_period',
+            'date_verif',
+            'cat_number_f',
+            'cp1_acc',
+            'sour_type',
+            'cost',
+            'condition',
+            'upper_id',
+            'is_si',
+            'is_stud',
+            'status_use',
+            'service_type',
+            'rels_of_work',
+            'rels_of_contracts',
+            'note1',
+            'note2',
+            'note3'
+        ]
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        #  Предзагрузка
+        self.fields['type'].queryset = (
+            self.fields['type'].queryset.select_related('category__cat_l1')
+        )
+
+        #  Для поля cp1_acc удаляем из перечня возможных вариантов
+        #  выбор два варианта с текстом 'ТНП'
+        if self.fields['cp1_acc']:
+            temp_qs = self.fields['cp1_acc'].queryset.all()
+            for item in temp_qs:
+                if ((item.rtu and item.rtu.title == 'ТНП') or
+                    (item.custhouse and item.custhouse.title == 'ТНП')):
+                    self.fields['cp1_acc'].queryset = self.fields[
+                        'cp1_acc'].queryset.exclude(id=item.id)
+
+        #  Для полей, где value is None, замена None на "Не задано"
+        for field_name, field in self.fields.items():
+            if getattr(self.instance, field_name, None) is None:
+                field.widget.attrs['placeholder'] = 'Не задано'

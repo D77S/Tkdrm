@@ -8,7 +8,7 @@ from django.forms.models import model_to_dict
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from core.constants import ALL_DEV_PAG
-from core.forms import DevDetailForm
+from core.forms import DevDetailForm, DevEditForm
 from core.models import (
     Device,
     RelToDev,
@@ -132,11 +132,6 @@ def dev_detail(request, pk):
     одного уже существующего в БД девайса
     для цели ПРОСМОТРА."""
 
-    #  Настроенная предзагрузка.
-    #  Из БД грузится 1 (один) интересующий объект,
-    #  но к нему select_related и prefetch_related
-    #  много дополнительной информации.
-    #  Всего в сумме 12 запросов.
     devs_qs = Device.objects.select_related(
         'type__category__cat_l1',
         'holder__dept',
@@ -162,17 +157,59 @@ def dev_detail(request, pk):
         'from_dev__to_rel__loc__oez',
         'from_dev__to_rel__loc__ztk'
     )
-    curr_dev: Device = get_object_or_404(devs_qs, pk=pk)
-
-    instance = curr_dev
+    instance: Device = get_object_or_404(devs_qs, pk=pk)
     dev_detail_form = DevDetailForm(instance=instance)
 
     context = {
-        'dev': curr_dev,
+        'dev': instance,
         'dev_detail_form': dev_detail_form
     }
     template_name = 'dev_detail.html'
     return render(request, template_name, context)
+
+def dev_edit(request, pk):
+    """Вью-функция по детализированному выводу
+    одного уже существующего в БД девайса
+    для цели РЕДАКТИРОВАНИЯ."""
+
+    devs_qs = Device.objects.select_related(
+        'type__category__cat_l1',
+        'holder__dept',
+        'cp1_acc__rtu',
+        'cp1_acc__custhouse',
+        'cp1_acc__custpost',
+        'sour_type',
+        'status_use',
+        'service_type',
+        'upper_id'
+    ).prefetch_related(
+        'f_dev_to_doing__from_dtcp_to_dtcr',
+        'f_dev_to_doing__reltocd__to_doing',
+        'f_dev_to_doing__reltocd__to_contract',
+        'from_dev__to_rel__cust_pl1__rtu',
+        'from_dev__to_rel__cust_pl1__custhouse',
+        'from_dev__to_rel__cust_pl1__custpost',
+        'from_dev__to_rel__loc__ppr__pptype',
+        'from_dev__to_rel__loc__mmpo',
+        'from_dev__to_rel__loc__oez',
+        'from_dev__to_rel__loc__ztk'
+    )
+
+    instance: Device = get_object_or_404(devs_qs, pk=pk)
+    dev_edit_form = DevEditForm(request.POST or None, instance=instance)
+    context = {
+        'dev': instance,
+        'dev_edit_form': dev_edit_form
+    }
+    print(f'{request.method=}, {dev_edit_form.is_valid()=}')
+    if request.method == 'POST':
+        if dev_edit_form.is_valid():
+            dev_edit_form.save()
+            return redirect('core:all_list_by_cpl')
+
+    template_name = 'dev_edit.html'
+    return render(request, template_name, context)
+
 
 def dev_delete(request, pk):
     """Вью-функция по удалению
