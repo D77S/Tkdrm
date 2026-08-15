@@ -423,7 +423,7 @@ class Device(models.Model):
         blank=True,
         default=None,
         on_delete=models.PROTECT,
-        verbose_name='Должностное лицо, ответственное за эксплуатацию (только одно, если таковое есть, с его отделом),',
+        verbose_name='Должностное лицо, ответственное за эксплуатацию (только одно, если таковое есть)',
         related_name='from_man_to_dev'
     )
     # Дата изготовления (выпуска, производства)
@@ -446,17 +446,17 @@ class Device(models.Model):
     # срока службы (если было, иначе равна date_expl)
     @property
     def date_prolong(self):
-        date_ret = self.date_expl
-        date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())  # noqa
-        date_ret = timezone.make_aware(date_ret)
+        date_enter = self.date_expl
+        date_enter = datetime.datetime.combine(date_enter, datetime.datetime.min.time())  # noqa
+        date_enter = timezone.make_aware(date_enter)
         temps = self.f_dev_to_doing.all()
         for item in temps:
             temps2 = list(item.from_dtcp_to_dtcr.all())
             temps2.sort(key=lambda x: x.exact_moment, reverse=True)
             temp2 = temps2[0] if temps2 else None
             if temp2 and item.reltocd.to_doing.title == DOING1:
-                date_ret = max(temp2.exact_moment, date_ret)
-        return date_ret.date()
+                date_enter = max(temp2.exact_moment, date_enter)
+        return date_enter.date()
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
         null=False,

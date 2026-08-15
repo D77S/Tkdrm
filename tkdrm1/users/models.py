@@ -68,7 +68,13 @@ class TKDRMUser(AbstractUser):
     def __str__(self):
         """."""
         pater_name = self.pater_name if self.pater_name else ', отчество не указано, '
-        out = ' '.join([self.first_name, pater_name, self.last_name])
-        out += ', '
-        out += self.dept.title
+        out = ' '.join([
+            self.first_name,
+            pater_name,
+            self.last_name,
+            ', ',
+            self.dept.__str__(),
+            ', ',
+            self.empl.__str__()
+        ])
         return out

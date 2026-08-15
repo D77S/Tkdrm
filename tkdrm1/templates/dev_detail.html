@@ -352,9 +352,14 @@
 
     <h4 class="pb-2 mb-0">Информация по прибору</h4>
 
+    {% comment %}
+    <!--
+    -->
+    {% endcomment %}
     <form>
       {% bootstrap_form dev_detail_form %}
     </form>
+
 
     ID в БД:
     {{ dev.id }}

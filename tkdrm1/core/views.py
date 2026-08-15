@@ -159,7 +159,6 @@ def dev_detail(request, pk):
     )
     instance: Device = get_object_or_404(devs_qs, pk=pk)
     dev_detail_form = DevDetailForm(instance=instance)
-
     context = {
         'dev': instance,
         'dev_detail_form': dev_detail_form
@@ -175,6 +174,9 @@ def dev_edit(request, pk):
     devs_qs = Device.objects.select_related(
         'type__category__cat_l1',
         'holder__dept',
+        'holder__empl__rtu',
+        'holder__empl__custhouse__upper_id',
+        'holder__empl__custpost__upper_id__upper_id',
         'cp1_acc__rtu',
         'cp1_acc__custhouse',
         'cp1_acc__custpost',
@@ -201,7 +203,7 @@ def dev_edit(request, pk):
         'dev': instance,
         'dev_edit_form': dev_edit_form
     }
-    print(f'{request.method=}, {dev_edit_form.is_valid()=}')
+
     if request.method == 'POST':
         if dev_edit_form.is_valid():
             dev_edit_form.save()

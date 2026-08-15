@@ -651,7 +651,14 @@ class CustPlace1Use(models.Model):
 
     def __str__(self):
         """."""
-        return f'{self.to_cp}'
+        if self.rtu:
+            return self.rtu.__str__()
+        elif self.custhouse:
+            return self.custhouse.__str__()
+        elif self.custpost:
+            return self.custpost.__str__()
+        else:
+            return None
 
 
 class LocationOfUse(models.Model):
