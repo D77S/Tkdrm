@@ -9,15 +9,15 @@
           style="text-align: center"
           class="col-7"
           colspan=3
-          title="У технического средства может быть не один эксплуатирующий таможенный орган. Но, задано логикой, что из них основной - только один. Он и показан в данной таблице. Остальные, если они есть, могут быть увидены по ссылке 'Подробнее'."
+          title="У технического средства может быть не один эксплуатирующий таможенный орган. Но из них основной только один. Он и показан. Остальные, если они есть, могут быть увидены по ссылке 'Подробно'."
           >
             Эксплуатирующий т.орган<br>
             <div style="font-weight: normal;" class="small">
               (наведите)
             </div>
       </th>
-      <th scope="col" valign="top" class="col-1" rowspan=2>Название</th>
-      <th scope="col" valign="top" class="col-1" rowspan=2>Номер</th>
+      <th scope="col" valign="top" class="col-1" rowspan=2>Тип</th>
+      <th scope="col" valign="top" class="col-1" rowspan=2>Сер. номер</th>
       <th scope="col" valign="top" class="col-7" rowspan=2>Дополнительно</th>
     </tr>
     <tr>
@@ -37,22 +37,7 @@
         <td scope="row">{{ item.1.serial|default_if_none:"--" }}</td>
         <td scope="row">
           <a class="mt-3 regular-link" href="{% url 'core:dev_detail' item.1.id %}">Подробно</a>
-
-          {% comment %}
-          <!--
-          <form action="{% url 'core:dev_edit' item.1.id %}" method='POST' style='display: inline;'>
-            {% csrf_token %}
-            <button type="submit" style="background: none; border: none; padding: 0; color: #007bff; text-decoration: underline; cursor: pointer;">
-            Редактировать
-            </button>
-          </form>
-          -->
-          {% endcomment %}
-
-          <a class="mt-3 regular-link" href="{% url 'core:dev_edit' item.1.id %}">
-            Редактировать
-          </a>        
-
+          <a class="mt-3 regular-link" href="{% url 'core:dev_edit' item.1.id %}">Редактировать</a>
           <form action="{% url 'core:dev_delete' item.1.id %}" method='POST' style='display: inline;'>
             {% csrf_token %}
             <button type="submit" style="background: none; border: none; padding: 0; color: #007bff; text-decoration: underline; cursor: pointer;">

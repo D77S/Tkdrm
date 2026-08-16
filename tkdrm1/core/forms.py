@@ -166,6 +166,7 @@ class DevEditForm(forms.ModelForm):
     # Поле id
     obj_id = forms.IntegerField(
         label='ID объекта в БД',
+        required=False
     )
 
     class Meta:

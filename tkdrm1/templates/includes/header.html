@@ -20,6 +20,13 @@
           href="{% url 'core:all_list_by_cpl' %}">
           Общий перечень
           </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link {% if view_name  == 'core:dev_create' %}active{% endif %}"
+          href="{% url 'core:dev_create' %}">
+          Создать новый прибор
+          </a>
+        </li>
       </ul>
     </div>
   </nav>

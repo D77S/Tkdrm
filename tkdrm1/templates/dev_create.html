@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% load django_bootstrap5 %}
+  {% block content %}
+    <h4 class="pb-2 mb-0">Создание прибора</h4>
+
+    <form method="post">
+      {% csrf_token %}
+      {% bootstrap_form dev_edit_form %}
+      {% bootstrap_button button_type="submit" content="Отправить" %}
+    </form>
+
+    {% bootstrap_button button_type="button" content="Вернуться на предыдущую страницу" onclick="history.back()" %}
+  {% endblock %}

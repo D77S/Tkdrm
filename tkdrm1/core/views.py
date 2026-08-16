@@ -220,6 +220,22 @@ def dev_edit(request, pk):
     return render(request, template_name, context)
 
 
+def dev_create(request):
+    """Вью-функция по созданию
+    одного девайса в БД."""
+    dev_edit_form = DevEditForm(request.POST or None)
+    context = {
+        'dev_edit_form': dev_edit_form
+    }
+    if request.method == 'POST':
+        if dev_edit_form.is_valid():
+            dev_edit_form.save()
+            return redirect('core:all_list_by_cpl')
+
+    template_name = 'dev_create.html'
+    return render(request, template_name, context)
+
+
 def dev_delete(request, pk):
     """Вью-функция по удалению
     одного уже существующего в БД девайса."""
