@@ -1,7 +1,6 @@
 {% extends "base.html" %}
 {% load django_bootstrap5 %}
   {% block content %}
-    <h2 class="pb-2 mb-0">Детализация по выбранному прибору и его взаимосвязь с гос.контрактами</h2>
 
     {% comment %}
     <!--
@@ -352,18 +351,9 @@
 
     <h4 class="pb-2 mb-0">Информация по прибору</h4>
 
-    {% comment %}
-    <!--
-    -->
-    {% endcomment %}
     <form>
       {% bootstrap_form dev_detail_form %}
     </form>
-
-
-    ID в БД:
-    {{ dev.id }}
-    <br>
 
     {% bootstrap_button button_type="button" content="Вернуться на предыдущую страницу" onclick="history.back()" %}
   {% endblock %}

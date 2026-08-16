@@ -158,9 +158,12 @@ def dev_detail(request, pk):
         'from_dev__to_rel__loc__ztk'
     )
     instance: Device = get_object_or_404(devs_qs, pk=pk)
-    dev_detail_form = DevDetailForm(instance=instance)
+    initial={'obj_id': pk}
+    dev_detail_form = DevDetailForm(
+        instance=instance,
+        initial=initial
+    )
     context = {
-        'dev': instance,
         'dev_detail_form': dev_detail_form
     }
     template_name = 'dev_detail.html'
@@ -198,9 +201,13 @@ def dev_edit(request, pk):
     )
 
     instance: Device = get_object_or_404(devs_qs, pk=pk)
-    dev_edit_form = DevEditForm(request.POST or None, instance=instance)
+    initial={'obj_id': pk}
+    dev_edit_form = DevEditForm(
+        request.POST or None,
+        instance=instance,
+        initial=initial
+    )
     context = {
-        'dev': instance,
         'dev_edit_form': dev_edit_form
     }
 

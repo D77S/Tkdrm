@@ -197,6 +197,7 @@ Table Device{
   is_stud boolean
   status_use integer [not null, ref: > StatusTypes.id]
   service_type integer [not null, ref: > ServiceTypes.id]
+//  real_of_contrs integer [null, ref: < DTCReal.id]
   note1 varchar
   note2 varchar
   note3 varchar

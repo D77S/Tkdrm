@@ -339,14 +339,14 @@ class RelContrDoing(models.Model):
 
     def __str__(self):
         """."""
-        return f'По контракту "{self.to_contract}" действие "{self.to_doing}"'
+        return f'по контракту {self.to_contract} действие {self.to_doing}'
 
 
 class DTCReal(models.Model):
-    """Модель-промежутка M2M приборов и контрактов.
-    Реальные действия с приборами по контрактам.
-    Пример: прибор реально подвергся действию по контракту,
-    какое-то количество раз, в какие-то даты."""
+    """Модель событий. Событие: реальный единичный
+    короткий кейс связи одного прибора с одним контрактам.
+    Пример: реальный ремонт прибора по по контракту,
+    в некий момент времени."""
     basis = models.ForeignKey(to='DTCPotential',
                               null=False,
                               blank=False,
@@ -357,7 +357,7 @@ class DTCReal(models.Model):
         null=False,
         blank=False,
         default=timezone.now,
-        verbose_name=('Точная дата и время реального действия ' +
+        verbose_name=('Момент реального события' +
                       ' с прибором по контракту')
     )
 
@@ -375,7 +375,7 @@ class DTCReal(models.Model):
 
     def __str__(self):
         """."""
-        return f'Объект промежутки dtcreal с id={self.id}'
+        return f'Событие с прибором: {self.basis.reltocd}, дата: {self.exact_moment}'
 
 
 class Device(models.Model):
@@ -621,12 +621,17 @@ class Device(models.Model):
         through='RelToDev',
         verbose_name='Какой там.орган и в каком месте эксплуатирует прибор'
     )
-    # По вхождению в контракты какие-то каким-то образом
+    # Потенциальное вхождению прибора в контракты
     rels_of_contracts = models.ManyToManyField(
         RelContrDoing,
         through='DTCPotential',
-        verbose_name='Информация по потенциальному вхождению прибора в гос.контракты'
+        verbose_name='Потенциальное вхождение прибора в гос.контракты'
     )
+    # Вычисляемое поле.
+    # Коллекция реальных вхождений прибора в контракты
+    @property
+    def real_of_contrs(self):
+        return DTCReal.objects.filter(basis__dev__id=self.id)
     # Примечение1 (район субъекта эксплуатации, если имеется и известно).
     note1 = models.CharField(
         max_length=255,

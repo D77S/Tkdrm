@@ -1,6 +1,6 @@
 from django import forms
 from django.db import models
-from core.models import DevCatsL1, DevCatsL2, Device, RelContrDoing
+from core.models import DTCReal, DevCatsL1, DevCatsL2, Device, RelContrDoing
 from custplaces.models import CustPlace1Acc, CustPlaceToLocation
 from users.models import TKDRMUser
 
@@ -29,6 +29,12 @@ class DevDetailForm(forms.ModelForm):
         initial=None,
         widget=forms.TextInput(attrs={'readonly': 'readonly'})
     )
+    real_of_contrs_f = forms.ModelMultipleChoiceField(
+        label='Реальное вхождение прибора в контракты',
+        queryset=DTCReal.objects.none(),
+        required=False,
+    )
+
 
     #  Поля вышестоящих типов относительно типа объекта
     dev_cat_l2 = forms.CharField(
@@ -36,6 +42,11 @@ class DevDetailForm(forms.ModelForm):
     )
     dev_cat_l1 = forms.CharField(
         label='Вышестоящий тип уровня 1',
+    )
+
+    # Поле id
+    obj_id = forms.IntegerField(
+        label='ID объекта в БД',
     )
 
     class Meta:
@@ -67,21 +78,21 @@ class DevDetailForm(forms.ModelForm):
             'service_type',
             'rels_of_work',
             'rels_of_contracts',
+            'real_of_contrs_f',
             'note1',
             'note2',
-            'note3'
+            'note3',
+            'obj_id'
         ]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        #  По всем полям типа O2M (FK) обрезаем все кверисеты
-        #  до единственного значения в поля выбора.
-        #  Меняем null на "не задано".
-        #  Отключаем редактирование по всем полям.
+        #  По всем полям типа O2M (FK) обрезаем все кверисеты.
+        #  Теперь в каждом кверисете будет только один объект.
         for field_name, field in self.fields.items():
             if isinstance(field, forms.ModelChoiceField):
-                curr_item = getattr(self.instance, field_name)
+                curr_item = getattr(self.instance, field_name, None)
                 if curr_item:
                     model_field = self.instance._meta.get_field(field_name)
                     if isinstance(model_field, models.ForeignKey):
@@ -95,8 +106,10 @@ class DevDetailForm(forms.ModelForm):
                         pass
                 else:
                     field.queryset = field.queryset.none()
+            #  Меняем null на "не задано".
             if getattr(self.instance, field_name, None) is None:
                 self.fields[field_name].widget.attrs['placeholder'] = 'Не задано'
+            #  Отключаем редактирование по всем полям.
             self.fields[field_name].widget.attrs['disabled'] = 'disabled'
 
 
@@ -137,15 +150,23 @@ class DevDetailForm(forms.ModelForm):
             self.fields[
                 'cat_number_c_f'
             ].initial=self.instance.cat_number_c
-
-        if  self.fields.get('upper_id'):
+        if self.fields.get('upper_id'):
             self.fields['upper_id'].empty_label = 'Не задано'
+        if self.fields.get('real_of_contrs_f'):
+            temp_qs = DTCReal.objects.select_related(
+                'basis__reltocd__to_doing',
+                'basis__reltocd__to_contract'
+            ).filter(basis__dev__id=self.instance.id)
+            self.fields['real_of_contrs_f'].queryset = temp_qs
 
 
 class DevEditForm(forms.ModelForm):
     #  Форма для отображения одного объекта Device для редактирования.
     #
-    pass
+    # Поле id
+    obj_id = forms.IntegerField(
+        label='ID объекта в БД',
+    )
 
     class Meta:
         model = Device
@@ -173,7 +194,8 @@ class DevEditForm(forms.ModelForm):
             'rels_of_contracts',
             'note1',
             'note2',
-            'note3'
+            'note3',
+            'obj_id'
         ]
 
     def __init__(self, *args, **kwargs):
@@ -239,3 +261,5 @@ class DevEditForm(forms.ModelForm):
         for field_name in self.fields:
             if getattr(self.instance, field_name, None) is None:
                 self.fields[field_name].widget.attrs['placeholder'] = 'Не задано'
+
+        self.fields['obj_id'].widget.attrs['disabled'] = 'disabled'
