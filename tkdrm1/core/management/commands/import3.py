@@ -1,8 +1,6 @@
 """."""
 import datetime
 import math
-import os
-import pandas
 import random
 import re
 import string
@@ -34,6 +32,7 @@ from core.constants import (
     CONTRACT4,
     CONTRACT5
 )
+from utils import get_frame
 from users.models import (TKDRMUser,
                           Departments)
 from core.models import (DTCPotential,
@@ -70,26 +69,6 @@ class Command(BaseCommand):
         """."""
 
         User = get_user_model()
-
-        def get_frame() -> pandas.DataFrame:
-            """."""
-            if not os.path.exists('__база СТСО.xlsm'):
-                print('В текущем каталоге не найден файл __база СТСО.xlsm, '
-                      'программы завершена.')
-                sys.exit()
-            print('В текущем каталоге найден файл __база СТСО.xlsm.')
-            try:
-                data = pandas.read_excel('__база СТСО.xlsm',
-                                         skiprows=6,
-                                         #  nrows=2,
-                                         header=None,
-                                         sheet_name='Новая база2',
-                                         # usecols=range(0, 17),
-                                         )
-            except Exception:
-                print('Ошибка формата файла.')
-                sys.exit()
-            return data
 
         def replace_to_clean(source: str, pattern: dict):
             """."""
@@ -1543,7 +1522,13 @@ class Command(BaseCommand):
             print(f'{row_lit}{reason_lit}{stage_lit_1}{stage_lit_2}')
 
         # Main begin
-        data = get_frame()
+        data = get_frame(
+            file='__база СТСО.xlsm',
+            skip=6,
+            sheet='Новая база2'
+        )
+        if not data:
+            sys.exit()
         data_2 = []
         for i in data.values:
             data_2_temp = []
