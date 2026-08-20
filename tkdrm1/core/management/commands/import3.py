@@ -507,6 +507,15 @@ class Command(BaseCommand):
                 date_start=datetime.date(year=2025, month=7, day=10),
                 date_end=datetime.date(year=2026, month=7, day=1)
             )
+            # 2026
+            # по т.о.
+            c_2026_t = Contracts.objects.create(
+                title=CONTRACT4,
+                number=32,
+                date_of=datetime.date(year=2026, month=5, day=6),
+                date_start=datetime.date(year=2026, month=7, day=3),
+                date_end=datetime.date(year=2026, month=11, day=23)
+            )
 
             # Создание всех отношений между контрактами и действиями по ним
             # 2012
@@ -741,6 +750,14 @@ class Command(BaseCommand):
                 to_contract=c_2025_r,
                 min_count=0,
                 max_count=500
+            )
+            # 2026
+            # по т.о.
+            RelContrDoing.objects.create(
+                to_doing=Doings.objects.get_or_create(title=DOING4)[0],
+                to_contract=c_2026_t,
+                min_count=1,
+                max_count=1
             )
 
         def pre_valid_tests(row):
@@ -2102,8 +2119,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[54],
-                pos=54,
+                item_pos=item[53],
+                pos=53,
                 contr_num=114,
                 date_of=datetime.date(year=2021, month=8, day=18),
                 title_of=CONTRACT4,
@@ -2113,8 +2130,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[53],
-                pos=53,
+                item_pos=item[52],
+                pos=52,
                 contr_num=115,
                 date_of=datetime.date(year=2021, month=8, day=23),
                 title_of=CONTRACT3,
@@ -2125,8 +2142,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[56],
-                pos=56,
+                item_pos=item[55],
+                pos=55,
                 contr_num=424,
                 date_of=datetime.date(year=2022, month=10, day=3),
                 title_of=CONTRACT4,
@@ -2136,8 +2153,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[55],
-                pos=55,
+                item_pos=item[54],
+                pos=54,
                 contr_num=393,
                 date_of=datetime.date(year=2022, month=8, day=15),
                 title_of=CONTRACT3,
@@ -2148,8 +2165,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[58],
-                pos=58,
+                item_pos=item[57],
+                pos=57,
                 contr_num=85,
                 date_of=datetime.date(year=2023, month=6, day=26),
                 title_of=CONTRACT4,
@@ -2159,8 +2176,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[59],
-                pos=59,
+                item_pos=item[58],
+                pos=58,
                 contr_num=82,
                 date_of=datetime.date(year=2023, month=6, day=21),
                 title_of=CONTRACT4,
@@ -2170,8 +2187,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[57],
-                pos=57,
+                item_pos=item[56],
+                pos=56,
                 contr_num=72,
                 date_of=datetime.date(year=2023, month=5, day=29),
                 title_of=CONTRACT3,
@@ -2182,8 +2199,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[62],
-                pos=62,
+                item_pos=item[60],
+                pos=60,
                 contr_num=184,
                 date_of=datetime.date(year=2024, month=3, day=26),
                 title_of=CONTRACT4,
@@ -2193,8 +2210,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[61],
-                pos=61,
+                item_pos=item[59],
+                pos=59,
                 contr_num=183,
                 date_of=datetime.date(year=2024, month=3, day=27),
                 title_of=CONTRACT3,
@@ -2205,8 +2222,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[69],
-                pos=69,
+                item_pos=item[67],
+                pos=67,
                 contr_num=47,
                 date_of=datetime.date(year=2025, month=4, day=22),
                 title_of=CONTRACT4,
@@ -2216,12 +2233,24 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[66],
-                pos=66,
+                item_pos=item[71],
+                pos=71,
                 contr_num=68,
                 date_of=datetime.date(year=2025, month=6, day=23),
                 title_of=CONTRACT3,
                 doing=Doings.objects.get(title=DOING3)
+            )
+            # 2026
+            # по т.о.
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[75],
+                pos=75,
+                contr_num=32,
+                date_of=datetime.date(year=2026, month=5, day=6),
+                title_of=CONTRACT4,
+                doing=Doings.objects.get(title=DOING4)
             )
             # Попытка апдейта фактической категории девайса
             curr_dev.cat_number_f = curr_dev.cat_number_c
