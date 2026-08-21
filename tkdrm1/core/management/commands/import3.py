@@ -1,6 +1,5 @@
 """."""
 import datetime
-import math
 import random
 import re
 import string
@@ -32,7 +31,9 @@ from core.constants import (
     CONTRACT4,
     CONTRACT5
 )
-from utils import get_frame
+from .utils import (err_report,
+                   get_frame,
+                   clean_data_first)
 from users.models import (TKDRMUser,
                           Departments)
 from core.models import (DTCPotential,
@@ -1509,18 +1510,6 @@ class Command(BaseCommand):
                 DTCReal.objects.create(basis=temp_dtcp, exact_moment=temp_data)
             return
 
-        def err_report(
-                row: str = None,
-                reason: str = None,
-                st_1: str = None,
-                st_2: str = None):
-            """."""
-            row_lit = f'Строка {row}. ' if row else ''
-            reason_lit = f'Ошибка {reason}. ' if reason else ''
-            stage_lit_1 = f'При создании перечня {st_1}. ' if st_1 else ''
-            stage_lit_2 = f'На этапе запроса {st_2}.' if st_2 else ''
-            print(f'{row_lit}{reason_lit}{stage_lit_1}{stage_lit_2}')
-
         # Main begin
         data = get_frame(
             file='__база СТСО.xlsm',
@@ -1529,22 +1518,7 @@ class Command(BaseCommand):
         )
         if not data:
             sys.exit()
-        data_2 = []
-        for i in data.values:
-            data_2_temp = []
-            for j in i:
-                if isinstance(j, int):
-                    data_2_temp.append(str(j))
-                elif isinstance(j, float) and math.isnan(j):
-                    data_2_temp.append('')
-                elif isinstance(j, float):
-                    data_2_temp.append(str(int(j)))
-                elif isinstance(j, str):
-                    data_2_temp.append(str(j))
-                else:
-                    data_2_temp.append('')
-            data_2.append(data_2_temp)
-        # !!!!!!!!
+        data_2 = clean_data_first(data)
         data_3 = clean_data_second(data_2)
 
         print('Очистка таблиц в БД.')
