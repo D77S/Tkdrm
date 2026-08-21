@@ -9,6 +9,7 @@ from custplaces.models import (
 )
 from core.constants import DOING1
 from users.models import TKDRMUser
+from .validators import real_date, real_lt, real_cat
 
 
 class SourceTypes(models.Model):
@@ -137,7 +138,7 @@ class DevTypes(models.Model):
     title = models.CharField(
         max_length=255,
         default='Новый прибора',
-        unique=False,
+        unique=True,
         null=False,
         blank=False,
         verbose_name='Название прибора'
@@ -152,9 +153,11 @@ class DevTypes(models.Model):
     )
     lifetime = models.PositiveSmallIntegerField(
         null=False,
+        unique=False,
         blank=False,
         default=2,
-        verbose_name='Срок службы'
+        validators=(real_lt,),
+        verbose_name='Срок службы, мес.'
     )
     # Признак серийного номера:
     # True: он обязан быть у объекта;
@@ -225,12 +228,6 @@ class Doings(models.Model):
 
         verbose_name = 'Объект возможного действия с прибором по контракту'
         verbose_name_plural = 'Объекты в. д. с п. по к.'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['title'],
-                name='unique_title'
-            ),
-        ]
 
     def __str__(self):
         """."""
@@ -253,25 +250,32 @@ class Contracts(models.Model):
     #  Номер гос.контракта.
     number = models.PositiveSmallIntegerField(
         null=False,
+        unique=False,
         blank=False,
         verbose_name='Номер гос.контракта'
     )
     # Дата заключения гос.контракта.
     date_of = models.DateField(
         null=False,
+        unique=False,
         blank=False,
+        validators=(real_date,),
         verbose_name='Дата заключения гос.контракта'
     )
     # Дата начала возможности действий по гос.контракту.
     date_start = models.DateField(
         null=False,
+        unique=False,
         blank=False,
+        validators=(real_date,),
         verbose_name='Дата начала действий по гос.контракту'
     )
     # Дата окончания возможности действий по гос.контракту.
     date_end = models.DateField(
         null=False,
+        unique=False,
         blank=False,
+        validators=(real_date,),
         verbose_name='Дата окончания действий по гос.контракту'
     )
 
@@ -282,14 +286,14 @@ class Contracts(models.Model):
         verbose_name_plural = 'Объекты гос.контрактов'
         constraints = [
             models.UniqueConstraint(
-                fields=['title', 'number', 'date_of'],
-                name='unique_tnd'
+                fields=['number', 'date_of'],
+                name='unique_nd'
             ),
         ]
 
     def __str__(self):
         """."""
-        return f'номер {self.number}, от {self.date_of}'
+        return f'Контракт номер {self.number}, от {self.date_of}'
 
 
 class RelContrDoing(models.Model):
@@ -315,12 +319,14 @@ class RelContrDoing(models.Model):
     # Сколько минимально раз должно делаться.
     min_count = models.PositiveSmallIntegerField(
         null=False,
+        unique=False,
         blank=False,
         verbose_name='Минимально, раз'
     )
     # Сколько максимально раз должно делаться.
     max_count = models.PositiveSmallIntegerField(
         null=False,
+        unique=False,
         blank=False,
         verbose_name='Максимально, раз'
     )
@@ -339,7 +345,7 @@ class RelContrDoing(models.Model):
 
     def __str__(self):
         """."""
-        return f'по контракту {self.to_contract} действие {self.to_doing}'
+        return f'По контракту {self.to_contract} действие {self.to_doing}'
 
 
 class DTCReal(models.Model):
@@ -355,9 +361,11 @@ class DTCReal(models.Model):
                               related_name='from_dtcp_to_dtcr')
     exact_moment = models.DateTimeField(
         null=False,
+        unique=False,
         blank=False,
         default=timezone.now,
-        verbose_name=('Момент реального события' +
+        validators=(real_date,),
+        verbose_name=('Реальная реализация потенциального события' +
                       ' с прибором по контракту')
     )
 
@@ -429,15 +437,19 @@ class Device(models.Model):
     # Дата изготовления (выпуска, производства)
     date_prod = models.DateField(
         null=False,
+        unique=False,
         blank=True,
         default=datetime.date(1990, 1, 1),
+        validators=(real_date,),
         verbose_name='Дата изготовления (выпуска, производства)'
     )
     # Дата ввода в эксплуатацию первоначальная при поставке
     date_expl = models.DateField(
         null=False,
+        unique=False,
         blank=True,
         default=datetime.date(1991, 1, 1),
+        validators=(real_date,),
         verbose_name='Дата ввода в эксплуатацию первоначальная при поставке'
     )
 
@@ -460,6 +472,7 @@ class Device(models.Model):
     # Гарантийный срок при поставке, месяцев
     warr_period = models.PositiveSmallIntegerField(
         null=False,
+        unique=False,
         blank=False,
         default=24,
         verbose_name='Срок гарантии при поставке (месяцев)'
@@ -489,8 +502,10 @@ class Device(models.Model):
     # В иных случаях может быть любым, в т.ч. Null.
     date_verif = models.DateField(
         null=True,
+        unique=False,
         blank=True,
         default=None,
+        validators=(real_date,),
         verbose_name='Дата окончания последней поверки (если было)'
     )
 
@@ -536,8 +551,10 @@ class Device(models.Model):
     # Номер категории фактический (от 1 до 4, если есть)
     cat_number_f = models.PositiveSmallIntegerField(
         null=True,
+        unique=False,
         default=None,
         blank=True,
+        validators=(real_cat,),
         verbose_name='Номер категории фактический (от 1 до 4, если есть)'
     )
     # Субъект учета по (за)балансу.
@@ -562,6 +579,7 @@ class Device(models.Model):
         max_digits=10,
         decimal_places=2,
         null=True,
+        unique=False,
         blank=True,
         default=None,
         verbose_name='Величина балансовой стоимости (если есть, отдельно от прочих), руб.'
@@ -572,6 +590,7 @@ class Device(models.Model):
     # Если состояние неизвестно, то = Null.
     condition = models.BooleanField(
         null=True,
+        unique=False,
         blank=False,
         default=True,
         verbose_name='Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно, да-исправно, нет-неисправно)'
@@ -587,6 +606,7 @@ class Device(models.Model):
     # Является ли СИ конкретный экземпляр (да-СИ, нет-индикатор).
     is_si = models.BooleanField(
         null=True,
+        unique=False,
         blank=False,
         default=False,
         verbose_name='Является ли СИ конкретный экземпляр (да-СИ, нет-индикатор)'
@@ -594,6 +614,7 @@ class Device(models.Model):
     # Яляется ли учебным конкретный экземпляр (да-учебный, нет-нет).
     is_stud = models.BooleanField(
         null=True,
+        unique=False,
         blank=False,
         default=False,
         verbose_name='Яляется ли учебным конкретный экземпляр (да-учебный, нет-нет)'
@@ -685,7 +706,10 @@ class DTCPotential(models.Model):
     всех приборов. Входит строго один раз.
     Объект модели - потенциальное, но не реальное,
     действие с прибором по контракту.
-    Поэтому в объекте модели нет таймстампа."""
+    Поэтому:
+    - в объекте модели нет таймстампа;
+    - сочетание обоих полей д.быть уникально."""
+
     dev = models.ForeignKey(to=Device,
                             null=False,
                             blank=False,

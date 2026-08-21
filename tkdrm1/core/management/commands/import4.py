@@ -1,4 +1,5 @@
 """."""
+import sys
 from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
@@ -19,4 +20,6 @@ class Command(BaseCommand):
             skip=2,
             sheet='Лист1'
         )
+        if not data:
+            sys.exit()
         data_2 = clean_data_first(data)
