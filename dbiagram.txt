@@ -58,6 +58,12 @@ Table Ztk{
   title varchar
 }
 
+Table Svh{
+  id integer [primary key]
+  title varchar
+  is_state boolean
+}
+
 Table CustPlace1Acc{
   id integer [primary key]
   rtu integer [null, unique, ref: - Rtu.id]
@@ -80,6 +86,7 @@ Table LocationOfUse{
   mmpo integer [null, unique, ref: - Mmpo.id]
   oez integer [null, unique, ref: - Oez.id]
   ztk integer [null, unique, ref: - Ztk.id]
+  svh integer [null, unique, ref: - Svh.id]
   is_ztk boolean
 }
 

@@ -279,7 +279,7 @@ class Ppr(models.Model):
 
     def __str__(self):
         """."""
-        return f'пункт(е) пропуска {self.pptype} {self.title}'
+        return f'Пункт пропуска {self.pptype} {self.title}'
 
 
 class Mmpo(models.Model):
@@ -313,12 +313,6 @@ class Mmpo(models.Model):
 
         verbose_name = 'объект ММПО'
         verbose_name_plural = 'объекты ММПО'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['title',],
-                name='unique_mmpo_title'
-            ),
-        ]
 
     def __str__(self):
         """."""
@@ -356,12 +350,6 @@ class Oez(models.Model):
 
         verbose_name = 'объект ОЭЗ'
         verbose_name_plural = 'объекты ОЭЗ'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['title',],
-                name='unique_oez_title'
-            ),
-        ]
 
     def __str__(self):
         """."""
@@ -399,16 +387,56 @@ class Ztk(models.Model):
 
         verbose_name = 'объект ЗТК'
         verbose_name_plural = 'объекты ЗТК'
-        constraints = [
-            models.UniqueConstraint(
-                fields=['title',],
-                name='unique_ztk_title'
-            ),
-        ]
 
     def __str__(self):
         """."""
         return f'ЗТК {self.title}'
+
+
+class Svh(models.Model):
+    """Модель СВХ"""
+
+    title = models.CharField(
+        max_length=255,
+        unique=True,  # !!!!!!
+        null=False,
+        verbose_name='Название'
+    )
+    # Является ли государственным конкретный экземпляр
+    is_state = models.BooleanField(
+        null=False,
+        unique=False,
+        blank=False,
+        default=False,
+        verbose_name='Является ли гос-м конкретный экземпляр'
+    )
+
+    def save(self, *args, **kwargs):
+        """Создание нового СВХ.
+
+        Для него также создается объект модели локации."""
+        temp = super().save(*args, **kwargs)
+        LocationOfUse.objects.update_or_create(
+            ztk=self,
+            defaults={
+                'ppr': None,
+                'mmpo': None,
+                'oez': None,
+                'is_ztk': True
+            }
+        )
+        return temp  # noqa
+
+    class Meta:
+        """."""
+
+        verbose_name = 'объект СВХ'
+        verbose_name_plural = 'объекты СВХ'
+
+    def __str__(self):
+        """."""
+        return f'СВХ {self.title}'
+
 
 
 class CustPlace1Acc(models.Model):
@@ -666,10 +694,11 @@ class LocationOfUse(models.Model):
 
     Для каждой записи (строки) строго одно поле д. быть ненулевым.
     Иначе говоря, перечень валидных сочетаний полей ограничен таким:
-    foo1, null, null, null;
-    null, foo2, null, null;
-    null, null, foo3, null;
-    null, null, null, foo4.
+    foo1, null, null, null, null;
+    null, foo2, null, null, null;
+    null, null, foo3, null, null;
+    null, null, null, foo4, null;
+    null, null, null, null, foo5.
     """
     # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     ppr = models.OneToOneField(
@@ -708,6 +737,15 @@ class LocationOfUse(models.Model):
         blank=True,
         default=None
     )
+    svh = models.OneToOneField(
+        Svh,
+        verbose_name='Название СВХ',
+        related_name='svhs',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        default=None
+    )
     is_ztk = models.BooleanField(
         null=False,
         blank=False,
@@ -727,6 +765,8 @@ class LocationOfUse(models.Model):
             return self.oez
         elif self.ztk:
             return self.ztk
+        elif self.svh:
+            return self.svh
         else:
             return None
 
@@ -746,19 +786,23 @@ class LocationOfUse(models.Model):
             Oez.objects.get(id=self.oez.id).delete()
         if self.ztk:
             Ztk.objects.get(id=self.ztk.id).delete()
+        if self.svh:
+            Svh.objects.get(id=self.svh.id).delete()
         return temp  # noqa
 
     def clean(self):
         """."""
         temp = super().clean()
-        curr_ppr: Ppr = self.ppr
-        curr_mmpo: Mmpo = self.mmpo
-        curr_oez: Oez = self.oez
-        curr_ztk: Ztk = self.ztk
-        check = (((curr_ppr is None) and (curr_mmpo is None) and (curr_oez is None) and (curr_ztk is not None)) or  # noqa
-                  ((curr_ppr is None) and (curr_mmpo is None) and (curr_oez is not None) and (curr_ztk is None)) or  # noqa
-                  ((curr_ppr is None) and (curr_mmpo is not None) and (curr_oez is None) and (curr_ztk is None)) or  # noqa
-                  ((curr_ppr is not None) and (curr_mmpo is None) and (curr_oez is None) and (curr_ztk is None)))  # noqa
+        cp: Ppr = self.ppr
+        cm: Mmpo = self.mmpo
+        co: Oez = self.oez
+        cz: Ztk = self.ztk
+        cs: Svh = self.svh
+        check = ((~cp and ~cm and ~co and ~cz and cs) or
+                  (~cp and ~cm and ~co and cz and ~cs) or
+                  (~cp and ~cm and co and ~cz and ~cs) or
+                  (~cp and cm and ~co and ~cz and ~cs) or
+                  (cp and ~cm and ~co and ~cz and ~cs))
         if not check:
             raise ValidationError('Ненулевое поле должно быть строго единственное.')  # noqa
         return temp  # noqa
@@ -773,19 +817,28 @@ class LocationOfUse(models.Model):
                 check=(models.Q(ppr__isnull=True) &
                        models.Q(mmpo__isnull=True) &
                        models.Q(oez__isnull=True) &
-                       ~models.Q(ztk__isnull=True)) |
+                       models.Q(ztk__isnull=True) &
+                       ~models.Q(svh__isnull=True)) |
+                (models.Q(ppr__isnull=True) &
+                 models.Q(mmpo__isnull=True) &
+                 models.Q(oez__isnull=True) &
+                 ~models.Q(ztk__isnull=True) &
+                 models.Q(svh__isnull=True)) |
                 (models.Q(ppr__isnull=True) &
                  models.Q(mmpo__isnull=True) &
                  ~models.Q(oez__isnull=True) &
-                 models.Q(ztk__isnull=True)) |
+                 models.Q(ztk__isnull=True) &
+                 models.Q(svh__isnull=True)) |
                 (models.Q(ppr__isnull=True) &
                  ~models.Q(mmpo__isnull=True) &
                  models.Q(oez__isnull=True) &
-                 models.Q(ztk__isnull=True)) |
-                (~models.Q(ppr__isnull=True) &
-                 models.Q(mmpo__isnull=True) &
-                 models.Q(oez__isnull=True) &
-                 models.Q(ztk__isnull=True)),
+                 models.Q(ztk__isnull=True) &
+                 models.Q(svh__isnull=True)) |
+                 (~models.Q(ppr__isnull=True) &
+                  models.Q(mmpo__isnull=True) &
+                  models.Q(oez__isnull=True) &
+                  models.Q(ztk__isnull=True) &
+                  models.Q(svh__isnull=True)),
                 name='Loc_Nullable'
             ),
         ]

@@ -1,4 +1,5 @@
 """."""
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 import datetime
@@ -686,17 +687,29 @@ class Device(models.Model):
 
         verbose_name = 'Техническое средство'
         verbose_name_plural = 'Технические средства'
-        # добавить констрейты на:
-        # то, что наличие/отсутствие серийного номера согласуется
-        # с соотв. флагом типа девайса
-        # то, что наличие/отсутствие ссылки на девайс верхнего
-        # уровня согласуетс с соотв. флагом типа девайса
-        # то, что принадлежности девайса к СИ
-        # согласуется с соотв. флагом типа девайса
 
     def __str__(self):
         """."""
         return f'Прибор, тип {self.type}, сер.номер {self.serial}, id={self.id}'
+
+    def add_clean(self):
+        super().clean()
+        if not self.type:
+            return
+        for item_field, item_type_flag in [
+            ('serial', self.type.serial_flag),
+            ('upper_id', self.type.upper_dev_flag),
+            ('is_si', self.type.si_flag),
+        ]:
+            field_value = getattr(self, item_field)
+            if item_type_flag is True and field_value is None:
+                raise ValidationError(f'Для данного типа прибора поле {item_field}  обязано быть не Null.')
+            if item_type_flag is False and field_value is not None:
+                raise ValidationError(f'Для данного типа прибора поле {item_field} обязано быть Null.')
+
+    def save(self, *args, **kwargs):
+        self.add_clean()
+        super().save(*args, **kwargs)
 
 
 class DTCPotential(models.Model):

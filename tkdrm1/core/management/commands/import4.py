@@ -20,6 +20,6 @@ class Command(BaseCommand):
             skip=2,
             sheet='Лист1'
         )
-        if not data:
+        if data.empty:
             sys.exit()
         data_2 = clean_data_first(data)
