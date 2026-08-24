@@ -60,6 +60,7 @@ from custplaces.models import (CustHouse,
                                Mmpo,
                                Oez,
                                Ztk,
+                               Svh,
                                Rtu,
                                CustPlace1Acc,
                                CustPlace1Use,
@@ -473,7 +474,7 @@ class Command(BaseCommand):
             return None
 
         def get_curr_loc_use(
-                curr_site: Union[Ppr, Mmpo, Oez, Ztk]
+                curr_site: Union[Ppr, Mmpo, Oez, Ztk, Svh]
         ) -> LocationOfUse:
             """."""
             if isinstance(curr_site, Ppr):
@@ -484,6 +485,8 @@ class Command(BaseCommand):
                 return LocationOfUse.objects.get(oez=curr_site)
             if isinstance(curr_site, Ztk):
                 return LocationOfUse.objects.get(ztk=curr_site)
+            if isinstance(curr_site, Svh):
+                return LocationOfUse.objects.get(svh=curr_site)
             return None
 
         def get_or_cr_curr_cp_to_loc(
@@ -514,7 +517,7 @@ class Command(BaseCommand):
         def chk_flags(
                 item: list[list[str], str],
                 curr_cpl: Union[Rtu, CustHouse, CustPost],
-                curr_site: Union[Ppr, Mmpo, Oez, Ztk]
+                curr_site: Union[Ppr, Mmpo, Oez, Ztk, Svh]
         ) -> bool:
             """Проверка верности сочетания флагов и наличия/отсутствия
             субъекта эксплуатации прибора."""
@@ -522,7 +525,7 @@ class Command(BaseCommand):
                 err_report(row=item[0],
                            reason='Некорректное сочетание флага '
                            'standalone_allowed и отсутствия субъекта '
-                           'эксплуатации (п.п., ММПО, ОЭЗ, ЗТК).')
+                           'эксплуатации (п.п., ММПО, ОЭЗ, ЗТК, СВХ).')
                 return False
             if curr_cpl.ztk_allowed is False and isinstance(curr_site, Ztk):
                 err_report(row=item[0],
@@ -557,8 +560,8 @@ class Command(BaseCommand):
                 tow_country=country
             )[0]
 
-        def get_or_create_mmpo_oez_ztk(
-                model: Union[Mmpo, Oez, Ztk],
+        def get_or_create_mmpo_oez_ztk_svh(
+                model: Union[Mmpo, Oez, Ztk, Svh],
                 item: list[Union[list[str], str]]
         ):
             """."""
@@ -572,14 +575,15 @@ class Command(BaseCommand):
                 all_pprs: QuerySet,
                 all_mmpos: QuerySet,
                 all_oezs: QuerySet,
-                all_ztks: QuerySet
-        ) -> Union[Ppr, Mmpo, Ztk, Oez]:
-            """Определение текущего п.п, ММПО, ОЭЗ или ЗТК.
+                all_ztks: QuerySet,
+                all_svhs: QuerySet
+        ) -> Union[Ppr, Mmpo, Ztk, Oez, Svh]:
+            """Определение текущего п.п, ММПО, ОЭЗ, ЗТК или СВХ.
             Принимает строку вида
             ['1', ['Дальневосточное таможенное управление', 'Бурятская таможня', 'Таможенный пост ДАПП Монды'], ['Монды', 'МНР', 'АПП']]  # noqa
-            И перечни всех п.п., ММПО, ОЭЗ, ЗТК в виде кверисетов.
+            И перечни всех п.п., ММПО, ОЭЗ, ЗТК, СВХ в виде кверисетов.
             Возвращает объект одного из типов:
-            Ppr, Mmpo, Ztk или Oez.
+            Ppr, Mmpo, Ztk, Oez или Svh.
             """
             if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
                               'МПП', 'ППП', 'РПП', 'СПП']:
@@ -621,6 +625,12 @@ class Command(BaseCommand):
                                reason='поиска ЗТК')
                     return None
                 return ztks_qs.first()
+            elif item[2][2] == 'СВХ' or item[2][2] == 'СВХ-ЮЛ':
+                svhs_qs = all_svhs.filter(title=item[2][0])
+                if svhs_qs.count() != 1:
+                    err_report(row=item[0],
+                               reason='поиска СВХ')
+                    return None
             return None
 
         def get_curr_dev(
@@ -1029,11 +1039,13 @@ class Command(BaseCommand):
                               'МПП', 'ППП', 'РПП', 'СПП']:
                 curr_site = get_or_create_pp(item)
             elif item[2][2] == 'ММПО':
-                curr_site = get_or_create_mmpo_oez_ztk(item=item, model=Mmpo)
+                curr_site = get_or_create_mmpo_oez_ztk_svh(item=item, model=Mmpo)
             elif item[2][2] == 'ОЭЗ':
-                curr_site = get_or_create_mmpo_oez_ztk(item=item, model=Oez)
+                curr_site = get_or_create_mmpo_oez_ztk_svh(item=item, model=Oez)
             elif item[2][2] == 'ЗТК':
-                curr_site = get_or_create_mmpo_oez_ztk(item=item, model=Ztk)
+                curr_site = get_or_create_mmpo_oez_ztk_svh(item=item, model=Ztk)
+            elif item[2][2] == 'СВХ' or item[2][2] == 'СВХ-ЮЛ':
+                curr_site = get_or_create_mmpo_oez_ztk_svh(item=item, model=Svh)
             else:
                 curr_site = None
 
@@ -1046,7 +1058,7 @@ class Command(BaseCommand):
                                      curr_cust_place_1,
                                      curr_loc_use)
         print('Успешное завершение создания перечня пунктов '
-              'пропуска, ММПО, ОЭЗ, ЗТК.')
+              'пропуска, ММПО, ОЭЗ, ЗТК, СВХ.')
 
         print('Начало создания перечня девайсов.')
         devs_pre_list = [row for row in data_3 if row[11] == 'служебная']
@@ -1057,6 +1069,7 @@ class Command(BaseCommand):
         all_mmpos = Mmpo.objects.all()
         all_oezs = Oez.objects.all()
         all_ztks = Ztk.objects.all()
+        all_svhs = Svh.objects.all()
         ##########
         for item in tqdm(devs_pre_list):
             curr_mini_item = [
@@ -1094,7 +1107,8 @@ class Command(BaseCommand):
                 all_pprs=all_pprs,
                 all_mmpos=all_mmpos,
                 all_oezs=all_oezs,
-                all_ztks=all_ztks
+                all_ztks=all_ztks,
+                all_svhs=all_svhs
             )
             ##########
             curr_loc_use = get_curr_loc_use(curr_site)
