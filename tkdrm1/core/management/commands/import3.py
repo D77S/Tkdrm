@@ -13,8 +13,8 @@ from django.db.models import QuerySet
 from django.utils import timezone
 
 from core.constants import (
-    PATTERN1,
-    PATTERN2,
+    # PATTERN1,
+    # PATTERN2,
     PATTERN3,
     PATTERN4,
     STANDALONE_CODES,
@@ -31,12 +31,22 @@ from core.constants import (
     CONTRACT4,
     CONTRACT5
 )
-from .utils import (err_report,
-                   get_frame,
-                   replace_to_clean,
-                   clean_data_first,
-                   clean_data_second,
-                   clear_n_init)
+from .utils import (
+    err_report,
+    get_frame,
+    replace_to_clean,
+    clean_data_first,
+    clean_data_second,
+    clear_n_init,
+    get_rtu,
+    get_ch,
+    # get_cp,
+    get_curr_cust_place,
+    get_curr_pl_1_acc,
+    get_curr_pl_1_use,
+    get_curr_site,
+    get_curr_loc_use
+)
 from users.models import (TKDRMUser,
                           Departments)
 from core.models import (
@@ -290,6 +300,7 @@ class Command(BaseCommand):
                 upper_id=upper_rtu_1
             )
             curr_ch_1.address = data_in[3]
+            curr_ch_1.standalone_allowed = True
             curr_ch_1.save()
             return (bd_some_flags_update(curr_ch_1))
 
@@ -306,148 +317,6 @@ class Command(BaseCommand):
             curr_cp_1.address = data_in[3]
             curr_cp_1.save()
             return (bd_some_flags_update(curr_cp_1))
-
-        def get_rtu(
-                data_in: list[Union[list[str], str]],
-                all_rtus_1: QuerySet,
-        ) -> tuple[Rtu, bool]:
-            """."""
-            if data_in[1][0] != '':
-                rtu_1_qs = all_rtus_1.filter(title=data_in[1][0])
-            else:
-                rtu_1_qs = all_rtus_1.filter(title='ТНП')
-            if rtu_1_qs.count() != 1:
-                return (None, False)
-            return (rtu_1_qs.first(), True)
-
-        def get_ch(
-                data_in: list[Union[list[str],
-                                    str]],
-                all_ch_1: QuerySet,
-                upper_rtu_1: Rtu,
-        ) -> tuple[CustHouse, bool]:
-            """."""
-            if data_in[1][1] != '':
-                ch_1_qs = all_ch_1.filter(
-                    title=data_in[1][1],
-                    upper_id=upper_rtu_1
-                )
-            else:
-                ch_1_qs = all_ch_1.filter(title='ТНП')
-            if ch_1_qs.count() != 1:
-                return (None, False)
-            return (ch_1_qs.first(), True)
-
-        def get_cp(
-                data_in: list[Union[list[str],
-                                    str]],
-                all_cp_1: QuerySet,
-                upper_ch_1: CustHouse,
-        ) -> tuple[CustPost, bool]:
-            """."""
-            cp_1_qs = all_cp_1.filter(
-                title=data_in[1][2],
-                upper_id=upper_ch_1
-            )
-            if cp_1_qs.count() != 1:
-                return (None, False)
-            return (cp_1_qs.first(), True)
-
-        def get_curr_cust_place(
-                item: list[list[str], str],
-                all_rtus_1: QuerySet,
-                all_ch_1: QuerySet,
-                all_cp_1: QuerySet,
-        ) -> Union[Rtu, CustHouse, CustPost]:
-            """Определение там.органа.
-            Принимает строку вида
-            ['1', ['Дальневосточное таможенное управление', 'Бурятская таможня', 'Таможенный пост ДАПП Монды'], ...]  # noqa
-            Также принимает полные перечни всех РТУ, таможен, постов.
-            В виде кверисетов.
-            Возвращает объект какого-либо из классов Rtu, CustHouse, CustPost.
-            """
-            curr_cust_place_1 = None
-            if item[1][2] != '':
-                curr_level = 3
-            elif item[1][1] != '':
-                curr_level = 2
-            else:
-                curr_level = 1
-            curr_rtu_1, flag = get_rtu(
-                data_in=item,
-                all_rtus_1=all_rtus_1)
-            if not flag:
-                err_report(row=item[0],
-                           reason='Ошибка получения текущего РТУ',
-                           st_2='РТУ')
-                return None
-            curr_cust_place_1 = curr_rtu_1
-            if curr_level in [2, 3]:
-                curr_ch_1, flag = get_ch(
-                    data_in=item,
-                    all_ch_1=all_ch_1,
-                    upper_rtu_1=curr_rtu_1,
-                )
-                if not flag:
-                    err_report(row=item[0],
-                               reason='Ошибка получения текущей таможни',
-                               st_2='таможни')
-                    return None
-                if curr_ch_1.title != 'ТНП':
-                    curr_cust_place_1 = curr_ch_1
-            if curr_level == 3:
-                curr_cp_1, flag = get_cp(
-                    data_in=item,
-                    all_cp_1=all_cp_1,
-                    upper_ch_1=curr_ch_1,
-                )
-                if not flag:
-                    err_report(row=item[0],
-                               reason='Ошибка получения текущего поста',
-                               st_2='поста')
-                    return None
-                curr_cust_place_1 = curr_cp_1
-            return curr_cust_place_1
-
-        def get_curr_pl_1_acc(
-                curr_cpl: Union[Rtu, CustHouse, CustPost]) -> CustPlace1Acc:
-            """."""
-            if isinstance(curr_cpl, Rtu):
-                return CustPlace1Acc.objects.get(rtu=curr_cpl)
-            if isinstance(curr_cpl, CustHouse):
-                return CustPlace1Acc.objects.get(custhouse=curr_cpl)
-            if isinstance(curr_cpl, CustPost):
-                if curr_cpl.upper_id.title == 'ТНП':
-                    return CustPlace1Acc.objects.get(custpost=curr_cpl)
-                return CustPlace1Acc.objects.get(custhouse=curr_cpl.upper_id)
-            return None
-
-        def get_curr_pl_1_use(
-                curr_cpl: Union[Rtu, CustHouse, CustPost]) -> CustPlace1Use:
-            """."""
-            if isinstance(curr_cpl, Rtu):
-                return CustPlace1Use.objects.get(rtu=curr_cpl)
-            if isinstance(curr_cpl, CustHouse):
-                return CustPlace1Use.objects.get(custhouse=curr_cpl)
-            if isinstance(curr_cpl, CustPost):
-                return CustPlace1Use.objects.get(custpost=curr_cpl)
-            return None
-
-        def get_curr_loc_use(
-                curr_site: Union[Ppr, Mmpo, Oez, Ztk, Svh]
-        ) -> LocationOfUse:
-            """."""
-            if isinstance(curr_site, Ppr):
-                return LocationOfUse.objects.get(ppr=curr_site)
-            if isinstance(curr_site, Mmpo):
-                return LocationOfUse.objects.get(mmpo=curr_site)
-            if isinstance(curr_site, Oez):
-                return LocationOfUse.objects.get(oez=curr_site)
-            if isinstance(curr_site, Ztk):
-                return LocationOfUse.objects.get(ztk=curr_site)
-            if isinstance(curr_site, Svh):
-                return LocationOfUse.objects.get(svh=curr_site)
-            return None
 
         def get_or_cr_curr_cp_to_loc(
                 curr_pl_1_use: CustPlace1Use,
@@ -529,69 +398,6 @@ class Command(BaseCommand):
                 return model.objects.get(title=item[2][0])
             except Exception:
                 return model.objects.create(title=item[2][0])
-
-        def get_curr_site(
-                item: list[Union[list[str], str]],
-                all_pprs: QuerySet,
-                all_mmpos: QuerySet,
-                all_oezs: QuerySet,
-                all_ztks: QuerySet,
-                all_svhs: QuerySet
-        ) -> Union[Ppr, Mmpo, Ztk, Oez, Svh]:
-            """Определение текущего п.п, ММПО, ОЭЗ, ЗТК или СВХ.
-            Принимает строку вида
-            ['1', ['Дальневосточное таможенное управление', 'Бурятская таможня', 'Таможенный пост ДАПП Монды'], ['Монды', 'МНР', 'АПП']]  # noqa
-            И перечни всех п.п., ММПО, ОЭЗ, ЗТК, СВХ в виде кверисетов.
-            Возвращает объект одного из типов:
-            Ppr, Mmpo, Ztk, Oez или Svh.
-            """
-            if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
-                              'МПП', 'ППП', 'РПП', 'СПП']:
-                pptype = PprType.objects.get(title=item[2][2])
-                if item[2][2] in ['АПП', 'ЖДПП', 'ППП', 'РПП', 'СПП']:
-                    pprs_qs = all_pprs.filter(
-                        pptype=pptype,
-                        title=item[2][0],
-                        tow_country=item[2][1]
-                    )
-                else:
-                    pprs_qs = all_pprs.filter(
-                        pptype=pptype,
-                        title=item[2][0]
-                    )
-                if pprs_qs.count() != 1:
-                    err_report(row=item[0],
-                               reason='поиска п.п.')
-                    return None
-                return pprs_qs.first()
-            elif item[2][2] == 'ММПО':
-                mmpos_qs = all_mmpos.filter(title=item[2][0])
-                if mmpos_qs.count() != 1:
-                    err_report(row=item[0],
-                               reason='поиска ММПО')
-                    return None
-                return mmpos_qs.first()
-            elif item[2][2] == 'ОЭЗ':
-                oezs_qs = all_oezs.filter(title=item[2][0])
-                if oezs_qs.count() != 1:
-                    err_report(row=item[0],
-                               reason='поиска ОЭЗ')
-                    return None
-                return oezs_qs.first()
-            elif item[2][2] == 'ЗТК':
-                ztks_qs = all_ztks.filter(title=item[2][0])
-                if ztks_qs.count() != 1:
-                    err_report(row=item[0],
-                               reason='поиска ЗТК')
-                    return None
-                return ztks_qs.first()
-            elif item[2][2] == 'СВХ' or item[2][2] == 'СВХ-ЮЛ':
-                svhs_qs = all_svhs.filter(title=item[2][0])
-                if svhs_qs.count() != 1:
-                    err_report(row=item[0],
-                               reason='поиска СВХ')
-                    return None
-            return None
 
         def get_curr_dev(
                 item: list[Union[list[str], str]],
@@ -1066,7 +872,7 @@ class Command(BaseCommand):
                            st_1='девайсов')
                 continue
             ##########
-            curr_site = get_curr_site(
+            curr_site_list: list = get_curr_site(
                 item=curr_mini_item,
                 all_pprs=all_pprs,
                 all_mmpos=all_mmpos,
@@ -1074,6 +880,22 @@ class Command(BaseCommand):
                 all_ztks=all_ztks,
                 all_svhs=all_svhs
             )
+            if curr_site_list == [] and not all(x == '' for x in curr_mini_item[2]):
+                print(f'{curr_mini_item=}')
+                err_report(
+                    row=item[0],
+                    reason='не распознан сайт (ПП, ММПО, ...), критично!'
+                )
+                continue
+            if len(curr_site_list) > 1:
+                err_report(
+                    row=item[0],
+                    reason='распознано более одного сайта (ПП, ММПО, ...), берем первый'
+                )
+            try:
+                curr_site=curr_site_list[0]
+            except Exception:
+                curr_site=None
             ##########
             curr_loc_use = get_curr_loc_use(curr_site)
             if not chk_flags(item, curr_cust_place_1, curr_site):

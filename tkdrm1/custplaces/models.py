@@ -1,5 +1,6 @@
 """."""
-from django.db import models
+import sys
+from django.db import models, transaction
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 
@@ -39,7 +40,7 @@ class BaseCPModel(models.Model):
     standalone_allowed = models.BooleanField(
         null=False,
         blank=False,
-        default=True,
+        default=False,
         verbose_name='Признак разрешения работать без локации'
     )
 
@@ -63,24 +64,40 @@ class Rtu(BaseCPModel):
         """Сохранение нового РТУ.
 
         Для него также создается/апдейтится объект модели 'субъект учета'."""
-        temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.update_or_create(
-            rtu=self,
-            defaults={
-                'custhouse': None,
-                'custpost': None,
-            }
-        )
-        CustPlace1Use.objects.update_or_create(
-            rtu=self,
-            defaults={
-                'custhouse': None,
-                'custpost': None,
-                'ztk_allowed': self.ztk_allowed,
-                'standalone_allowed': self.standalone_allowed
-            }
-        )
-        return temp  # noqa
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                CustPlace1Acc.objects.create(
+                    rtu=self,
+                    custhouse=None,
+                    custpost=None
+                )
+                CustPlace1Use.objects.create(
+                    rtu=self,
+                    custhouse=None,
+                    custpost=None,
+                    ztk_allowed=self.ztk_allowed,
+                    standalone_allowed=self.standalone_allowed
+                )
+        else:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                CustPlace1Acc.objects.update_or_create(
+                    rtu=self,
+                    defaults={
+                        'custhouse': None,
+                        'custpost': None,
+                    }
+                )
+                CustPlace1Use.objects.update_or_create(
+                    rtu=self,
+                    defaults={
+                        'custhouse': None,
+                        'custpost': None,
+                        'ztk_allowed': self.ztk_allowed,
+                        'standalone_allowed': self.standalone_allowed
+                    }
+                )
 
     class Meta:
         """."""
@@ -115,24 +132,41 @@ class CustHouse(BaseCPModel):
         """Сохранение новой таможни.
 
         Для нее также создается/апдейтится объект модели 'субъект учета'."""
-        temp = super().save(*args, **kwargs)
-        CustPlace1Acc.objects.update_or_create(
-            custhouse=self,
-            defaults={
-                'rtu': None,
-                'custpost': None,
-            }
-        )
-        CustPlace1Use.objects.update_or_create(
-            custhouse=self,
-            defaults={
-                'rtu': None,
-                'custpost': None,
-                'ztk_allowed': self.ztk_allowed,
-                'standalone_allowed': self.standalone_allowed
-            }
-        )
-        return temp  # noqa
+        if not self.pk:
+            self.standalone_allowed = True
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                CustPlace1Acc.objects.create(
+                    custhouse=self,
+                    rtu=None,
+                    custpost=None
+                )
+                CustPlace1Use.objects.create(
+                    custhouse=self,
+                    rtu=None,
+                    custpost=None,
+                    ztk_allowed=self.ztk_allowed,
+                    standalone_allowed=self.standalone_allowed
+                )
+        else:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                CustPlace1Acc.objects.update_or_create(
+                    custhouse=self,
+                    defaults={
+                        'rtu': None,
+                        'custpost': None,
+                    }
+                )
+                CustPlace1Use.objects.update_or_create(
+                    custhouse=self,
+                    defaults={
+                        'rtu': None,
+                        'custpost': None,
+                        'ztk_allowed': self.ztk_allowed,
+                        'standalone_allowed': self.standalone_allowed
+                    }
+                )
 
     class Meta:
         """."""
@@ -171,28 +205,49 @@ class CustPost(BaseCPModel):
         - вышестоящее этой таможне РТУ имеет имя 'ТНП'
         то только для такого поста также создается/апдейтится
         объект модели 'субъект учета'."""
-        temp = super().save(*args, **kwargs)
-        upper_ch = self.upper_id
-        if upper_ch:
-            upper_rtu = upper_ch.upper_id
-        if upper_ch and upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
-            CustPlace1Acc.objects.update_or_create(
-                custpost=self,
-                defaults={
-                    'rtu': None,
-                    'custhouse': None,
-                }
-            )
-        CustPlace1Use.objects.update_or_create(
-            custpost=self,
-            defaults={
-                'rtu': None,
-                'custhouse': None,
-                'ztk_allowed': self.ztk_allowed,
-                'standalone_allowed': self.standalone_allowed
-            }
-        )
-        return temp  # noqa
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                upper_ch = self.upper_id
+                if upper_ch:
+                    upper_rtu = upper_ch.upper_id
+                    if upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa
+                        CustPlace1Acc.objects.create(
+                            custpost=self,
+                            rtu=None,
+                            custhouse=None,
+                        )
+                CustPlace1Use.objects.create(
+                    custpost=self,
+                    rtu=None,
+                    custhouse=None,
+                    ztk_allowed=self.ztk_allowed,
+                    standalone_allowed=self.standalone_allowed
+                )
+        else:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                upper_ch = self.upper_id
+                if upper_ch:
+                    upper_rtu = upper_ch.upper_id
+                    if upper_ch.title == 'ТНП' and upper_rtu and upper_rtu.title == 'ТНП':  # noqa               
+                        CustPlace1Acc.objects.update_or_create(
+                            custpost=self,
+                            defaults={
+                                'rtu': None,
+                                'custhouse': None,
+                            }
+                        )
+                CustPlace1Use.objects.update_or_create(
+                    custpost=self,
+                    defaults={
+                        'rtu': None,
+                        'custhouse': None,
+                        'ztk_allowed': self.ztk_allowed,
+                        'standalone_allowed': self.standalone_allowed
+                    }
+                )
+    
 
     class Meta:
         """."""
