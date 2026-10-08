@@ -33,7 +33,9 @@ from core.constants import (
 )
 from .utils import (err_report,
                    get_frame,
+                   replace_to_clean,
                    clean_data_first,
+                   clean_data_second,
                    clear_n_init)
 from users.models import (TKDRMUser,
                           Departments)
@@ -74,48 +76,6 @@ class Command(BaseCommand):
         """."""
 
         User = get_user_model()
-
-        def replace_to_clean(source: str, pattern: dict):
-            """."""
-            if source in pattern.keys():
-                to_out = pattern.get(source)
-            else:
-                to_out = source
-            return to_out
-
-        def clean_data_second(data_in: list[list[str]]):
-            """."""
-            data_out = []
-            for row in data_in:
-                temp_row = []
-                for i in range(0, len(row)):
-                    if i == 1:
-                        temp_row.append(
-                            replace_to_clean(
-                                source=row[i],
-                                pattern=PATTERN1
-                            )
-                        )
-                    elif (i == 4 or
-                          i == 20 or
-                          i == 21 or
-                          i == 24
-                          ):
-                        temp_row.append(
-                            row[i].split('.')[0]
-                        )
-                    elif i == 7:
-                        temp_row.append(
-                            replace_to_clean(
-                                source=row[i],
-                                pattern=PATTERN2
-                            )
-                        )
-                    else:
-                        temp_row.append(row[i])
-                data_out.append(temp_row)
-            return data_out
-
 
         def pre_valid_tests(row):
             """."""
@@ -869,15 +829,19 @@ class Command(BaseCommand):
             return
 
         # Main begin
+        print('import3.py начал работу.')
         data = get_frame(
             file='__база СТСО.xlsm',
             skip=6,
             sheet='Новая база2'
         )
+        print('Данные из Excel загружены.')
         if data.empty:
             sys.exit()
         data_2 = clean_data_first(data)
-        data_3 = clean_data_second(data_2)
+        print('Первая очистка данных прошла.')
+        data_3 = clean_data_second(data_2, 3)
+        print('Вторая очистка данных прошла.')
 
         print('Очистка таблиц в БД.')
 

@@ -33,8 +33,8 @@ from custplaces.models import (CustHouse,
                                CustPlace1Use,
                                CustPlaceToLocation)
 from core.constants import (
-    # PATTERN1,
-    # PATTERN2,
+    PATTERN1,
+    PATTERN2,
     # PATTERN3,
     # PATTERN4,
     # STANDALONE_CODES,
@@ -90,6 +90,14 @@ def get_frame(
         return
     return data
 
+def replace_to_clean(source: str, pattern: dict):
+    """."""
+    if source in pattern.keys():
+        to_out = pattern.get(source)
+    else:
+        to_out = source
+    return to_out
+
 def clean_data_first(data_in):
     """."""
     data_out = []
@@ -108,6 +116,40 @@ def clean_data_first(data_in):
                 data_out_temp.append('')
         data_out.append(data_out_temp)
     return data_out
+
+def clean_data_second(data_in: list[list[str]], num_im: int):
+    """."""
+    data_out = []
+    for row in data_in:
+        temp_row = []
+        for i in range(0, len(row)):
+            if num_im == 3 and i == 1:
+                temp_row.append(
+                    replace_to_clean(
+                        source=row[i],
+                        pattern=PATTERN1
+                    )
+                )
+            elif num_im ==3 and (i in [4, 20, 21, 22, 23, 24]):
+                temp_row.append(
+                    row[i].split('.')[0]
+                )
+            elif num_im == 4 and (i in[0, 25]):
+                temp_row.append(
+                    row[i].split('.')[0]
+                )
+            elif num_im == 3 and i == 7:
+                temp_row.append(
+                    replace_to_clean(
+                        source=row[i],
+                        pattern=PATTERN2
+                    )
+                )
+            else:
+                temp_row.append(row[i])
+        data_out.append(temp_row)
+    return data_out
+
 
 def clear_n_init():
         """."""
@@ -175,20 +217,70 @@ def clear_n_init():
         DevCatsL1.objects.create(title='Переносные')
         dev_cats_l2_titles = [
             ['СТСО', DevCatsL1.objects.get(title='Стационарные')],
+            ['ИИИ к СТСО', DevCatsL1.objects.get(title='Переносные')],
+            ['МТСО', DevCatsL1.objects.get(title='Переносные')],
             ['ВН', DevCatsL1.objects.get(title='Стационарные')],
             ['Телеком', DevCatsL1.objects.get(title='Стационарные')],
             ['Дозиметры', DevCatsL1.objects.get(title='Переносные')],
             ['Поисковые', DevCatsL1.objects.get(title='Переносные')],
+            ['Поисковые двухканальные', DevCatsL1.objects.get(title='Переносные')],
             ['Радиометры-спектрометры', DevCatsL1.objects.get(
                 title='Переносные')],
             ['Спектрометры', DevCatsL1.objects.get(title='Переносные')],
             ['СИЗ', DevCatsL1.objects.get(title='Переносные')],
+            ['Прочее', DevCatsL1.objects.get(title='Переносные')],
         ]
         dev_cats_l2_objs = [
             DevCatsL2(title=item[0],
                       cat_l1=item[1]) for item in dev_cats_l2_titles]
         DevCatsL2.objects.bulk_create(objs=dev_cats_l2_objs)
         dev_types_titles = [
+            ['FH40G-L10', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['AT1121', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['AT1123', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['Гамма-1С/NB1-02', DevCatsL2.objects.get(title='Спектрометры'), 24,
+             True, False, True, None],
+            ['ДБГ', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['Калифорний-252', DevCatsL2.objects.get(title='ИИИ к СТСО'), 24,
+             None, False, None, None],
+            ['Кюрий-244', DevCatsL2.objects.get(title='ИИИ к СТСО'), 24,
+             None, False, None, None],
+            ['МКС-А02', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+             True, False, True, None],
+            ['МКС-А03-1', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+             True, False, True, None],
+            ['МКС-А03-1Н', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+             True, False, True, None],
+            ['ММОМ', DevCatsL2.objects.get(title='Прочее'), 24,
+             None, False, False, None],
+            ['РМ1203М', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['РМ1401', DevCatsL2.objects.get(title='Поисковые'), 24,
+             True, False, True, None],
+            ['РМ1401К', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+             True, False, True, None],
+            ['РМ1401К-01', DevCatsL2.objects.get(title='Поисковые двухканальные'), 24,
+             True, False, True, None],
+            ['РМ1401М', DevCatsL2.objects.get(title='Поисковые'), 24,
+             True, False, True, None],
+            ['РМ1610', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['РМ1621', DevCatsL2.objects.get(title='Дозиметры'), 24,
+             True, False, True, None],
+            ['РСУ-01', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+             True, False, True, None],
+            ['СИЗ', DevCatsL2.objects.get(title='СИЗ'), 24,
+             False, False, False, None],
+            ['СКС-50М', DevCatsL2.objects.get(title='Спектрометры'), 24,
+             True, False, True, None],
+            ['ТППРК', DevCatsL2.objects.get(title='МТСО'), 24,
+             None, False, False, None],
+            ['Цезий-137', DevCatsL2.objects.get(title='ИИИ к СТСО'), 24,
+             None, False, None, None],
             [
                 'Янтарь-1С',  # title
                 DevCatsL2.objects.get(title='СТСО'),  # category
@@ -243,6 +335,8 @@ def clear_n_init():
             ['Янтарь-2Ж', DevCatsL2.objects.get(title='СТСО'), 12,
              True, False, True, None],
             ['Янтарь-2Ж2', DevCatsL2.objects.get(title='СТСО'), 12,
+             True, False, True, None],
+            ['Янтарь-МА', DevCatsL2.objects.get(title='МТСО'), 24,
              True, False, True, None],
             ['ВН-Ж', DevCatsL2.objects.get(title='ВН'), 2,
              None, None, False, None],
