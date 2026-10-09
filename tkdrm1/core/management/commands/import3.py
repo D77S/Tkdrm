@@ -320,28 +320,55 @@ class Command(BaseCommand):
 
         def get_or_cr_curr_cp_to_loc(
                 curr_pl_1_use: CustPlace1Use,
+                curr_loc_use: LocationOfUse,
                 curr_cust_place_1: Union[Rtu, CustHouse, CustPost],
-                curr_loc_use: LocationOfUse
         ) -> CustPlaceToLocation:
             """."""
-            temp_cp_to_loc = CustPlaceToLocation.objects.filter(
+            temp_cp_to_loc_list = CustPlaceToLocation.objects.filter(
                 cust_pl1=curr_pl_1_use,
+                loc=curr_loc_use
             )
-            if not temp_cp_to_loc.exists():
-                return CustPlaceToLocation.objects.create(
-                    cust_pl1=curr_pl_1_use,
-                    loc=curr_loc_use,
-                    is_main_for_cust=True
-                    )
-            else:
-                temp2_cp_to_loc = temp_cp_to_loc.filter(loc=curr_loc_use)
-                if not temp2_cp_to_loc.exists():
-                    return CustPlaceToLocation.objects.create(
-                        cust_pl1=curr_pl_1_use,
-                        loc=curr_loc_use,
-                        is_main_for_cust=False
-                    )
-                return temp2_cp_to_loc.first()
+            # В БД обнаружено единственное сочетание т.о. и его сайта
+            if len(temp_cp_to_loc_list) == 1:
+                return temp_cp_to_loc_list[0]
+            # В БД обнаружено неединственное сочетание т.о. и его сайта
+            if len(temp_cp_to_loc_list) > 1:
+                print('Внимание, обнаружена неуникальность сочетания т.органа и его сайта экплуатации. Работаем с первым из них.')
+                return temp_cp_to_loc_list[0]
+            # В БД не обнаружено таких сочетаний т.о. и его сайта
+            # Создаем его
+            to_out =  CustPlaceToLocation.objects.create(
+                cust_pl1=curr_pl_1_use,
+                loc=curr_loc_use,
+                is_main_for_cust=False
+            )
+            # Начинаем апдейт флагов is_main_for_cust для всех сайтов данного т.о.
+            # Проверяем, что таких флагов для него уже поднято не более одного,
+            # хотя на это есть и констрейт на уровне БД.
+            temp1 = CustPlaceToLocation.objects.filter(
+                cust_pl1=curr_pl_1_use,
+                is_main_for_cust=True
+            )
+            if len(temp1) == 1:
+                return to_out
+            if len(temp1) > 1:
+                print('Внимание, для т.о. обнаружен неединственный флаг главного места эксплуатации.')
+                return to_out
+            # Поднятых флагов для него не найдено. Надо поднять строго один. Решить какой.
+            # Важнее такие сочетания, в которых сайт не равен None. Ищем такие, если будут.
+            temp2 = temp1.filter(loc__isnull=False)
+            # Если найдены, поднимаем флаг первому попавшемуся и выходим.
+            if temp2:
+                temp2[0].is_main_for_cust = True
+                temp2[0].save(update_fields='is_main_for_cust')
+                return to_out
+            # Если тех не было, ищем оставшиеся. Те, в которых сайт равен None.
+            temp2 = temp1.filter(loc__isnull=True)
+            if temp2:
+                temp2[0].is_main_for_cust = True
+                temp2[0].save(update_fields='is_main_for_cust')
+                return to_out
+            return to_out
 
         def chk_flags(
                 item: list[list[str], str],
@@ -779,32 +806,41 @@ class Command(BaseCommand):
             sys.exit()
         ##########
         for item in tqdm(sites_pre_list):
+
+            # Определяется текущий по строке объект
+            # одной из моделей: Rtu, CustHouse, CustPost
             curr_cust_place_1 = get_curr_cust_place(
                 item=item,
                 all_rtus_1=all_rtus_1,
                 all_ch_1=all_ch_1,
                 all_cp_1=all_cp_1
             )
-            ##########
             if not curr_cust_place_1:
                 err_report(row=item[0],
                            reason='определения текущего т.органа',
                            st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
-            ##########
+
+            # Определяется текущий по строке объект модели
+            # CustPlace1Acc
             curr_pl_1_acc = get_curr_pl_1_acc(curr_cust_place_1)
             if not curr_pl_1_acc:
                 err_report(row=item[0], reason='определения '
                            'субъекта собственника текущего т.органа',
                            st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
+
+            # Определяется текущий по строке объект модели
+            # CustPlace1Use
             curr_pl_1_use = get_curr_pl_1_use(curr_cust_place_1)
             if not curr_pl_1_use:
                 err_report(row=item[0], reason='Ошибка определения '
                            'субъекта пользователя текущего т.органа',
                            st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
-            ##########
+
+            # Определяется или создается текущий по строке
+            # объект одной из моделей: Ppr, Mmpo, Oez, Ztk, Svh
             if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
                               'МПП', 'ППП', 'РПП', 'СПП']:
                 curr_site = get_or_create_pp(item)
@@ -819,14 +855,18 @@ class Command(BaseCommand):
             else:
                 curr_site = None
 
+            # Определяется текущий по строке объект модели LocationOfUse
             curr_loc_use = get_curr_loc_use(curr_site)
-
             if not chk_flags(item, curr_cust_place_1, curr_site):
                 continue
 
-            get_or_cr_curr_cp_to_loc(curr_pl_1_use,
-                                     curr_cust_place_1,
-                                     curr_loc_use)
+            # Определяется или создается текущий по строке объект
+            # модели CustPlaceToLocation
+            get_or_cr_curr_cp_to_loc(
+                curr_pl_1_use=curr_pl_1_use,
+                curr_loc_use=curr_loc_use,
+                curr_cust_place_1=curr_cust_place_1
+            )
         print('Успешное завершение создания перечня пунктов '
               'пропуска, ММПО, ОЭЗ, ЗТК, СВХ.')
 
@@ -900,9 +940,11 @@ class Command(BaseCommand):
             curr_loc_use = get_curr_loc_use(curr_site)
             if not chk_flags(item, curr_cust_place_1, curr_site):
                 continue
-            curr_cpl_to_loc = get_or_cr_curr_cp_to_loc(curr_pl_1_use,
-                                                       curr_cust_place_1,
-                                                       curr_loc_use)
+            curr_cpl_to_loc = get_or_cr_curr_cp_to_loc(
+                curr_pl_1_use=curr_pl_1_use,
+                curr_loc_use=curr_loc_use,
+                curr_cust_place_1=curr_cust_place_1
+            )
             if curr_cpl_to_loc is None:
                 err_report(row=item[0],
                            reason='curr_cpl_to_loc не распознан '

@@ -85,9 +85,13 @@ class Command(BaseCommand):
         all_cp_1 = CustPost.objects.all()
 
         print('Начало создания перечня всех, кроме Янтарь (с ВН, АРМ, ССД) и кроме СВХ.')
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         x1 = 0
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         for item in tqdm(data_3):
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             x1 += 1 
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if item[7] == 'СТСО' or item[5] == 'СВХ' or item[5] == 'СВХ-ЮЛ':
                 continue
             curr_mini_item = [
@@ -161,8 +165,10 @@ class Command(BaseCommand):
             curr_cpl_to_loc = curr_cpl_to_loc_list[0]
 
             ##########
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if x1 >= 200:
                 sys.exit()
+            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             # print(f'{item[0]=}')
             # print(f'{curr_mini_item=}')
             # print(f'{curr_cust_place_1=}')

@@ -61,9 +61,10 @@ class Rtu(BaseCPModel):
     )
 
     def save(self, *args, **kwargs):
-        """Сохранение нового РТУ.
+        """Сохранение нового объекта РТУ.
 
-        Для него также создается/апдейтится объект модели 'субъект учета'."""
+        Для него также создаются/апдейтятся
+        объекты моделей 'балансовый учет' и 'учет эксплуатации'."""
         if not self.pk:
             with transaction.atomic():
                 super().save(*args, **kwargs)
@@ -129,10 +130,13 @@ class CustHouse(BaseCPModel):
                                  related_name='from_ch_to_rtu')
 
     def save(self, *args, **kwargs):
-        """Сохранение новой таможни.
+        """Сохранение нового объекта таможни.
 
-        Для нее также создается/апдейтится объект модели 'субъект учета'."""
+        Для него также создаются/апдейтятся
+        объекты моделей 'балансовый учет' и 'учет эксплуатации'."""
         if not self.pk:
+            # При создании нового объекта таможни ей устанавливается флаг
+            # 'разрешено эксплуатировать приборы вне сайта (ПП, ММПО, ...)
             self.standalone_allowed = True
             with transaction.atomic():
                 super().save(*args, **kwargs)
@@ -198,13 +202,15 @@ class CustPost(BaseCPModel):
                                  related_name='cust_post_to_cust_house')
 
     def save(self, *args, **kwargs):
-        """Сохранение нового поста.
+        """Сохранение нового объекта поста.
 
         В случае, если все условия:
         - вышестоящая таможня поста имеет имя 'ТНП';
         - вышестоящее этой таможне РТУ имеет имя 'ТНП'
-        то только для такого поста также создается/апдейтится
-        объект модели 'субъект учета'."""
+        то только для такого поста
+        также создается/апдейтится объект модели 'балансовый учет'.
+        Для любого также создается/апдейтится объект модели 'учет эксплуатации'.
+        """
         if not self.pk:
             with transaction.atomic():
                 super().save(*args, **kwargs)
@@ -247,7 +253,6 @@ class CustPost(BaseCPModel):
                         'standalone_allowed': self.standalone_allowed
                     }
                 )
-    
 
     class Meta:
         """."""
@@ -305,20 +310,32 @@ class Ppr(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Создание нового пункта пропуска.
+        """Создание объекта нового пункта пропуска.
 
-        Для него также создается объект модели локации."""
-        temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.update_or_create(
-            ppr=self,
-            defaults={
-                'mmpo': None,
-                'oez': None,
-                'ztk': None,
-                'is_ztk': False
-            }
-        )
-        return temp  # noqa
+        Для него также создается/апдейтится объект модели локации."""
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                LocationOfUse.objects.create(
+                    ppr=self,
+                    mmpo=None,
+                    oez=None,
+                    ztk=None,
+                    svh=None,
+                    is_ztk=False
+                )
+        else:
+            with transaction.atomic():
+                LocationOfUse.objects.update_or_create(
+                    ppr=self,
+                    defaults={
+                        'mmpo': None,
+                        'oez': None,
+                        'ztk': None,
+                        'svh': None,
+                        'is_ztk': False
+                    }
+                )
 
     class Meta:
         """."""
@@ -348,20 +365,32 @@ class Mmpo(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Создание нового ММПО.
+        """Создание нового объекта ММПО.
 
-        Для него также создается объект модели локации."""
-        temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.update_or_create(
-            mmpo=self,
-            defaults={
-                'ppr': None,
-                'oez': None,
-                'ztk': None,
-                'is_ztk': False
-            }
-        )
-        return temp  # noqa
+        Для него также создается/апдейтится объект модели локации."""
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                LocationOfUse.objects.create(
+                    ppr=None,
+                    mmpo=self,
+                    oez=None,
+                    ztk=None,
+                    svh=None,
+                    is_ztk=False
+                )
+        else:
+            with transaction.atomic():
+                LocationOfUse.objects.update_or_create(
+                    mmpo=self,
+                    defaults={
+                        'ppr': None,
+                        'oez': None,
+                        'ztk': None,
+                        'svh': None,
+                        'is_ztk': False
+                    }
+                )
 
     class Meta:
         """."""
@@ -385,20 +414,32 @@ class Oez(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Создание новой ОЭЗ.
+        """Создание нового объекта ОЭЗ.
 
-        Для нее также создается объект модели локации."""
-        temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.update_or_create(
-            oez=self,
-            defaults={
-                'ppr': None,
-                'mmpo': None,
-                'ztk': None,
-                'is_ztk': False
-            }
-        )
-        return temp  # noqa
+        Для него также создается/апдейтится объект модели локации."""
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                LocationOfUse.objects.create(
+                    ppr=None,
+                    mmpo=None,
+                    oez=self,
+                    ztk=None,
+                    svh=None,
+                    is_ztk=False
+                )
+        else:
+            with transaction.atomic():
+                LocationOfUse.objects.update_or_create(
+                    oez=self,
+                    defaults={
+                        'mmpo': None,
+                        'ppr': None,
+                        'ztk': None,
+                        'svh': None,
+                        'is_ztk': False
+                    }
+                )
 
     class Meta:
         """."""
@@ -422,20 +463,32 @@ class Ztk(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Создание новой ЗТК.
+        """Создание нового объекта ЗТК.
 
-        Для нее также создается объект модели локации."""
-        temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.update_or_create(
-            ztk=self,
-            defaults={
-                'ppr': None,
-                'mmpo': None,
-                'oez': None,
-                'is_ztk': True
-            }
-        )
-        return temp  # noqa
+        Для него также создается/апдейтится объект модели локации."""
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                LocationOfUse.objects.create(
+                    ppr=None,
+                    mmpo=None,
+                    oez=None,
+                    ztk=self,
+                    svh=None,
+                    is_ztk=True
+                )
+        else:
+            with transaction.atomic():
+                LocationOfUse.objects.update_or_create(
+                    ztk=self,
+                    defaults={
+                        'mmpo': None,
+                        'oez': None,
+                        'ppr': None,
+                        'svh': None,
+                        'is_ztk': True
+                    }
+                )
 
     class Meta:
         """."""
@@ -467,20 +520,32 @@ class Svh(models.Model):
     )
 
     def save(self, *args, **kwargs):
-        """Создание нового СВХ.
+        """Создание нового объекта СВХ.
 
-        Для него также создается объект модели локации."""
-        temp = super().save(*args, **kwargs)
-        LocationOfUse.objects.update_or_create(
-            ztk=self,
-            defaults={
-                'ppr': None,
-                'mmpo': None,
-                'oez': None,
-                'is_ztk': True
-            }
-        )
-        return temp  # noqa
+        Для него также создается/апдейтится объект модели локации."""
+        if not self.pk:
+            with transaction.atomic():
+                super().save(*args, **kwargs)
+                LocationOfUse.objects.create(
+                    ppr=None,
+                    mmpo=None,
+                    oez=None,
+                    ztk=None,
+                    svh=self,
+                    is_ztk=False
+                )
+        else:
+            with transaction.atomic():
+                LocationOfUse.objects.update_or_create(
+                    svh=self,
+                    defaults={
+                        'ppr': None,
+                        'mmpo': None,
+                        'oez': None,
+                        'ztk': None,
+                        'is_ztk': False
+                    }
+                )
 
     class Meta:
         """."""
@@ -957,6 +1022,7 @@ class CustPlaceToLocation(models.Model):
                 fields=['cust_pl1', 'loc'],
                 name='unique_cp_loc'
             ),
+            #  У любого т.органа должен быть только одна главная локация деятельности
             models.UniqueConstraint(
                 fields=['cust_pl1',],
                 condition=models.Q(is_main_for_cust=True),
