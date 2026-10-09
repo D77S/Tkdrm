@@ -1010,6 +1010,18 @@ class CustPlaceToLocation(models.Model):
             raise ValidationError('Данный т.орган не может работать в ЗТК')
         if check2:
             raise ValidationError('Данный т.орган не может работать вне какого-либо административного субъекта')  # noqa
+        #
+        if self.loc is None:
+            qs = CustPlaceToLocation.objects.filter(
+                cust_pl1=self.cust_pl1,
+                loc__isnull=True
+            )
+            if self.pk:
+                qs = qs.exclude(pk=self.pk)
+            if qs.exists():
+                raise ValidationError({
+                    'loc': f'Для объекта {self.cust_pl1} уже есть запись с нулевым полем loc.'
+                })
         return temp
 
     class Meta:
@@ -1021,6 +1033,11 @@ class CustPlaceToLocation(models.Model):
             models.UniqueConstraint(
                 fields=['cust_pl1', 'loc'],
                 name='unique_cp_loc'
+            ),
+            models.UniqueConstraint(
+                fields=['cust_pl1'],
+                condition=models.Q(loc__isnull=True),
+                name='unique_custpl1_when_loc_is_null'
             ),
             #  У любого т.органа должен быть только одна главная локация деятельности
             models.UniqueConstraint(

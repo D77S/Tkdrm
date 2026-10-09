@@ -84,15 +84,13 @@ class Command(BaseCommand):
         all_ch_1 = CustHouse.objects.all()
         all_cp_1 = CustPost.objects.all()
 
-        print('Начало создания перечня всех, кроме Янтарь (с ВН, АРМ, ССД) и кроме СВХ.')
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        x1 = 0
-        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        print('Начало создания перечня всех, кроме Янтарь (с ВН, АРМ, ССД), кроме СВХ, кроме ОЭЗ.')
         for item in tqdm(data_3):
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            x1 += 1 
+            # if int(item[0]) >= 104:
+            #     sys.exit()
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if item[7] == 'СТСО' or item[5] == 'СВХ' or item[5] == 'СВХ-ЮЛ':
+            if item[7] == 'СТСО' or item[5] == 'СВХ' or item[5] == 'СВХ-ЮЛ' or item[5] == 'ОЭЗ':
                 continue
             curr_mini_item = [
                 item[0],
@@ -117,6 +115,7 @@ class Command(BaseCommand):
                            st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
                 continue
             curr_pl_1_use = get_curr_pl_1_use(curr_cust_place_1)
+
             if not curr_pl_1_use:
                 err_report(row=item[0], reason='определения '
                            'субъекта пользователя текущего т.органа',
@@ -139,37 +138,94 @@ class Command(BaseCommand):
                 continue
 
             curr_loc_use_list = []
-            if len(curr_site_list) > 0:
-                for item2 in curr_site_list:
-                    curr_loc_use_list.append(get_curr_loc_use(item2))
+            for item2 in curr_site_list:
+                curr_loc_use_list.append(get_curr_loc_use(item2))
 
             curr_cpl_to_loc_list = []
-            if len(curr_loc_use_list) > 0:
+            if curr_loc_use_list == []:
+                temp1 = CustPlaceToLocation.objects.filter(
+                    cust_pl1=curr_pl_1_use,
+                    loc__isnull=True
+                ).first()
+                if temp1:
+                    curr_cpl_to_loc = temp1
+                else:
+                    try:
+                        curr_cpl_to_loc = CustPlaceToLocation.objects.create(
+                            cust_pl1=curr_pl_1_use,
+                            loc=None,
+                            is_main_for_cust=True
+                        )
+                    except Exception:
+                        curr_cpl_to_loc = CustPlaceToLocation.objects.create(
+                            cust_pl1=curr_pl_1_use,
+                            loc=None,
+                            is_main_for_cust=False
+                        )
+                    # Начинаем апдейт флагов is_main_for_cust для всех сайтов данного т.о.
+                    # Проверяем, что таких флагов для него уже поднято не более одного,
+                    # хотя на это есть и констрейт на уровне БД.
+                    # Полный кверисет данного т.о., с любыми флагами:
+                    # full_qs_for_cpl = CustPlaceToLocation.objects.filter(
+                    #                     cust_pl1=curr_pl_1_use
+                    #                 )
+                    # # Из него, кверисет только объектов с поднятыми флагами
+                    # fl_up_qs = CustPlaceToLocation.objects.filter(
+                    #     cust_pl1=curr_pl_1_use,
+                    #     is_main_for_cust=True
+                    # )
+                    # if len(fl_up_qs) == 1:
+                    #     pass
+                    # elif len(fl_up_qs) > 1:
+                    #     err_report(
+                    #         row=item[0],
+                    #         reason='Внимание, для т.о. обнаружен неединственный флаг главного места эксплуатации.'
+                    #     )
+                    # else:
+                    #     # Поднятых флагов для него не найдено. Надо поднять строго один. Решить какой.
+                    #     # Важнее такие сочетания, в которых сайт не равен None. Ищем такие, если будут.
+                    #     temp2 = CustPlaceToLocation.objects.filter(
+                    #         cust_pl1=curr_pl_1_use,
+                    #         loc__isnull=False
+                    #     )
+                    #     # Если найдены, поднимаем флаг первому попавшемуся и выходим.
+                    #     if temp2.exists():
+                    #         temp2[0].is_main_for_cust=True
+                    #         temp2[0].save()
+                    #     else:
+                    #         # Если тех не было, ищем оставшиеся. Те, в которых сайт равен None.
+                    #         temp3 = CustPlaceToLocation.objects.filter(
+                    #             cust_pl1=curr_pl_1_use,
+                    #             loc__isnull=True)
+                    #         if temp3.exists():
+                    #             temp3[0].is_main_for_cust=True
+                    #             temp3[0].save()
+            else:
                 for item2 in curr_loc_use_list:
                     try:
-                        temp1 = CustPlaceToLocation.objects.get(
-                            cust_pl1=curr_pl_1_use,
-                            loc=item2
-                        )
+                        if item2 is not None:
+                            temp1 = CustPlaceToLocation.objects.get(
+                                cust_pl1=curr_pl_1_use,
+                                loc=item2
+                            )
+                        else:
+                            temp1 = CustPlaceToLocation.objects.get(
+                                cust_pl1=curr_pl_1_use,
+                                loc__isnull=False
+                            )
                     except Exception:
                         temp1 = None
                     if temp1:
                         curr_cpl_to_loc_list.append(temp1)
 
-            if len(curr_cpl_to_loc_list) != 1:
-                err_report(
-                    row=item[0],
-                    reason=' сочетаний т.о. и сайта найдено ноль или больше одного, критично! Пропуск прибора'
-                )
-                continue
-            curr_cpl_to_loc = curr_cpl_to_loc_list[0]
-
-            ##########
-            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if x1 >= 200:
-                sys.exit()
-            # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # print(f'{item[0]=}')
-            # print(f'{curr_mini_item=}')
-            # print(f'{curr_cust_place_1=}')
-            # print(f'{curr_site=}')
+                if len(curr_cpl_to_loc_list) == 1:
+                    curr_cpl_to_loc = curr_cpl_to_loc_list[0]
+                elif len(curr_cpl_to_loc_list) > 1:
+                    print('Внимание, обнаружено неединственное сочетание т.о. и сайта. Берем первый.')
+                    curr_cpl_to_loc = curr_cpl_to_loc_list[0]
+                else:
+                    err_report(
+                        row=item[0],
+                        reason='Непустой, но неизвестный сайт. Правьте на этапе import3.'
+                    )
+                    continue
