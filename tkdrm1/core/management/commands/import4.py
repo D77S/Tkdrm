@@ -162,44 +162,6 @@ class Command(BaseCommand):
                             loc=None,
                             is_main_for_cust=False
                         )
-                    # Начинаем апдейт флагов is_main_for_cust для всех сайтов данного т.о.
-                    # Проверяем, что таких флагов для него уже поднято не более одного,
-                    # хотя на это есть и констрейт на уровне БД.
-                    # Полный кверисет данного т.о., с любыми флагами:
-                    # full_qs_for_cpl = CustPlaceToLocation.objects.filter(
-                    #                     cust_pl1=curr_pl_1_use
-                    #                 )
-                    # # Из него, кверисет только объектов с поднятыми флагами
-                    # fl_up_qs = CustPlaceToLocation.objects.filter(
-                    #     cust_pl1=curr_pl_1_use,
-                    #     is_main_for_cust=True
-                    # )
-                    # if len(fl_up_qs) == 1:
-                    #     pass
-                    # elif len(fl_up_qs) > 1:
-                    #     err_report(
-                    #         row=item[0],
-                    #         reason='Внимание, для т.о. обнаружен неединственный флаг главного места эксплуатации.'
-                    #     )
-                    # else:
-                    #     # Поднятых флагов для него не найдено. Надо поднять строго один. Решить какой.
-                    #     # Важнее такие сочетания, в которых сайт не равен None. Ищем такие, если будут.
-                    #     temp2 = CustPlaceToLocation.objects.filter(
-                    #         cust_pl1=curr_pl_1_use,
-                    #         loc__isnull=False
-                    #     )
-                    #     # Если найдены, поднимаем флаг первому попавшемуся и выходим.
-                    #     if temp2.exists():
-                    #         temp2[0].is_main_for_cust=True
-                    #         temp2[0].save()
-                    #     else:
-                    #         # Если тех не было, ищем оставшиеся. Те, в которых сайт равен None.
-                    #         temp3 = CustPlaceToLocation.objects.filter(
-                    #             cust_pl1=curr_pl_1_use,
-                    #             loc__isnull=True)
-                    #         if temp3.exists():
-                    #             temp3[0].is_main_for_cust=True
-                    #             temp3[0].save()
             else:
                 for item2 in curr_loc_use_list:
                     try:
@@ -229,3 +191,6 @@ class Command(BaseCommand):
                         reason='Непустой, но неизвестный сайт. Правьте на этапе import3.'
                     )
                     continue
+            # Попытка поиска в БД первого попавшегося юзера
+            # с текущим т.органом и отделом.
+            # Если нет ни одного - создается.

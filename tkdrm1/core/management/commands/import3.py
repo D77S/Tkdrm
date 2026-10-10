@@ -349,32 +349,6 @@ class Command(BaseCommand):
                     loc=curr_loc_use,
                     is_main_for_cust=False
                 )
-            # Начинаем апдейт флагов is_main_for_cust для всех сайтов данного т.о.
-            # Проверяем, что таких флагов для него уже поднято не более одного,
-            # хотя на это есть и констрейт на уровне БД.
-            # temp1 = CustPlaceToLocation.objects.filter(
-            #     cust_pl1=curr_pl_1_use,
-            #     is_main_for_cust=True
-            # )
-            # if len(temp1) == 1:
-            #     return to_out
-            # if len(temp1) > 1:
-            #     print('Внимание, для т.о. обнаружен неединственный флаг главного места эксплуатации.')
-            #     return to_out
-            # # Поднятых флагов для него не найдено. Надо поднять строго один. Решить какой.
-            # # Важнее такие сочетания, в которых сайт не равен None. Ищем такие, если будут.
-            # temp2 = temp1.filter(loc__isnull=False)
-            # # Если найдены, поднимаем флаг первому попавшемуся и выходим.
-            # if temp2:
-            #     temp2[0].is_main_for_cust = True
-            #     temp2[0].save()
-            #     return to_out
-            # # Если тех не было, ищем оставшиеся. Те, в которых сайт равен None.
-            # temp2 = temp1.filter(loc__isnull=True)
-            # if temp2:
-            #     temp2[0].is_main_for_cust = True
-            #     temp2[0].save()
-            #     return to_out
             return to_out
 
         def chk_flags(
