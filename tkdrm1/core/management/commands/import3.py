@@ -97,8 +97,8 @@ class Command(BaseCommand):
                 print(ERR_TEXT_1.format(row[0], '\'код\'', ''))
                 return False
             if row[7] not in [
-                '', 'АПП', 'ВПП', 'ЖДПП', 'МПП',
-                'ППП', 'РПП', 'СПП', 'ММПО', 'ОЭЗ', 'ЗТК'
+                '', 'АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП',
+                'РПП', 'СПП', 'ММПО', 'ОЭЗ', 'ЗТК', 'СВХ', 'СВХ-ЮЛ'
             ]:
                 print(ERR_TEXT_1.format(row[0], '\'тип ПП, ММПО и т.п.\'', ''))
                 return False
@@ -180,7 +180,7 @@ class Command(BaseCommand):
                 return False
             if row[8] == '1' and not (row[5] != '' and row[7] in [
                 '', 'АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП',
-                'СПП', 'ММПО', 'ОЭЗ', 'ЗТК'
+                'СПП', 'ММПО', 'ОЭЗ', 'ЗТК', 'СВХ', 'СВХ-ЮЛ'
             ]):
                 print(ERR_TEXT_2.format(row[0], '\'8\', \'7\' и \'5\''))
                 return False
@@ -402,10 +402,28 @@ class Command(BaseCommand):
                 item: list[Union[list[str], str]]
         ):
             """."""
-            try:
-                return model.objects.get(title=item[2][0])
-            except Exception:
-                return model.objects.create(title=item[2][0])
+            if model != Svh:
+                return model.objects.get_or_create(title=item[2][0])[0]
+            else:
+                if item[2][2] == 'СВХ':
+                    return model.objects.get_or_create(
+                            title=item[2][0],
+                            is_state=True
+                        )[0]
+                elif item[2][2] == 'СВХ-ЮЛ':
+                    return model.objects.get_or_create(
+                            title=item[2][0],
+                            is_state=False
+                    )[0]
+                else:
+                    print(f'Сбой по столбцу 7!!!! {item=}, {item[2][2]=}')
+                    sys.exit()
+                    err_report(
+                        row=item[0][0],
+                        reason='сбой по столбцу 7'
+                    )
+                    return None
+
 
         def get_curr_dev(
                 item: list[Union[list[str], str]],
@@ -739,8 +757,7 @@ class Command(BaseCommand):
             all_cp_1 = CustPost.objects.all()
         print('Успешное завершение создания перечня т.постов.')
 
-        print('Начало создания перечня пунктов пропуска, '
-              'ММПО, ОЭЗ, ЗТК.')
+        print('Начало создания перечня ПП, ММПО, ОЭЗ, ЗТК, СВХ-ЮЛ, СВХ.')
         sites_pre_list = [
             [row[0],
              [row[1], row[2], row[3]],
@@ -748,27 +765,42 @@ class Command(BaseCommand):
             for row in data_3 if (
                 row[11] == 'основная' and
                 row[8] == '1' and
-                row[7] in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП',
-                           'РПП', 'СПП', 'ММПО', 'ОЭЗ', 'ЗТК']
+                row[7] in ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП',
+                           'СПП', 'ММПО', 'ОЭЗ', 'ЗТК', 'СВХ', 'СВХ-ЮЛ']
                 )
         ]
+
         pp_pre_list = [[
             row[0],
             [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
         ] for row in sites_pre_list if row[2][2] in [
             'АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП', 'СПП']]
+
         mmpo_pre_list = [[
             row[0],
-            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1]]
-        ] for row in sites_pre_list if row[2][1] == 'ММПО']
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
+        ] for row in sites_pre_list if row[2][2] == 'ММПО']
+
         oez_pre_list = [[
             row[0],
-            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1]]
-        ] for row in sites_pre_list if row[2][1] == 'ОЭЗ']
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
+        ] for row in sites_pre_list if row[2][2] == 'ОЭЗ']
+
         ztk_pre_list = [[
             row[0],
-            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1]]
-        ] for row in sites_pre_list if row[2][1] == 'ЗТК']
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
+        ] for row in sites_pre_list if row[2][2] == 'ЗТК']
+
+        svh_pre_list = [[
+            row[0],
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
+        ] for row in sites_pre_list if row[2][2] == 'СВХ']
+
+        svh_ul_pre_list = [[
+            row[0],
+            [row[1][0], row[1][1], row[1][2], row[2][0], row[2][1], row[2][2]]
+        ] for row in sites_pre_list if row[2][2] == 'СВХ-ЮЛ']
+
         if not (loc_uniq_chk(pp_pre_list)):
             err_report(reason='уникальности имён пунктов пропуска в сочетании '
                        'с именами т.органа', st_1='п.пропуска')
@@ -799,7 +831,7 @@ class Command(BaseCommand):
             if not curr_cust_place_1:
                 err_report(row=item[0],
                            reason='определения текущего т.органа',
-                           st_1='п.пропуска, ММПО, ОЭЗ, ЗТК')
+                           st_1='')
                 continue
 
             # Определяется текущий по строке объект модели
@@ -821,7 +853,9 @@ class Command(BaseCommand):
                 continue
 
             # Определяется или создается текущий по строке
-            # объект одной из моделей: Ppr, Mmpo, Oez, Ztk, Svh
+            # объект одной из моделей: Ppr, Mmpo, Oez, Ztk, Svh.
+            # Если создается, то автоматически для создаваемого также
+            # создается объект модели LocationOfUse.
             if item[2][2] in ['АПП', 'ВПП', 'ЖДПП',
                               'МПП', 'ППП', 'РПП', 'СПП']:
                 curr_site = get_or_create_pp(item)

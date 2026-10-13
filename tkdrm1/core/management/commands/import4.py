@@ -5,12 +5,7 @@ from django.contrib.auth import get_user_model
 from django.core.management.base import BaseCommand
 
 from core.models import (
-    # DTCPotential,
     # Device,
-    # DTCReal,
-    # RelContrDoing,
-    # Contracts,
-    # Doings,
     SourceTypes,
     # ServiceTypes,
     # RelToDev,
@@ -84,13 +79,13 @@ class Command(BaseCommand):
         all_ch_1 = CustHouse.objects.all()
         all_cp_1 = CustPost.objects.all()
 
-        print('Начало создания перечня всех, кроме Янтарь (с ВН, АРМ, ССД), кроме СВХ, кроме ОЭЗ.')
+        print('Начало создания перечня всех, кроме Янтарь не на СВХ)')
         for item in tqdm(data_3):
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # if int(item[0]) >= 104:
+            # if int(item[0]) >= 1295:
             #     sys.exit()
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            if item[7] == 'СТСО' or item[5] == 'СВХ' or item[5] == 'СВХ-ЮЛ' or item[5] == 'ОЭЗ':
+            if item[7] == 'СТСО' and  not (item[5] == 'СВХ' or item[5] == 'СВХ-ЮЛ'):
                 continue
             curr_mini_item = [
                 item[0],
@@ -142,6 +137,7 @@ class Command(BaseCommand):
                 curr_loc_use_list.append(get_curr_loc_use(item2))
 
             curr_cpl_to_loc_list = []
+
             if curr_loc_use_list == []:
                 temp1 = CustPlaceToLocation.objects.filter(
                     cust_pl1=curr_pl_1_use,

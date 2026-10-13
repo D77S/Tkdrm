@@ -3,6 +3,7 @@ import datetime
 import math
 import os
 import pandas
+import sys
 from django.db.models import QuerySet
 from typing import Union
 
@@ -195,18 +196,37 @@ def clear_n_init():
         ppr_types_titles = ['АПП', 'ВПП', 'ЖДПП', 'МПП', 'ППП', 'РПП', 'СПП']  # noqa
         ppr_types_objs = [PprType(title=item) for item in ppr_types_titles]
         PprType.objects.bulk_create(objs=ppr_types_objs)
-        oez_titles = [
-            'АО \n«ВИнКо\n»',
-            'Липецк',
-            'Нойдорф',
-            'ОАО \n"ОЭЗ ТВТ-Дубна\n"',
-            'ПОЭЗ Ульяновск',
-            'Томск'
-        ]
-        for item in oez_titles:
-            Oez.objects.create(title=item)     
+        # oez_titles = [
+        #     'АО \n«ВИнКо\n»',
+        #     'Липецк',
+        #     'Нойдорф',
+        #     'ОАО \n"ОЭЗ ТВТ-Дубна\n"',
+        #     'ПОЭЗ Ульяновск',
+        #     'Томск'
+        # ]
+        # for item in oez_titles:
+        #     Oez.objects.create(title=item)     
         # users app
-        Departments.objects.create(title='ОТКДРМ')
+        depts_titles = [
+            'ОПИДК',
+            'ОСТП',
+            'ОТОиТК',
+            'ОТД',
+            'ОКзаСВХ',
+            'ОТКДРМ',
+            'ОТПиТК',
+            'ОКТТ',
+            'ОКВОТ',
+            'ООДСиТО',
+            'ОТСиСОСВТ',
+            'ОРО',
+            'ОТСТКиТСО',
+            'ОППВТиТКПВТ',
+            'ОАиОФИТ',
+            'ИТС',
+        ]
+        for item in depts_titles:
+            Departments.objects.create(title=item)
         # core app
         source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
         SourceTypes.objects.bulk_create(objs=source_objs)
@@ -1006,8 +1026,17 @@ def get_curr_site(
     elif item[2][2] == 'ЗТК':
         ztks_qs = all_ztks.filter(title=item[2][0])
         return list(ztks_qs)
-    elif item[2][2] == 'СВХ' or item[2][2] == 'СВХ-ЮЛ':
-        svhs_qs = all_svhs.filter(title=item[2][0])
+    elif item[2][2] == 'СВХ':
+        svhs_qs = all_svhs.filter(
+            title=item[2][0],
+            is_state=True
+            )
+        return list(svhs_qs)
+    elif item[2][2] == 'СВХ-ЮЛ':
+        svhs_qs = all_svhs.filter(
+            title=item[2][0],
+            is_state=False
+            )
         return list(svhs_qs)
     return []
 
