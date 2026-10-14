@@ -158,52 +158,70 @@ class Command(BaseCommand):
             try:
                 date_prod = datetime.strptime(item[13], '%d.%m.%Y')
             except Exception:
-                err_report(row=item[0], reason=f'даты')
-                date_prod = None
+                err_report(row=item[0], reason=f'даты изготовления')
+                return None
+
             try:
                 date_expl = datetime.strptime(item[14], '%d.%m.%Y')
             except Exception:
-                err_report(row=item[0], reason=f'даты')
-                date_expl = None
+                err_report(row=item[0], reason=f'даты ввода')
+                return None
+
+            curr_invent = item[12] if item[12] != '' else None
+
+            try:
+                curr_date_verif = datetime.strptime(item[23], '%d.%m.%Y')
+            except Exception:
+                curr_date_verif = None
+
+            cat_number_f = int(item[25])
+
+            if item[18] == '' or item[18] == 'Нет данных':
+                curr_cost = None
+            else:
+                curr_cost = float(item[18])
+
+            if item[20] == 'Исправно':
+                curr_cond = True
+            elif item[20] == 'Неисправно':
+                curr_cond = False
+            else:
+                curr_cond = None
+
             note1 = None
             note2 = item[39] if item[39] != '' else None
             note3 = None
-            cat_number_f = int(item[25])
 
             # создание девайса
-            curr_dev = Device.objects.create(
-                type=curr_dev_type,
-                serial=curr_serial,
-                is_si=curr_is_si,
-                cp1_acc=curr_pl_1_acc,
-                sour_type=curr_sour_type,
-                status_use=curr_status_use,
-                # sub_type=curr_subtype,
-                upper_id=curr_upper_id,
-                service_type=curr_serv_type
-            )
-
-            # Дозаполнение некоторых полей созданного девайса, затем сохранение
-            curr_dev.note1 = note1
-            curr_dev.note2 = note2
-            curr_dev.note3 = note3
-            curr_dev.warr_period = curr_dev_warr
-            curr_dev.holder = curr_holder
-            curr_dev.cat_number_f = cat_number_f
-
             try:
-                curr_dev.date_prod = date_prod
+                curr_dev = Device.objects.create(
+                    type=curr_dev_type,
+                    # sub_type=curr_subtype,
+                    sub_type=None,
+                    serial=curr_serial,
+                    inventary=curr_invent,
+                    holder=curr_holder,
+                    date_prod=date_prod,
+                    date_expl=date_expl,
+                    warr_period=curr_dev_warr,
+                    date_verif=curr_date_verif,
+                    cat_number_f = cat_number_f,
+                    cp1_acc=curr_pl_1_acc,
+                    sour_type=curr_sour_type,
+                    cost=curr_cost,
+                    condition=curr_cond,
+                    upper_id=curr_upper_id,
+                    is_si=curr_is_si,
+                    is_stud=False,
+                    status_use=curr_status_use,
+                    service_type=curr_serv_type,
+                    note1=note1,
+                    note2=note2,
+                    note3=note3
+                )
             except Exception:
-                err_report(row=item[0],
-                           reason='ошибка даты изготовления')
-            try:
-                curr_dev.date_expl = date_expl
-            except Exception:
-                err_report(row=item[0],
-                           reason='ошибка даты ввода в экспл.')
-
-            # Сохранение
-            curr_dev.save()
+                err_report(row=item[0], reason='создания девайса')
+                return None
 
             return curr_dev
 

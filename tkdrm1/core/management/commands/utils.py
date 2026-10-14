@@ -118,7 +118,7 @@ def clean_data_first(data_in):
             elif isinstance(j, float) and math.isnan(j):
                 data_out_temp.append('')
             elif isinstance(j, float):
-                data_out_temp.append(str(int(j)))
+                data_out_temp.append(str(float(j)))
 
             else:
                 data_out_temp.append('')
