@@ -107,14 +107,19 @@ def clean_data_first(data_in):
     for i in data_in.values:
         data_out_temp = []
         for j in i:
-            if isinstance(j, int):
+            if isinstance(j, str):
                 data_out_temp.append(str(j))
+            elif isinstance(j, int):
+                data_out_temp.append(str(j))
+            # elif isinstance(j, datetime.datetime) and pandas.notna(j):
+            #     data_out_temp.append(j)
+            # elif isinstance(j, pandas.Timestamp) and pandas.notna(j):
+            #     data_out_temp.append(j.date())
             elif isinstance(j, float) and math.isnan(j):
                 data_out_temp.append('')
             elif isinstance(j, float):
                 data_out_temp.append(str(int(j)))
-            elif isinstance(j, str):
-                data_out_temp.append(str(j))
+
             else:
                 data_out_temp.append('')
         data_out.append(data_out_temp)
@@ -126,7 +131,7 @@ def clean_data_second(data_in: list[list[str]], num_im: int):
     for row in data_in:
         temp_row = []
         for i in range(0, len(row)):
-            if i == 1:
+            if i== 1:
                 temp_row.append(
                     replace_to_clean(
                         source=row[i],
@@ -137,7 +142,7 @@ def clean_data_second(data_in: list[list[str]], num_im: int):
                 temp_row.append(
                     row[i].split('.')[0]
                 )
-            elif num_im == 4 and (i in[0, 25]):
+            elif num_im == 4 and (i in[11, 16, 25]):
                 temp_row.append(
                     row[i].split('.')[0]
                 )
@@ -256,56 +261,56 @@ def clear_n_init():
                       cat_l1=item[1]) for item in dev_cats_l2_titles]
         DevCatsL2.objects.bulk_create(objs=dev_cats_l2_objs)
         dev_types_titles = [
-            ['FH40G-L10', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['FH40G-L10', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['AT1121', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['AT1121', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['AT1123', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['AT1123', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['Гамма-1С/NB1-02', DevCatsL2.objects.get(title='Спектрометры'), 24,
+            ['Гамма-1С/NB1-02', DevCatsL2.objects.get(title='Спектрометры'), 8,
              True, False, True, None],
-            ['ДБГ', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['ДБГ', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['Калифорний-252', DevCatsL2.objects.get(title='ИИИ к СТСО'), 24,
+            ['Калифорний-252', DevCatsL2.objects.get(title='ИИИ к СТСО'), 8,
              None, False, None, None],
-            ['Кюрий-244', DevCatsL2.objects.get(title='ИИИ к СТСО'), 24,
+            ['Кюрий-244', DevCatsL2.objects.get(title='ИИИ к СТСО'), 8,
              None, False, None, None],
-            ['МКС-А02', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+            ['МКС-А02', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 8,
              True, False, True, None],
-            ['МКС-А03-1', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+            ['МКС-А03-1', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 8,
              True, False, True, None],
-            ['МКС-А03-1Н', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+            ['МКС-А03-1Н', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 8,
              True, False, True, None],
-            ['ММОМ', DevCatsL2.objects.get(title='Прочее'), 24,
+            ['ММОМ', DevCatsL2.objects.get(title='Прочее'), 8,
              None, False, False, None],
-            ['РМ1203М', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['РМ1203М', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['РМ1401', DevCatsL2.objects.get(title='Поисковые'), 24,
+            ['РМ1401', DevCatsL2.objects.get(title='Поисковые'), 8,
              True, False, True, None],
-            ['РМ1401К', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+            ['РМ1401К', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 8,
              True, False, True, None],
-            ['РМ1401К-01', DevCatsL2.objects.get(title='Поисковые двухканальные'), 24,
+            ['РМ1401К-01', DevCatsL2.objects.get(title='Поисковые двухканальные'), 8,
              True, False, True, None],
-            ['РМ1401М', DevCatsL2.objects.get(title='Поисковые'), 24,
+            ['РМ1401М', DevCatsL2.objects.get(title='Поисковые'), 8,
              True, False, True, None],
-            ['РМ1610', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['РМ1610', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['РМ1621', DevCatsL2.objects.get(title='Дозиметры'), 24,
+            ['РМ1621', DevCatsL2.objects.get(title='Дозиметры'), 8,
              True, False, True, None],
-            ['РСУ-01', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 24,
+            ['РСУ-01', DevCatsL2.objects.get(title='Радиометры-спектрометры'), 8,
              True, False, True, None],
-            ['СИЗ', DevCatsL2.objects.get(title='СИЗ'), 24,
+            ['СИЗ', DevCatsL2.objects.get(title='СИЗ'), 8,
              False, False, False, None],
-            ['СКС-50М', DevCatsL2.objects.get(title='Спектрометры'), 24,
+            ['СКС-50М', DevCatsL2.objects.get(title='Спектрометры'), 8,
              True, False, True, None],
-            ['ТППРК', DevCatsL2.objects.get(title='МТСО'), 24,
+            ['ТППРК', DevCatsL2.objects.get(title='МТСО'), 8,
              None, False, False, None],
-            ['Цезий-137', DevCatsL2.objects.get(title='ИИИ к СТСО'), 24,
+            ['Цезий-137', DevCatsL2.objects.get(title='ИИИ к СТСО'), 8,
              None, False, None, None],
             [
                 'Янтарь-1С',  # title
                 DevCatsL2.objects.get(title='СТСО'),  # category
-                12,  # lifetime
+                12,  # lifetime, years
                 True,  # serail_flag
                 False,  # upper_dev_flag
                 True,  # si_flag
@@ -1055,3 +1060,25 @@ def get_curr_loc_use(
     if isinstance(curr_site, Svh):
         return LocationOfUse.objects.get(svh=curr_site)
     return None
+
+def get_or_cr_curr_reltodev(
+        to_rel: CustPlaceToLocation,
+        to_dev: Device
+    ) -> RelToDev:
+    """."""
+    temp_rel_to_dev = RelToDev.objects.filter(to_dev=to_dev)
+    if not temp_rel_to_dev.exists():
+        return RelToDev.objects.create(
+            to_rel=to_rel,
+            to_dev=to_dev,
+            is_main_for_dev=True
+        )
+    else:
+        temp2_rel_to_dev = temp_rel_to_dev.filter(to_rel=to_rel)
+        if not temp2_rel_to_dev.exists():
+            return RelToDev.objects.create(
+                to_rel=to_rel,
+                to_dev=to_dev,
+                is_main_for_dev=False
+            )
+        return temp2_rel_to_dev.first()

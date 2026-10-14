@@ -45,7 +45,8 @@ from .utils import (
     get_curr_pl_1_acc,
     get_curr_pl_1_use,
     get_curr_site,
-    get_curr_loc_use
+    get_curr_loc_use,
+    get_or_cr_curr_reltodev
 )
 from users.models import (TKDRMUser,
                           Departments)
@@ -598,29 +599,7 @@ class Command(BaseCommand):
             curr_dev.save()
 
             return curr_dev
-
-        def get_or_cr_curr_reltodev(
-                to_rel: CustPlaceToLocation,
-                to_dev: Device
-        ) -> RelToDev:
-            """."""
-            temp_rel_to_dev = RelToDev.objects.filter(to_dev=to_dev)
-            if not temp_rel_to_dev.exists():
-                return RelToDev.objects.create(
-                    to_rel=to_rel,
-                    to_dev=to_dev,
-                    is_main_for_dev=True
-                )
-            else:
-                temp2_rel_to_dev = temp_rel_to_dev.filter(to_rel=to_rel)
-                if not temp2_rel_to_dev.exists():
-                    return RelToDev.objects.create(
-                        to_rel=to_rel,
-                        to_dev=to_dev,
-                        is_main_for_dev=False
-                    )
-                return temp2_rel_to_dev.first()
-
+    
         def cr_rel_to_contrs(
                 curr_dev,
                 item0,
@@ -985,8 +964,7 @@ class Command(BaseCommand):
                 )
             else:
                 user = User.objects.filter(empl=curr_pl_1_use).first()
-            ##########
-            # Создание связей по эксплуатации прибора
+            # Создание девайса
             curr_dev = get_curr_dev(item=item,
                                     all_dev_types=all_dev_types,
                                     curr_pl_1_acc=curr_pl_1_acc,
@@ -998,6 +976,7 @@ class Command(BaseCommand):
                 err_report(row=item[0],
                            reason='девайс не распознан и пропущен')
                 continue
+            # Создание связей по эксплуатации прибора
             get_or_cr_curr_reltodev(to_rel=curr_cpl_to_loc,
                                     to_dev=curr_dev)
             ##########

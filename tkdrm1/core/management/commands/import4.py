@@ -1,13 +1,18 @@
 """."""
+import random
+import string
 import sys
+from datetime import datetime
 from tqdm import tqdm
+from typing import Union
 from django.contrib.auth import get_user_model
+from django.db.models import QuerySet
 from django.core.management.base import BaseCommand
 
 from core.models import (
-    # Device,
+    Device,
     SourceTypes,
-    # ServiceTypes,
+    ServiceTypes,
     # RelToDev,
     DevTypes,
     StatusTypes,
@@ -26,10 +31,13 @@ from custplaces.models import (
     Oez,
     Ztk,
     Svh,
-    # CustPlace1Acc,
+    CustPlace1Acc,
     # CustPlace1Use,
     CustPlaceToLocation
 )
+
+from users.models import (TKDRMUser,
+                          Departments)
 
 from .utils import (
     err_report,
@@ -40,7 +48,8 @@ from .utils import (
     get_curr_pl_1_acc,
     get_curr_pl_1_use,
     get_curr_site,
-    get_curr_loc_use
+    get_curr_loc_use,
+    get_or_cr_curr_reltodev
 )
 
 class Command(BaseCommand):
@@ -48,6 +57,155 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """."""
+
+        def get_curr_dev4(
+                item: list[Union[list[str], str]],
+                all_dev_types: QuerySet[DevTypes],
+                curr_pl_1_acc: CustPlace1Acc,
+                curr_holder: TKDRMUser,
+                all_sour_types: QuerySet,
+                all_status_types: QuerySet
+        ) -> Device:
+            """."""
+
+            # Определение типа девайса и срока гарантии
+            curr_dev_type_temp = item[9]
+            curr_dev_warr = int(float(item[15].replace(',', '.')) * 12)
+            try:
+                curr_dev_type = all_dev_types.get(
+                    title=curr_dev_type_temp
+                )
+            except Exception:
+                err_report(row=item[0],
+                           reason='поиск типа девайса')
+                return None
+
+            # определение серийного номера девайса
+            if (item[11] == '' or
+               item[11] == 'б/н' or
+               item[11] == 'б.н.'):
+                curr_serial = None
+            else:
+                curr_serial = item[11]
+            if ((curr_serial is not None) and
+               (curr_dev_type.serial_flag is False)):
+                err_report(row=item[0],
+                           reason='наличия сер.номера, а его быть не должно')
+                return None
+            if ((curr_serial is None) and
+               (curr_dev_type.serial_flag is True)):
+                err_report(row=item[0],
+                           reason='отсутствие сер.номера, а он должен быть')
+                return None
+
+            # определение собственника девайса
+            if item[17] == 'да':
+                curr_sour_type = all_sour_types.get(
+                    title='РФ в лице там.органа'
+                )
+            elif item[17] == 'нет':
+                curr_sour_type = all_sour_types.get(
+                    title='Иной владелец (по факту, без документа-основания)'
+                )
+            else:
+                err_report(row=item[0],
+                           reason='названия собственника нет в БД')
+                return None
+            # Предупреждение
+            if item[5] == 'СВХ-ЮЛ' and curr_sour_type.title == 'РФ в лице там.органа':
+                err_report(row=item[0],
+                           reason='На коммерческом складе СВХ используется государственный прибор')
+
+            # определение статуса тех.средства по использованию
+            curr_status_use = all_status_types.get(
+                    title='Используется'
+                )
+
+            # curr_subtype = ???
+
+            # определение вышестоящего девайса
+            curr_upper_id = None
+
+            # определение принадлежности девайса к СИ
+            if curr_dev_type.si_flag is False:
+                curr_is_si = None
+            elif item[22] == 'Да':
+                curr_is_si = True
+            elif item[22] == 'Нет':
+                curr_is_si = False
+            else:
+                err_report(row=item[0],
+                           reason='определения СИ/инд из-за ',
+                           st_2='литерала, который таков:' + item[22])
+                return None
+
+            # определение флага включения ТС в ГК
+            if item[17] == 'да':
+                curr_serv_type = ServiceTypes.objects.get(
+                    title='Децентрализовано, но за гос.бюджет'
+                )
+            elif item[17] == 'нет':
+                curr_serv_type = ServiceTypes.objects.get(
+                    title='Вне гос.бюждета'
+                )
+            else:
+                err_report(row=item[0],
+                           reason='определения, за чей счет тех.поддержка, из-за ',
+                           st_2='литерала, который таков:' + item[17])
+                return None
+
+            # загрузка второстепенных атрибутов прибора
+            try:
+                date_prod = datetime.strptime(item[13], '%d.%m.%Y')
+            except Exception:
+                err_report(row=item[0], reason=f'даты')
+                date_prod = None
+            try:
+                date_expl = datetime.strptime(item[14], '%d.%m.%Y')
+            except Exception:
+                err_report(row=item[0], reason=f'даты')
+                date_expl = None
+            note1 = None
+            note2 = item[39] if item[39] != '' else None
+            note3 = None
+            cat_number_f = int(item[25])
+
+            # создание девайса
+            curr_dev = Device.objects.create(
+                type=curr_dev_type,
+                serial=curr_serial,
+                is_si=curr_is_si,
+                cp1_acc=curr_pl_1_acc,
+                sour_type=curr_sour_type,
+                status_use=curr_status_use,
+                # sub_type=curr_subtype,
+                upper_id=curr_upper_id,
+                service_type=curr_serv_type
+            )
+
+            # Дозаполнение некоторых полей созданного девайса, затем сохранение
+            curr_dev.note1 = note1
+            curr_dev.note2 = note2
+            curr_dev.note3 = note3
+            curr_dev.warr_period = curr_dev_warr
+            curr_dev.holder = curr_holder
+            curr_dev.cat_number_f = cat_number_f
+
+            try:
+                curr_dev.date_prod = date_prod
+            except Exception:
+                err_report(row=item[0],
+                           reason='ошибка даты изготовления')
+            try:
+                curr_dev.date_expl = date_expl
+            except Exception:
+                err_report(row=item[0],
+                           reason='ошибка даты ввода в экспл.')
+
+            # Сохранение
+            curr_dev.save()
+
+            return curr_dev
 
         User = get_user_model()
 
@@ -59,12 +217,16 @@ class Command(BaseCommand):
             sheet='Лист1'
         )
         print('Данные из Excel загружены.')
-        if data.empty:
-            sys.exit()
         data_2 = clean_data_first(data)
         print('Первая очистка данных прошла.')
+        # for item in data_2:
+        #     print(f'Первая строка: {item}')
+        #     break
         data_3 = clean_data_second(data_2, 4)
         print('Вторая очистка данных прошла.')
+        # for item in data_3:
+        #     print(f'Первая строка: {item}')
+        #     break
 
         print('Начало создания перечня девайсов.')
         all_dev_types = DevTypes.objects.all()
@@ -79,10 +241,10 @@ class Command(BaseCommand):
         all_ch_1 = CustHouse.objects.all()
         all_cp_1 = CustPost.objects.all()
 
-        print('Начало создания перечня всех, кроме Янтарь не на СВХ)')
+        print('Начало создания перечня всех, кроме Янтарь не на СВХ')
         for item in tqdm(data_3):
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-            # if int(item[0]) >= 1295:
+            # if int(item[0]) >= 2:
             #     sys.exit()
             # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
             if item[7] == 'СТСО' and  not (item[5] == 'СВХ' or item[5] == 'СВХ-ЮЛ'):
@@ -190,3 +352,47 @@ class Command(BaseCommand):
             # Попытка поиска в БД первого попавшегося юзера
             # с текущим т.органом и отделом.
             # Если нет ни одного - создается.
+            try:
+                curr_user_dept = Departments.objects.get(
+                    title=item[4])
+            except Exception:
+                err_report(
+                    row=item[0],
+                    reason='Неизвестный отдел в столбце 4'
+                )
+                continue
+            if not User.objects.filter(
+                empl=curr_pl_1_use,
+                dept=curr_user_dept
+            ).first():
+                username = ''.join(random.choices(string.ascii_lowercase, k=5))
+                user = User.objects.create_user(
+                    username=username,
+                    first_name='Иван',
+                    pater_name='Иванович',
+                    last_name='Иванов',
+                    email='a@a.com',
+                    password='123',
+                    empl=curr_pl_1_use,
+                    dept=curr_user_dept
+                )
+            else:
+                user = User.objects.filter(
+                    empl=curr_pl_1_use,
+                    dept=curr_user_dept
+                ).first()
+            # Создание девайса
+            curr_dev = get_curr_dev4(item=item,
+                                     all_dev_types=all_dev_types,
+                                     curr_pl_1_acc=curr_pl_1_acc,
+                                     curr_holder=user,
+                                     all_sour_types=all_sour_types,
+                                     all_status_types=all_status_types
+                                     )
+            if curr_dev is None:
+                err_report(row=item[0],
+                           reason='девайс не распознан и пропущен')
+                continue
+            # Создание связей по эксплуатации прибора
+            get_or_cr_curr_reltodev(to_rel=curr_cpl_to_loc,
+                                    to_dev=curr_dev)
