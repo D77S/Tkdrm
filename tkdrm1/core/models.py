@@ -661,7 +661,7 @@ class Device(models.Model):
         unique=False,
         null=True,
         blank=True,
-        verbose_name='Примечение1 (район субъекта эксплуатации, если имеется и известно)'
+        verbose_name='Примечание1 (район субъекта эксплуатации, если имеется и известно)'
     )
     # Примечение2 (иные примечания, если имеется и известно).
     note2 = models.CharField(

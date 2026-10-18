@@ -31,10 +31,6 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'users.apps.UsersConfig',
-    'core.apps.CoreConfig',
-    'custplaces.apps.CustplacesConfig',
-    'mainpage.apps.MainpageConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,6 +39,11 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_bootstrap5',
     'debug_toolbar',
+    'rest_framework',
+    'users.apps.UsersConfig',
+    'core.apps.CoreConfig',
+    'custplaces.apps.CustplacesConfig',
+    'mainpage.apps.MainpageConfig',
 ]
 
 MIDDLEWARE = [

@@ -3,6 +3,9 @@
 # import sys
 import time
 # from django.db import connection, reset_queries
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework import status
 from django.core.paginator import Paginator
 from django.forms.models import model_to_dict
 from django.http import HttpRequest
@@ -13,6 +16,7 @@ from core.models import (
     Device,
     RelToDev,
 )
+from core.serializers import AllDevsSerializer, DevDetailSerializer
 
 # def query_debugger(func):
 #     @functools.wraps(func)
@@ -40,7 +44,7 @@ def time_counter(time_list: list, st: str):
 
 # @query_debugger
 def all_list_by_cpl(request: HttpRequest):
-    """."""
+    """Отдает объект питона, в шаблон."""
     template_name = 'all_list.html'
     time_list = []
     time_list = time_counter(time_list, 'Начало запроса из БД перечня приборов.')  # noqa
@@ -48,7 +52,7 @@ def all_list_by_cpl(request: HttpRequest):
         'type__category',
     ).order_by('id')
     time_list = time_counter(time_list, 'Конец запроса из БД перечня приборов.')  # noqa
-    devs_dict = {item.id: {'dev': item} for item in devs_qset}
+    devs_dict = {item.pk: {'dev': item} for item in devs_qset}
 
     time_list = time_counter(time_list, 'Начало запроса из БД перечня reltodevs.')  # noqa
     reltodevs = RelToDev.objects.all().select_related(
@@ -60,7 +64,7 @@ def all_list_by_cpl(request: HttpRequest):
     time_list = time_counter(time_list, 'Конец запроса из БД перечня reltodevs.')  # noqa
 
     for reltodev in reltodevs:
-        dev_id = reltodev.to_dev.id
+        dev_id = reltodev.to_dev.pk
         if devs_dict[dev_id].get('main_found') is True:
             continue
         else:
@@ -126,11 +130,20 @@ def all_list_by_cpl(request: HttpRequest):
     context = {'page_obj': curr_page_obj}
     return render(request, template_name, context)
 
+# @query_debugger
+@api_view(['GET',])
+def all_list_by_cpl2(request: HttpRequest):
+    """Отдает JSON, во фронт."""
+    
+    devs_qset = Device.objects.all()
+    serializer = AllDevsSerializer(devs_qset, many=True)
+    return Response(serializer.data)
+
 
 def dev_detail(request, pk):
-    """Вью-функция по детализированному выводу
-    одного уже существующего в БД девайса
-    для цели ПРОСМОТРА."""
+    """Вью-функция по просмотру
+    одного девайса в БД.
+    Для шаблонов."""
 
     devs_qs = Device.objects.select_related(
         'type__category__cat_l1',
@@ -169,10 +182,11 @@ def dev_detail(request, pk):
     template_name = 'dev_detail.html'
     return render(request, template_name, context)
 
+
 def dev_edit(request, pk):
-    """Вью-функция по детализированному выводу
-    одного уже существующего в БД девайса
-    для цели РЕДАКТИРОВАНИЯ."""
+    """Вью-функция по редактированию
+    одного девайса в БД.
+    Для шаблонов."""
 
     devs_qs = Device.objects.select_related(
         'type__category__cat_l1',
@@ -220,9 +234,48 @@ def dev_edit(request, pk):
     return render(request, template_name, context)
 
 
-def dev_create(request):
+@api_view(['PATCH',])
+def dev_edit2(request: HttpRequest, pk):
+    """Вью-функция по редактированию
+    одного девайса в БД.
+    Для REST API."""
+    devs_qset = Device.objects.select_related(
+        'type__category__cat_l1',
+        'holder__dept',
+        'holder__empl__rtu',
+        'holder__empl__custhouse__upper_id',
+        'holder__empl__custpost__upper_id__upper_id',
+        'cp1_acc__rtu',
+        'cp1_acc__custhouse',
+        'cp1_acc__custpost',
+        'sour_type',
+        'status_use',
+        'service_type',
+        'upper_id'
+    ).prefetch_related(
+        'f_dev_to_doing__from_dtcp_to_dtcr',
+        'f_dev_to_doing__reltocd__to_doing',
+        'f_dev_to_doing__reltocd__to_contract',
+        'from_dev__to_rel__cust_pl1__rtu',
+        'from_dev__to_rel__cust_pl1__custhouse',
+        'from_dev__to_rel__cust_pl1__custpost',
+        'from_dev__to_rel__loc__ppr__pptype',
+        'from_dev__to_rel__loc__mmpo',
+        'from_dev__to_rel__loc__oez',
+        'from_dev__to_rel__loc__ztk'
+    )
+    dev: Device = get_object_or_404(devs_qset, pk=pk)
+    serializer = DevDetailSerializer(dev, data=redirect.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def dev_create(request: HttpRequest):
     """Вью-функция по созданию
-    одного девайса в БД."""
+    одного девайса в БД.
+    Для шаблонов."""
     dev_edit_form = DevEditForm(request.POST or None)
     context = {
         'dev_edit_form': dev_edit_form
@@ -236,7 +289,19 @@ def dev_create(request):
     return render(request, template_name, context)
 
 
-def dev_delete(request, pk):
+@api_view(['POST',])
+def dev_create2(request: HttpRequest):
+    """Вью-функция по созданию
+    одного девайса в БД.
+    Для REST API."""
+    serializer = DevDetailSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+def dev_delete(request: HttpRequest, pk):
     """Вью-функция по удалению
     одного уже существующего в БД девайса."""
     instance=get_object_or_404(Device, pk=pk)
