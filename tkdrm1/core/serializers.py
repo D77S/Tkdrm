@@ -33,6 +33,7 @@ class DevDetailSerializer(serializers.ModelSerializer):
             'is_si',
             'is_stud',
             'status_use',
+            'service_type',
             'rels_of_work',
             'rels_of_contracts',
             'note1',
