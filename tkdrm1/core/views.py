@@ -5,9 +5,10 @@ import time
 # from django.db import connection, reset_queries
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework import status
+from rest_framework.views import APIView
+from rest_framework import generics, status, viewsets
 from django.core.paginator import Paginator
-from django.forms.models import model_to_dict
+# from django.forms.models import model_to_dict
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from core.constants import ALL_DEV_PAG
@@ -16,7 +17,14 @@ from core.models import (
     Device,
     RelToDev,
 )
-from core.serializers import AllDevsSerializer, DevDetailSerializer
+from custplaces.models import (
+    CustPlaceToLocation,
+)
+from core.serializers import (
+    AllDevsSerializer,
+    CustPlaceToLocSerializer,
+    DevDetailSerializer
+)
 
 # def query_debugger(func):
 #     @functools.wraps(func)
@@ -42,7 +50,214 @@ def time_counter(time_list: list, st: str):
     return time_list
 
 #########################
-# Для шаблонов.
+# На REST API
+#########################
+
+#########################
+# На вьюсетах REST API
+#########################
+
+class CustPlaceToLocViewSet(viewsets.ModelViewSet):
+    queryset = CustPlaceToLocation.objects.all()
+    serializer_class = CustPlaceToLocSerializer
+
+class DevViewSet(viewsets.ModelViewSet):
+    queryset=Device.objects.all()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+    serializer_class=DevDetailSerializer
+    def get_serializer_class(self):
+        if self.action == 'list':
+            return AllDevsSerializer
+        return DevDetailSerializer
+
+#########################
+# На высокоуровневых классах REST API
+#########################
+
+class AllDevList(generics.ListAPIView):
+    queryset=Device.objects.all()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+    serializer_class=AllDevsSerializer
+
+class DevR(generics.RetrieveAPIView):
+    queryset=Device.objects.all()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+    serializer_class=DevDetailSerializer  
+
+class DevC(generics.CreateAPIView):
+    queryset=Device.objects.all()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+    serializer_class=DevDetailSerializer
+
+class DevU(generics.UpdateAPIView):
+    queryset=Device.objects.all()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+    serializer_class=DevDetailSerializer
+
+class DevD(generics.DestroyAPIView):
+    queryset=Device.objects.all()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+    serializer_class=DevDetailSerializer  
+
+#########################
+# На низкоуровневых классах REST API
+#########################
+
+class APIAllList(APIView):
+    """Cписок всех объектов."""
+    def get(self, request, *args, **kwargs):
+        # !!!!!!!!!!!!!!!
+        # devs_qset = Device.objects.all()
+        devs_qset = Device.objects.filter(id__in=[1, 3, 13, 27, 34])
+        # !!!!!!!!!!!!!!!
+        serializer = AllDevsSerializer(devs_qset, many=True)
+        return Response(serializer.data)
+
+class APIDetail(APIView):
+    """Действия с одним объектом: просмотр, создание, правка, удаление."""
+    def get(self, request, *args, **kwargs):
+        instance: Device = get_object_or_404(Device, pk=self.kwargs.get('pk'))
+        serializer = DevDetailSerializer(instance)
+        return Response(serializer.data)
+    def post(self, request, *args, **kwargs):
+        serializer = DevDetailSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def patch(self, request, *args, **kwargs):
+        instance: Device = get_object_or_404(Device, pk=self.kwargs.get('pk'))
+        serializer = DevDetailSerializer(instance, data=request.data, partial=True)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def delete(self, request, *args, **kwargs):
+        instance: Device = get_object_or_404(Device, pk=self.kwargs.get('pk'))
+        instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+#########################
+# На функциях REST API
+#########################
+# @query_debugger
+@api_view(['GET',])
+def all_list_by_cpl2(request: HttpRequest):
+    """Список всех объектов."""
+
+    # !!!!!!!!!!!!!!!
+    # devs_qset = Device.objects.all()
+    devs_qset = Device.objects.filter(id__in=[1, 3, 13, 27, 34])
+    # !!!!!!!!!!!!!!!
+    serializer = AllDevsSerializer(devs_qset, many=True)
+    return Response(serializer.data)
+
+
+@api_view(['GET',])
+def dev_detail2(request: HttpRequest, pk):
+    """Вью-функция по просмотру
+    одного девайса в БД.
+    Для REST API."""
+    # devs_qs = Device.objects.select_related(
+    #     'type__category__cat_l1',
+    #     'holder__dept',
+    #     'holder__empl__rtu',
+    #     'holder__empl__custhouse',
+    #     'holder__empl__custpost',
+    #     'cp1_acc__rtu',
+    #     'cp1_acc__custhouse',
+    #     'cp1_acc__custpost',
+    #     'sour_type',
+    #     'status_use',
+    #     'service_type',
+    #     'upper_id'
+    # ).prefetch_related(
+    #     'f_dev_to_doing__from_dtcp_to_dtcr',
+    #     'f_dev_to_doing__reltocd__to_doing',
+    #     'f_dev_to_doing__reltocd__to_contract',
+    #     'from_dev__to_rel__cust_pl1__rtu',
+    #     'from_dev__to_rel__cust_pl1__custhouse',
+    #     'from_dev__to_rel__cust_pl1__custpost',
+    #     'from_dev__to_rel__loc__ppr__pptype',
+    #     'from_dev__to_rel__loc__mmpo',
+    #     'from_dev__to_rel__loc__oez',
+    #     'from_dev__to_rel__loc__ztk'
+    # )
+    # instance: Device = get_object_or_404(devs_qs, pk=pk)
+    instance: Device = get_object_or_404(Device, pk=pk)
+
+    serializer = DevDetailSerializer(instance)
+    return Response(serializer.data)
+
+
+@api_view(['POST',])
+def dev_create2(request: HttpRequest):
+    """Вью-функция по созданию
+    одного девайса в БД.
+    Для REST API."""
+    serializer = DevDetailSerializer(data=request.data)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['PATCH',])
+def dev_edit2(request: HttpRequest, pk):
+    """Вью-функция по редактированию
+    одного девайса в БД.
+    Для REST API."""
+    # devs_qset = Device.objects.select_related(
+    #     'type__category__cat_l1',
+    #     'holder__dept',
+    #     'holder__empl__rtu',
+    #     'holder__empl__custhouse__upper_id',
+    #     'holder__empl__custpost__upper_id__upper_id',
+    #     'cp1_acc__rtu',
+    #     'cp1_acc__custhouse',
+    #     'cp1_acc__custpost',
+    #     'sour_type',
+    #     'status_use',
+    #     'service_type',
+    #     'upper_id'
+    # ).prefetch_related(
+    #     'f_dev_to_doing__from_dtcp_to_dtcr',
+    #     'f_dev_to_doing__reltocd__to_doing',
+    #     'f_dev_to_doing__reltocd__to_contract',
+    #     'from_dev__to_rel__cust_pl1__rtu',
+    #     'from_dev__to_rel__cust_pl1__custhouse',
+    #     'from_dev__to_rel__cust_pl1__custpost',
+    #     'from_dev__to_rel__loc__ppr__pptype',
+    #     'from_dev__to_rel__loc__mmpo',
+    #     'from_dev__to_rel__loc__oez',
+    #     'from_dev__to_rel__loc__ztk'
+    # )
+    # instance: Device = get_object_or_404(devs_qset, pk=pk)
+    instance: Device = get_object_or_404(Device, pk=pk)
+
+    serializer = DevDetailSerializer(instance, data=request.data, partial=True)
+    if serializer.is_valid():
+        serializer.save()
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['DELETE',])
+def dev_delete2(request: HttpRequest, pk):
+    """Вью-функция по удалению
+    одного девайса в БД."""
+    instance: Device = get_object_or_404(Device, pk=pk)
+    instance.delete()
+    return Response(status=status.HTTP_204_NO_CONTENT)
+
+#########################
+# На шаблонах
 #########################
 
 # @query_debugger
@@ -255,118 +470,3 @@ def dev_delete(request: HttpRequest, pk):
     if request.method == 'POST':
         instance.delete()
     return redirect('core:all_list_by_cpl')
-
-
-#########################
-# Для REST API.
-#########################
-
-# @query_debugger
-@api_view(['GET',])
-def all_list_by_cpl2(request: HttpRequest):
-    """Список всех объектов."""
-
-    # !!!!!!!!!!!!!!!
-    # devs_qset = Device.objects.all()
-    devs_qset = Device.objects.filter(id__in=[1, 3, 13, 27, 34])
-    # !!!!!!!!!!!!!!!
-    serializer = AllDevsSerializer(devs_qset, many=True)
-    return Response(serializer.data)
-
-
-@api_view(['GET',])
-def dev_detail2(request: HttpRequest, pk):
-    """Вью-функция по просмотру
-    одного девайса в БД.
-    Для REST API."""
-    # devs_qs = Device.objects.select_related(
-    #     'type__category__cat_l1',
-    #     'holder__dept',
-    #     'holder__empl__rtu',
-    #     'holder__empl__custhouse',
-    #     'holder__empl__custpost',
-    #     'cp1_acc__rtu',
-    #     'cp1_acc__custhouse',
-    #     'cp1_acc__custpost',
-    #     'sour_type',
-    #     'status_use',
-    #     'service_type',
-    #     'upper_id'
-    # ).prefetch_related(
-    #     'f_dev_to_doing__from_dtcp_to_dtcr',
-    #     'f_dev_to_doing__reltocd__to_doing',
-    #     'f_dev_to_doing__reltocd__to_contract',
-    #     'from_dev__to_rel__cust_pl1__rtu',
-    #     'from_dev__to_rel__cust_pl1__custhouse',
-    #     'from_dev__to_rel__cust_pl1__custpost',
-    #     'from_dev__to_rel__loc__ppr__pptype',
-    #     'from_dev__to_rel__loc__mmpo',
-    #     'from_dev__to_rel__loc__oez',
-    #     'from_dev__to_rel__loc__ztk'
-    # )
-    # instance: Device = get_object_or_404(devs_qs, pk=pk)
-    instance: Device = get_object_or_404(Device, pk=pk)
-
-    serializer = DevDetailSerializer(instance)
-    return Response(serializer.data)
-
-
-@api_view(['POST',])
-def dev_create2(request: HttpRequest):
-    """Вью-функция по созданию
-    одного девайса в БД.
-    Для REST API."""
-    serializer = DevDetailSerializer(data=request.data)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PATCH',])
-def dev_edit2(request: HttpRequest, pk):
-    """Вью-функция по редактированию
-    одного девайса в БД.
-    Для REST API."""
-    # devs_qset = Device.objects.select_related(
-    #     'type__category__cat_l1',
-    #     'holder__dept',
-    #     'holder__empl__rtu',
-    #     'holder__empl__custhouse__upper_id',
-    #     'holder__empl__custpost__upper_id__upper_id',
-    #     'cp1_acc__rtu',
-    #     'cp1_acc__custhouse',
-    #     'cp1_acc__custpost',
-    #     'sour_type',
-    #     'status_use',
-    #     'service_type',
-    #     'upper_id'
-    # ).prefetch_related(
-    #     'f_dev_to_doing__from_dtcp_to_dtcr',
-    #     'f_dev_to_doing__reltocd__to_doing',
-    #     'f_dev_to_doing__reltocd__to_contract',
-    #     'from_dev__to_rel__cust_pl1__rtu',
-    #     'from_dev__to_rel__cust_pl1__custhouse',
-    #     'from_dev__to_rel__cust_pl1__custpost',
-    #     'from_dev__to_rel__loc__ppr__pptype',
-    #     'from_dev__to_rel__loc__mmpo',
-    #     'from_dev__to_rel__loc__oez',
-    #     'from_dev__to_rel__loc__ztk'
-    # )
-    # instance: Device = get_object_or_404(devs_qset, pk=pk)
-    instance: Device = get_object_or_404(Device, pk=pk)
-
-    serializer = DevDetailSerializer(instance, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['DELETE',])
-def dev_delete2(request: HttpRequest, pk):
-    """Вью-функция по удалению
-    одного девайса в БД."""
-    instance: Device = get_object_or_404(Device, pk=pk)
-    instance.delete()
-    return Response(status=status.HTTP_204_NO_CONTENT)
