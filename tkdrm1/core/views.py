@@ -4,6 +4,7 @@
 import time
 # from django.db import connection, reset_queries
 from rest_framework.decorators import api_view
+from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import generics, status, viewsets
@@ -109,13 +110,22 @@ class DevD(generics.DestroyAPIView):
 # На низкоуровневых классах REST API
 #########################
 
+# Пагинатор для списка объектов
+class CustomPagination(PageNumberPagination):
+    page_size = 10
+    # Позволяет клиенту менять размер страницы (напр., ?page_size=20)
+    page_size_query_param = 'page_size'
+    max_page_size = 100
+
 class APIAllList(APIView):
     """Cписок всех объектов."""
     def get(self, request, *args, **kwargs):
-        # !!!!!!!!!!!!!!!
-        # devs_qset = Device.objects.all()
-        devs_qset = Device.objects.filter(id__in=[1, 3, 13, 27, 34])
-        # !!!!!!!!!!!!!!!
+        devs_qset = Device.objects.all().order_by('id')
+        paginator = CustomPagination()
+        page = paginator.paginate_queryset(devs_qset, request, view=self)
+        if page is not None:
+            serializer = AllDevsSerializer(page, many=True)
+            return paginator.get_paginated_response(serializer.data)
         serializer = AllDevsSerializer(devs_qset, many=True)
         return Response(serializer.data)
 
@@ -146,15 +156,19 @@ class APIDetail(APIView):
 #########################
 # На функциях REST API
 #########################
+
+# Пагинатор для списка объектов тот же, что выше
+
 # @query_debugger
 @api_view(['GET',])
 def all_list_by_cpl2(request: HttpRequest):
     """Список всех объектов."""
-
-    # !!!!!!!!!!!!!!!
-    # devs_qset = Device.objects.all()
-    devs_qset = Device.objects.filter(id__in=[1, 3, 13, 27, 34])
-    # !!!!!!!!!!!!!!!
+    devs_qset = Device.objects.all().order_by('id')
+    paginator = CustomPagination()
+    page = paginator.paginate_queryset(devs_qset, request)
+    if page is not None:
+        serializer = AllDevsSerializer(page, many=True)
+        return paginator.get_paginated_response(serializer.data)
     serializer = AllDevsSerializer(devs_qset, many=True)
     return Response(serializer.data)
 
