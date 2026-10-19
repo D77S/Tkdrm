@@ -38,9 +38,9 @@ ToDo:
     - python manage.py makemigrations
     - python manage.py migrate
     - Обеспечить в общей папке с manage.py наличие двух легаси-Excel-файлов для импорта данных из них
-    - python import3
+    - python manage.py import3
     - ждать 15...60 минут
-    - python import4
+    - python manage.py import4
     - ждать 6..20 минут
   - 2.
     - получить от разработчика файл БД db.sqlite3 и положить его рядом с manage.py
