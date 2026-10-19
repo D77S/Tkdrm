@@ -50,15 +50,15 @@ ToDo:
 -  http://127.0.0.1:8000/
 - По шаблонам, в браузере:
   -  http://127.0.0.1:8000/all_list/by_cpl/
-  -  http://127.0.0.1:8000/all_list/by_cpl/<pk>/
+  -  http://127.0.0.1:8000/all_list/by_cpl/1/
   -  http://127.0.0.1:8000/all_list/by_cpl/create
-  -  http://127.0.0.1:8000/all_list/by_cpl/<pk>/edit
-  -  http://127.0.0.1:8000/all_list/by_cpl/<pk>/del
+  -  http://127.0.0.1:8000/all_list/by_cpl/1/edit
+  -  http://127.0.0.1:8000/all_list/by_cpl/1/del
 - По REST API, в клиенте:
   -  http://127.0.0.1:8000/all_list/by_cpl2/
-  -  http://127.0.0.1:8000/all_list/by_cpl2/<pk>/
+  -  http://127.0.0.1:8000/all_list/by_cpl2/1/
   -  http://127.0.0.1:8000/all_list/by_cpl2/create
-  -  http://127.0.0.1:8000/all_list/by_cpl2/<pk>/edit
-  -  http://127.0.0.1:8000/all_list/by_cpl2/<pk>/del
+  -  http://127.0.0.1:8000/all_list/by_cpl2/1/edit
+  -  http://127.0.0.1:8000/all_list/by_cpl2/1/del
 
 Автор: Дмитрий, контакт в профиле github.
