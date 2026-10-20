@@ -1,14 +1,68 @@
 from rest_framework import serializers
-from core.models import Device
-from custplaces.models import CustPlaceToLocation
+from core.models import (
+    Device,
+    DevTypes
+)
+from custplaces.models import (
+    CustPlaceToLocation,
+    CustPlace1Use
+)
+
+class CustPlace1UseSerializer(serializers.ModelSerializer):
+    rtuv2 = serializers.SerializerMethodField()
+    custhousev2 = serializers.SerializerMethodField()
+    custpostv2 = serializers.SerializerMethodField()
+    class Meta:
+        model = CustPlace1Use
+        fields = (
+            'id',
+            'rtuv2',
+            'custhousev2',
+            'custpostv2'
+        )
+
+    def get_rtuv2(self, obj):
+        if obj.rtu is None and obj.custhouse is None and obj.custpost is not None:
+            return obj.custpost.upper_id.upper_id.title
+        elif obj.rtu is None and obj.custhouse is not None and obj.custpost is None:
+            return obj.custhouse.upper_id.title
+        elif obj.rtu is not None and obj.custhouse is None and obj.custpost is None:
+            return obj.rtu.title
+    def get_custhousev2(self, obj):
+        if obj.rtu is None and obj.custhouse is None and obj.custpost is not None:
+            return obj.custpost.upper_id.title
+        elif obj.rtu is None and obj.custhouse is not None and obj.custpost is None:
+            return obj.custhouse.title
+        elif obj.rtu is not None and obj.custhouse is None and obj.custpost is None:
+            return None
+    def get_custpostv2(self, obj):
+        if obj.rtu is None and obj.custhouse is None and obj.custpost is not None:
+            return obj.custpost.title
+        elif obj.rtu is None and obj.custhouse is not None and obj.custpost is None:
+            return None
+        elif obj.rtu is not None and obj.custhouse is None and obj.custpost is None:
+            return None
 
 
 class CustPlaceToLocSerializer(serializers.ModelSerializer):
+    cust_pl1 = CustPlace1UseSerializer(
+        read_only=True,
+        many=False
+    )
     class Meta:
         model = CustPlaceToLocation
-        fields = ('cust_pl1', 'is_main_for_cust')
+        fields = ('id', 'cust_pl1', 'is_main_for_cust')
+
+class DevTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DevTypes
+        fields = ('id', 'title',)
 
 class AllDevsSerializer(serializers.ModelSerializer):
+    type = DevTypeSerializer(
+        read_only=True,
+        many=False
+    )
     # По полю rels_of_work вернется список.
     # В большинстве случаев он будет из единственного объекта.
     # Но если все-таки из нескольких, то для задачи "общий список"
@@ -30,6 +84,10 @@ class AllDevsSerializer(serializers.ModelSerializer):
         )
 
 class DevDetailSerializer(serializers.ModelSerializer):
+    type = DevTypeSerializer(
+        read_only=True,
+        many=False
+    )
     rels_of_work = CustPlaceToLocSerializer(
         read_only=True,
         many=True

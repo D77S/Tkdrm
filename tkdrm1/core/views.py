@@ -63,7 +63,7 @@ class CustPlaceToLocViewSet(viewsets.ModelViewSet):
     serializer_class = CustPlaceToLocSerializer
 
 class DevViewSet(viewsets.ModelViewSet):
-    queryset=Device.objects.all()
+    queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer
@@ -77,31 +77,31 @@ class DevViewSet(viewsets.ModelViewSet):
 #########################
 
 class AllDevList(generics.ListAPIView):
-    queryset=Device.objects.all()
+    queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=AllDevsSerializer
 
 class DevR(generics.RetrieveAPIView):
-    queryset=Device.objects.all()
+    queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer  
 
 class DevC(generics.CreateAPIView):
-    queryset=Device.objects.all()
+    queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer
 
 class DevU(generics.UpdateAPIView):
-    queryset=Device.objects.all()
+    queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer
 
 class DevD(generics.DestroyAPIView):
-    queryset=Device.objects.all()
+    queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer  
@@ -110,18 +110,13 @@ class DevD(generics.DestroyAPIView):
 # На низкоуровневых классах REST API
 #########################
 
-# Пагинатор для списка объектов
-class CustomPagination(PageNumberPagination):
-    page_size = 10
-    # Позволяет клиенту менять размер страницы (напр., ?page_size=20)
-    page_size_query_param = 'page_size'
-    max_page_size = 100
-
 class APIAllList(APIView):
     """Cписок всех объектов."""
     def get(self, request, *args, **kwargs):
         devs_qset = Device.objects.all().order_by('id')
-        paginator = CustomPagination()
+        # Пагинатор настроен в settings, ключи
+        # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
+        paginator = PageNumberPagination()
         page = paginator.paginate_queryset(devs_qset, request, view=self)
         if page is not None:
             serializer = AllDevsSerializer(page, many=True)
@@ -141,6 +136,13 @@ class APIDetail(APIView):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    def put(self, request, *args, **kwargs):
+        instance: Device = get_object_or_404(Device, pk=self.kwargs.get('pk'))
+        serializer = DevDetailSerializer(instance, data=request.data, partial=False)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def patch(self, request, *args, **kwargs):
         instance: Device = get_object_or_404(Device, pk=self.kwargs.get('pk'))
         serializer = DevDetailSerializer(instance, data=request.data, partial=True)
@@ -157,14 +159,14 @@ class APIDetail(APIView):
 # На функциях REST API
 #########################
 
-# Пагинатор для списка объектов тот же, что выше
-
 # @query_debugger
 @api_view(['GET',])
 def all_list_by_cpl2(request: HttpRequest):
     """Список всех объектов."""
     devs_qset = Device.objects.all().order_by('id')
-    paginator = CustomPagination()
+    paginator = PageNumberPagination()
+    # Пагинатор настроен в settings, ключи
+    # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     page = paginator.paginate_queryset(devs_qset, request)
     if page is not None:
         serializer = AllDevsSerializer(page, many=True)
