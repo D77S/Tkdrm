@@ -34,7 +34,7 @@ ToDo:
 - Создать venv. Установить в него зависимости.
 - cd tkdrm1
 - Сделать одно из:
-  - 1.
+  - Опция1:
     - python manage.py makemigrations
     - python manage.py migrate
     - Обеспечить в общей папке с manage.py наличие двух легаси-Excel-файлов для импорта данных из них
@@ -42,7 +42,7 @@ ToDo:
     - ждать 15...60 минут
     - python manage.py import4
     - ждать 6..20 минут
-  - 2.
+  - Опция2:
     - получить от разработчика файл БД db.sqlite3 и положить его рядом с manage.py
 - python manage.py runserver
 
