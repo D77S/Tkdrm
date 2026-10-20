@@ -49,38 +49,38 @@ ToDo:
 
 После запуска проекта будет доступно:
 -  http://127.0.0.1:8000/
-  -  Актуально:
-    - По REST API, в клиенте:
-      -  GET http://127.0.0.1:8000/all_list/by_cpl5/
-      -  POST http://127.0.0.1:8000/all_list/by_cpl5/
-      -  PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
-      -  PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
-      -  DELETE http://127.0.0.1:8000/all_list/by_cpl5/ID/
-  - Depricated (отключено в urls.py):
-    - По REST API, в клиенте:
-      -  По функциям:
-        -  http://127.0.0.1:8000/all_list/by_cpl2/
-        -  http://127.0.0.1:8000/all_list/by_cpl2/ID/
-        -  http://127.0.0.1:8000/all_list/by_cpl2/create
-        -  http://127.0.0.1:8000/all_list/by_cpl2/ID/edit
-        -  http://127.0.0.1:8000/all_list/by_cpl2/ID/del
-      - По низкоуровневым классам:
-        -  http://127.0.0.1:8000/all_list/by_cpl3/
-        -  http://127.0.0.1:8000/all_list/by_cpl3/ID/
-        -  http://127.0.0.1:8000/all_list/by_cpl3/create
-        -  http://127.0.0.1:8000/all_list/by_cpl3/ID/edit
-        -  http://127.0.0.1:8000/all_list/by_cpl3/ID/del
-      - По высокоуровневым классам:
-        -  http://127.0.0.1:8000/all_list/by_cpl4/
-        -  http://127.0.0.1:8000/all_list/by_cpl4/ID/
-        -  http://127.0.0.1:8000/all_list/by_cpl4/create
-        -  http://127.0.0.1:8000/all_list/by_cpl4/ID/edit
-        -  http://127.0.0.1:8000/all_list/by_cpl4/ID/del
-    - По шаблонам, в браузере:
-      -  http://127.0.0.1:8000/all_list/by_cpl/
-      -  http://127.0.0.1:8000/all_list/by_cpl/ID/
-      -  http://127.0.0.1:8000/all_list/by_cpl/create
-      -  http://127.0.0.1:8000/all_list/by_cpl/ID/edit
-      -  http://127.0.0.1:8000/all_list/by_cpl/ID/del
+    -  Актуально:
+        - По REST API, в клиенте:
+            -  GET http://127.0.0.1:8000/all_list/by_cpl5/
+            -  POST http://127.0.0.1:8000/all_list/by_cpl5/
+            -  PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
+            -  PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
+            -  DELETE http://127.0.0.1:8000/all_list/by_cpl5/ID/
+    - Depricated (отключено в urls.py):
+        - По REST API, в клиенте:
+            -  По функциям:
+                -  http://127.0.0.1:8000/all_list/by_cpl2/
+                -  http://127.0.0.1:8000/all_list/by_cpl2/ID/
+                -  http://127.0.0.1:8000/all_list/by_cpl2/create
+                -  http://127.0.0.1:8000/all_list/by_cpl2/ID/edit
+                -  http://127.0.0.1:8000/all_list/by_cpl2/ID/del
+            - По низкоуровневым классам:
+                -  http://127.0.0.1:8000/all_list/by_cpl3/
+                -  http://127.0.0.1:8000/all_list/by_cpl3/ID/
+                -  http://127.0.0.1:8000/all_list/by_cpl3/create
+                -  http://127.0.0.1:8000/all_list/by_cpl3/ID/edit
+                -  http://127.0.0.1:8000/all_list/by_cpl3/ID/del
+            - По высокоуровневым классам:
+                -  http://127.0.0.1:8000/all_list/by_cpl4/
+                -  http://127.0.0.1:8000/all_list/by_cpl4/ID/
+                -  http://127.0.0.1:8000/all_list/by_cpl4/create
+                -  http://127.0.0.1:8000/all_list/by_cpl4/ID/edit
+                -  http://127.0.0.1:8000/all_list/by_cpl4/ID/del
+        - По шаблонам, в браузере:
+            -  http://127.0.0.1:8000/all_list/by_cpl/
+            -  http://127.0.0.1:8000/all_list/by_cpl/ID/
+            -  http://127.0.0.1:8000/all_list/by_cpl/create
+            -  http://127.0.0.1:8000/all_list/by_cpl/ID/edit
+            -  http://127.0.0.1:8000/all_list/by_cpl/ID/del
 
 Автор: Дмитрий, контакт в профиле github.
