@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'django_bootstrap5',
     'debug_toolbar',
     'rest_framework',
+    'corsheaders',
     'users.apps.UsersConfig',
     'core.apps.CoreConfig',
     'custplaces.apps.CustplacesConfig',
@@ -50,6 +51,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
@@ -118,7 +120,7 @@ REST_FRAMEWORK = {
     # 'DEFAULT_PAGINATION_CLASS': 'api.pagination.UserPagination',
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     # 'SEARCH_PARAM': 'name',
-    'PAGE_SIZE': 10,
+    'PAGE_SIZE': 17,
 }
 
 
@@ -151,3 +153,10 @@ STATIC_URL = '/static/'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 AUTH_USER_MODEL = 'users.TKDRMUser'
+
+# CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOWED_ORIGINS = [
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+]
+CORS_URLS_REGEX = r'^.*$'
