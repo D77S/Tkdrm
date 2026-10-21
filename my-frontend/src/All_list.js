@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 
 function All_list() {
   const [devices, setDevices] = useState([]);
@@ -7,28 +8,51 @@ function All_list() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   
-  // Создаем переменную в состоянии для динамического хранения размера страницы
+  // Дефолтный размер страницы (на случай, если страниц всего 1 и ссылок next/prev нет)
   const [pageSize, setPageSize] = useState(20); 
 
-  useEffect(() => {
+useEffect(() => {
     setLoading(true);
     axios.get(`http://localhost:8000/all_list/by_cpl5/?page=${currentPage}`)
       .then(response => {
-        const dataResults = response.data.results || response.data;
-        const totalCount = response.data.count || dataResults.length;
+        const { count, next, previous, results } = response.data;
         
-        // Динамически определяем, сколько элементов отдал бэкенд.
-        // Если мы на первой странице, количество пришедших элементов и есть наш размер страницы (например, 500).
-        if (dataResults.length > 0 && currentPage === 1) {
-          setPageSize(dataResults.length);
+        const dataResults = results || response.data;
+        const totalCount = count || dataResults.length;
+        
+        // Переменная для хранения вычисленного на этом шаге размера страницы
+        let currentStepPageSize = 20; // дефолтное значение
+
+        const targetUrl = next || previous;
+        if (targetUrl) {
+          try {
+            const urlObj = new URL(targetUrl);
+            const limitParam = urlObj.searchParams.get('limit');
+            
+            if (limitParam) {
+              currentStepPageSize = parseInt(limitParam, 10);
+            } else if (dataResults.length > 0 && next) { 
+              currentStepPageSize = dataResults.length;
+            }
+          } catch (e) {
+            console.error("Не удалось распарсить URL от бэкенда", e);
+          }
         }
+
+        // Обновляем состояние через функцию. 
+        // Если новое значение совпадает со старым (prev), React не будет делать лишних рендеров.
+        setPageSize(prev => {
+          // Если мы на последней странице (нет next) и нет параметров в URL, 
+          // сохраняем предыдущий успешно определенный размер страницы
+          if (!next && !targetUrl) return prev;
+          return currentStepPageSize;
+        });
 
         setDevices(dataResults);
         
-        // Теперь деление идет на реальный размер страницы, полученный от бэкенда
-        const actualPageSize = dataResults.length > 0 ? dataResults.length : pageSize;
-        setTotalPages(Math.ceil(totalCount / actualPageSize));
-        
+        // Для расчета totalPages используем локально вычисленное на этом шаге значение,
+        // а не переменную из стейта, чтобы линтер не ругался.
+        setTotalPages(Math.ceil(totalCount / currentStepPageSize));
         setLoading(false);
       })
       .catch(error => {
@@ -36,7 +60,7 @@ function All_list() {
         alert(`Не удалось загрузить данные с бэкенда!\nПричина: ${error.message}\nПроверьте CORS или консоль F12.`);
         setLoading(false);
       });
-  }, [currentPage, pageSize]);
+  }, [currentPage]); // Теперь здесь честная и единственная зависимость. Ошибка ESLint исчезнет!
 
   if (loading) return <div style={{ padding: '20px', fontFamily: 'sans-serif' }}>Загрузка данных из базы...</div>;
 
@@ -67,7 +91,6 @@ function All_list() {
         </thead>
         <tbody>
           {devices.map((device, index) => {
-            // Расчет сквозного номера теперь тоже завязан на динамический размер страницы pageSize
             const globalIndex = (currentPage - 1) * pageSize + index + 1;
             
             let targetRel = null;
@@ -91,7 +114,7 @@ function All_list() {
                 <td style={{ padding: '10px', border: '1px solid #ddd', wordBreak: 'break-word' }}>{device.type?.title || ''}</td>
                 <td style={{ padding: '10px', border: '1px solid #ddd', wordBreak: 'break-word' }}>{device.serial || ''}</td>
                 <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <span style={{ color: '#007bff', cursor: 'pointer', marginRight: '12px', fontWeight: '500' }}>Подробно</span>
+                  <Link to={`/devices/${device.id}`} style={{ color: '#007bff', textDecoration: 'none', marginRight: '12px', fontWeight: '500' }}>Подробно</Link>
                   <span style={{ color: '#28a745', cursor: 'pointer', marginRight: '12px', fontWeight: '500' }}>Редактировать</span>
                   <span style={{ color: '#dc3545', cursor: 'pointer', fontWeight: '500' }}>Удалить</span>
                 </td>
@@ -101,97 +124,105 @@ function All_list() {
         </tbody>
       </table>
 
-      {/* Блок пагинации */}
-     <div style={{ 
-        display: 'flex', 
-        gap: '6px', 
-        alignItems: 'center', 
-        justifyContent: 'center', 
-        marginTop: '25px', 
-        marginBottom: '40px',
-        fontFamily: 'sans-serif'
-      }}>
-        {/* Кнопка НАЗАД */}
-        <button 
-          onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} 
-          disabled={currentPage === 1}
-          style={{ 
-            padding: '6px 14px', 
-            marginRight: '12px',
-            border: '1px solid #ccc',
-            backgroundColor: currentPage === 1 ? '#e9ecef' : '#fff',
-            cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        >
-          Назад
-        </button>
+      {/* Блок пагинации с исправленным расчетом окон */}
+      {totalPages > 1 && (
+        <div style={{ 
+          display: 'flex', 
+          gap: '6px', 
+          alignItems: 'center', 
+          justifyContent: 'center', 
+          marginTop: '25px', 
+          marginBottom: '40px',
+          fontFamily: 'sans-serif'
+        }}>
+          {/* Кнопка НАЗАД */}
+          <button 
+            onClick={() => {
+              setCurrentPage(prev => Math.max(prev - 1, 1));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }} 
+            disabled={currentPage === 1}
+            style={{ 
+              padding: '6px 14px', 
+              marginRight: '12px',
+              border: '1px solid #ccc',
+              backgroundColor: currentPage === 1 ? '#e9ecef' : '#fff',
+              cursor: currentPage === 1 ? 'not-allowed' : 'pointer',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          >
+            Назад
+          </button>
 
-        {/* Генерация номеров страниц */}
-        {(() => {
-          const pages = [];
-          
-          // Увеличили радиус: теперь выводится по 4 страницы до и после текущей (всего до 9 страниц в центре)
-          const range = 4; 
+          {/* Логически верная генерация номеров страниц без дублирования точек */}
+          {(() => {
+            const pages = [];
+            const range = 2; // Оптимальный радиус (текущая + 2 слева + 2 справа)
 
-          for (let i = 1; i <= totalPages; i++) {
-            // Всегда выводим первую, последнюю, предпоследнюю и широкий диапазон вокруг текущей
-            if (
-              i === 1 || 
-              i === totalPages || 
-              i === totalPages - 1 || 
-              (i >= currentPage - range && i <= currentPage + range)
-            ) {
-              pages.push(
-                <button
-                  key={i}
-                  onClick={() => setCurrentPage(i)}
-                  style={{
-                    padding: '6px 12px',
-                    border: '1px solid #ddd',
-                    borderRadius: '4px',
-                    backgroundColor: currentPage === i ? '#007bff' : '#fff',
-                    color: currentPage === i ? '#fff' : '#007bff',
-                    fontWeight: currentPage === i ? 'bold' : 'normal',
-                    cursor: 'pointer',
-                    minWidth: '40px',
-                    fontSize: '14px'
-                  }}
-                >
-                  {i}
-                </button>
-              );
-            } 
-            // Первое многоточие, если между первой страницей и левой границей диапазона есть разрыв
-            else if (i === 2 && currentPage > range + 2) {
-              pages.push(<span key="dots-start" style={{ padding: '0 10px', color: '#6c757d', userSelect: 'none', fontSize: '14px' }}>...</span>);
-            } 
-            // Второе многоточие, если между правой границей диапазона и предпоследней страницей есть разрыв
-            else if (i === totalPages - 2 && currentPage < totalPages - range - 2) {
-              pages.push(<span key="dots-end" style={{ padding: '0 10px', color: '#6c757d', userSelect: 'none', fontSize: '14px' }}>...</span>);
+            for (let i = 1; i <= totalPages; i++) {
+              if (
+                i === 1 || 
+                i === totalPages || 
+                (i >= currentPage - range && i <= currentPage + range)
+              ) {
+                pages.push(
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setCurrentPage(i);
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    style={{
+                      padding: '6px 12px',
+                      border: '1px solid #ddd',
+                      borderRadius: '4px',
+                      backgroundColor: currentPage === i ? '#007bff' : '#fff',
+                      color: currentPage === i ? '#fff' : '#007bff',
+                      fontWeight: currentPage === i ? 'bold' : 'normal',
+                      cursor: 'pointer',
+                      minWidth: '40px',
+                      fontSize: '14px'
+                    }}
+                  >
+                    {i}
+                  </button>
+                );
+              } 
+              // Контролируем вывод многоточия: ставим только ОДИН раз при переходе границы
+              else if (i === 2 && currentPage > range + 2) {
+                pages.push(<span key="dots-start" style={{ padding: '0 10px', color: '#6c757d', userSelect: 'none', fontSize: '14px' }}>...</span>);
+                i = currentPage - range - 1; // Скачок цикла вперед к рабочей зоне
+              } 
+              else if (i === currentPage + range + 1 && i < totalPages) {
+                pages.push(<span key="dots-end" style={{ padding: '0 10px', color: '#6c757d', userSelect: 'none', fontSize: '14px' }}>...</span>);
+                i = totalPages - 1; // Скачок цикла в самый конец
+              }
             }
-          }
-          return pages;
-        })()}
+            return pages;
+          })()}
 
-        {/* Кнопка ВПЕРЕД */}
-        <button 
-          onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} 
-          disabled={currentPage === totalPages}
-          style={{ 
-            padding: '6px 14px', 
-            marginLeft: '12px',
-            border: '1px solid #ccc',
-            backgroundColor: currentPage === totalPages ? '#e9ecef' : '#fff',
-            cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
-            borderRadius: '4px',
-            fontSize: '14px'
-          }}
-        >
-          Вперед
-        </button>
-      </div>
+          {/* Кнопка ВПЕРЕД */}
+          <button 
+            onClick={() => {
+              setCurrentPage(prev => Math.min(prev + 1, totalPages));
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }} 
+            disabled={currentPage === totalPages}
+            style={{ 
+              padding: '6px 14px', 
+              marginLeft: '12px',
+              border: '1px solid #ccc',
+              backgroundColor: currentPage === totalPages ? '#e9ecef' : '#fff',
+              cursor: currentPage === totalPages ? 'not-allowed' : 'pointer',
+              borderRadius: '4px',
+              fontSize: '14px'
+            }}
+          >
+            Вперед
+          </button>
+        </div>
+      )}
     </div>
   );
 }

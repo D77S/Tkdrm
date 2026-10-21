@@ -58,19 +58,116 @@ def time_counter(time_list: list, st: str):
 # На вьюсетах REST API
 #########################
 
-class CustPlaceToLocViewSet(viewsets.ModelViewSet):
-    queryset = CustPlaceToLocation.objects.all()
-    serializer_class = CustPlaceToLocSerializer
+# class CustPlaceToLocViewSet(viewsets.ModelViewSet):
+#     queryset = CustPlaceToLocation.objects.all()
+#     serializer_class = CustPlaceToLocSerializer
 
 class DevViewSet(viewsets.ModelViewSet):
     queryset=Device.objects.all().order_by('id')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        detailed_actions = ['retrieve', 'update', 'partial_update']
+        if self.action in detailed_actions:
+            return queryset.select_related(
+                'type__category__cat_l1',
+                'holder__dept',
+                'holder__empl__rtu',
+                'holder__empl__custhouse',
+                'holder__empl__custpost',
+                'cp1_acc__rtu',
+                'cp1_acc__custhouse',
+                'cp1_acc__custpost',
+                'sour_type',
+                'status_use',
+                'service_type',
+                'upper_id'
+                ).prefetch_related(
+                    'f_dev_to_doing__from_dtcp_to_dtcr',
+                    'f_dev_to_doing__reltocd__to_doing',
+                    'f_dev_to_doing__reltocd__to_contract',
+                    'from_dev__to_rel__cust_pl1__rtu',
+                    'from_dev__to_rel__cust_pl1__custhouse',
+                    'from_dev__to_rel__cust_pl1__custpost',
+                    'from_dev__to_rel__loc__ppr__pptype',
+                    'from_dev__to_rel__loc__mmpo',
+                    'from_dev__to_rel__loc__oez',
+                    'from_dev__to_rel__loc__ztk'
+            ).order_by('id')
+        return queryset.order_by('id')
     def get_serializer_class(self):
         if self.action == 'list':
             return AllDevsSerializer
         return DevDetailSerializer
+# Пример ответа вьюсета на запрос списка объектов:
+# {
+#     "count": 11469,
+#     "next": "http://127.0.0.1:8000/all_list/by_cpl5/?page=4",
+#     "previous": "http://127.0.0.1:8000/all_list/by_cpl5/?page=2",
+#     "results": [
+#         {
+#             "id": 7,
+#             "rels_of_work": [
+#                 {
+#                     "id": 2,
+#                     "cust_pl1": {
+#                         "id": 86,
+#                         "rtuv2": "Дальневосточное таможенное управление",
+#                         "custhousev2": "Бурятская таможня",
+#                         "custpostv2": "Таможенный пост ЖДПП Наушки"
+#                     },
+#                     "is_main_for_cust": true
+#                 }
+#             ],
+#             "type": {
+#                 "id": 49,
+#                 "title": "ВН-Ж",
+#                 "category": {
+#                     "id": 4,
+#                     "title": "ВН",
+#                     "cat_l1": {
+#                         "id": 1,
+#                         "title": "Стационарные"
+#                     }
+#                 },
+#                 "lifetime": 2
+#             },
+#             "serial": "0152-08"
+#         },
+#         {
+#             "id": 8,
+#             "rels_of_work": [
+#                 {
+#                     "id": 2,
+#                     "cust_pl1": {
+#                         "id": 86,
+#                         "rtuv2": "Дальневосточное таможенное управление",
+#                         "custhousev2": "Бурятская таможня",
+#                         "custpostv2": "Таможенный пост ЖДПП Наушки"
+#                     },
+#                     "is_main_for_cust": true
+#                 }
+#             ],
+#             "type": {
+#                 "id": 31,
+#                 "title": "ВН-А",
+#                 "category": {
+#                     "id": 4,
+#                     "title": "ВН",
+#                     "cat_l1": {
+#                         "id": 1,
+#                         "title": "Стационарные"
+#                     }
+#                 },
+#                 "lifetime": 2
+#             },
+#             "serial": "0359-07"
+#         }
+#     ]
+# }
+
 
 #########################
 # На высокоуровневых классах REST API

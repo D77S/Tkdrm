@@ -53,6 +53,7 @@ ToDo:
     -  Актуально:
         - По REST API, в клиенте:
             -  GET http://127.0.0.1:8000/all_list/by_cpl5/
+            -  GET http://127.0.0.1:8000/all_list/by_cpl5/ID/
             -  POST http://127.0.0.1:8000/all_list/by_cpl5/
             -  PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
             -  PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/

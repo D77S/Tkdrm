@@ -636,6 +636,7 @@ class Device(models.Model):
         verbose_name='Статус по централизованному т.о./ремонту, подлежит ли прибор',
         related_name='serv_to_dev'
     )
+    ###########
     # M2M-поля
     # По использованию кем-то где-то
     rels_of_work = models.ManyToManyField(
@@ -649,11 +650,7 @@ class Device(models.Model):
         through='DTCPotential',
         verbose_name='Потенциальное вхождение прибора в гос.контракты'
     )
-    # Вычисляемое поле.
-    # Коллекция реальных вхождений прибора в контракты
-    @property
-    def real_of_contrs(self):
-        return DTCReal.objects.filter(basis__dev__id=self.id)
+    ###########
     # Примечение1 (район субъекта эксплуатации, если имеется и известно).
     note1 = models.CharField(
         max_length=255,
