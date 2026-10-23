@@ -17,7 +17,7 @@ function App() {
           marginBottom: '20px'
         }}>
           <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', gap: '20px', fontWeight: 'bold', alignItems: 'center' }}>
-            <Link to="/" style={{ color: '#007bff', textDecoration: 'none' }}>Main</Link>
+            <Link to="/" style={{ color: '#007bff', textDecoration: 'none' }}>Главная страница</Link>
             <Link to="/all_list/by_cpl5/" style={{ color: '#007bff', textDecoration: 'none' }}>Общий перечень</Link>
             <span style={{ color: '#6c757d', cursor: 'not-allowed', userSelect: 'none' }}>
               Создать прибор

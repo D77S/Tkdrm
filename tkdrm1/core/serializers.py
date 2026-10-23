@@ -116,9 +116,24 @@ class CustPlaceToLocSerializer(serializers.ModelSerializer):
         read_only = True,
         many=False
     )
+    main_for_dev = serializers.SerializerMethodField()
     class Meta:
         model = CustPlaceToLocation
-        fields = ('id', 'cust_pl1', 'loc', 'is_main_for_cust')
+        fields = (
+            'id',
+            'cust_pl1',
+            'loc',
+            'is_main_for_cust',
+            'main_for_dev'
+        )
+    def get_main_for_dev(self, obj):
+        dev = self.context.get('dev')
+        if not dev:
+            return None
+        rel_obj = obj.from_relation.filter(to_dev=dev).first()
+        if rel_obj:
+            return rel_obj.is_main_for_dev
+        return None
 
 
 class DevCatL1Serializer(serializers.ModelSerializer):
@@ -281,6 +296,7 @@ class DevDetailSerializer(serializers.ModelSerializer):
         read_only=True,
         many=False
     )
+    cats_corresp = serializers.SerializerMethodField()
     cp1_acc = CustPlace1AccSerializer(
         read_only=True,
         many=False
@@ -319,6 +335,7 @@ class DevDetailSerializer(serializers.ModelSerializer):
             'date_verif',
             'cat_number_c',
             'cat_number_f',
+            'cats_corresp',
             'cp1_acc',
             'sour_type',
             'cost',
@@ -334,6 +351,13 @@ class DevDetailSerializer(serializers.ModelSerializer):
             'note2',
             'note3'
         )
+    def to_representation(self, instance):
+        self.context['dev'] = instance
+        return super().to_representation(instance)
+    def get_cats_corresp(self, obj):
+        if obj.cat_number_c == obj.cat_number_f:
+            return True
+        return False
     def get_rels_of_contracts(self, obj):
         context = self.context.copy()
         context['device'] = obj

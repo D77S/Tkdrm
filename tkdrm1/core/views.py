@@ -10,6 +10,8 @@ from rest_framework.views import APIView
 from rest_framework import generics, status, viewsets
 from django.core.paginator import Paginator
 # from django.forms.models import model_to_dict
+from django.db.models import OuterRef, Subquery, F, Value
+from django.db.models.functions import Coalesce
 from django.http import HttpRequest
 from django.shortcuts import get_object_or_404, redirect, render
 from core.constants import ALL_DEV_PAG
@@ -96,6 +98,49 @@ class DevViewSet(viewsets.ModelViewSet):
                     'from_dev__to_rel__loc__oez',
                     'from_dev__to_rel__loc__ztk'
             ).order_by('id')
+        elif self.action == 'list':
+            base_rel_qs = RelToDev.objects.filter(to_dev_id=OuterRef('pk'))
+            main_rel_subquery = base_rel_qs.filter(is_main_for_dev=True).values('to_rel_id')[:1]
+            any_rel_subquery = base_rel_qs.values('to_rel_id')[:1]
+            cpl_subquery_base = CustPlaceToLocation.objects.filter(
+                id=OuterRef('target_cust_place_to_location_id')
+            )
+            temp_qs =  Device.objects.select_related('type').annotate(
+                device_type_title=F('type__title'),
+                target_cust_place_to_location_id=Coalesce(
+                    Subquery(main_rel_subquery),
+                    Subquery(any_rel_subquery)
+                ),
+           sort_rtu_title=Subquery(
+               cpl_subquery_base.annotate(
+                   resolved_rtu_title=Coalesce(
+                       'cust_pl1__custpost__upper_id__upper_id__title', 
+                        'cust_pl1__custhouse__upper_id__title',
+                        'cust_pl1__rtu__title',
+                        Value(None)
+                    )
+                ).values('resolved_rtu_title')[:1]
+            ),
+            sort_house_title=Subquery(
+                cpl_subquery_base.annotate(
+                    resolved_house_title=Coalesce(
+                        'cust_pl1__custpost__upper_id__title',
+                        'cust_pl1__custhouse__title',
+                        Value(None)
+                    )
+                ).values('resolved_house_title')[:1]
+            ),
+            sort_post_title=Subquery(
+                cpl_subquery_base.values('cust_pl1__custpost__title')[:1]
+            ),
+            sort_ppr_id=Subquery(cpl_subquery_base.values('loc__ppr__pptype__title')[:1]),
+            sort_ppr_type_id=Subquery(cpl_subquery_base.values('loc__ppr__title')[:1]),
+            sort_mmpo_id=Subquery(cpl_subquery_base.values('loc__mmpo__title')[:1]),
+            sort_oez_id=Subquery(cpl_subquery_base.values('loc__oez__title')[:1]),
+            sort_ztk_id=Subquery(cpl_subquery_base.values('loc__ztk__title')[:1]),
+            sort_svh_id=Subquery(cpl_subquery_base.values('loc__svh__title')[:1])
+            )
+            return temp_qs
         return queryset.order_by('id')
     def get_serializer_class(self):
         if self.action == 'list':
@@ -167,7 +212,132 @@ class DevViewSet(viewsets.ModelViewSet):
 #         }
 #     ]
 # }
-
+#
+# Пример ответа въюсета на запрос об одном объекте
+# {
+#     "id": 13,
+#     "type": {
+#         "id": 50,
+#         "title": "ССД",
+#         "category": {
+#             "id": 5,
+#             "title": "Телеком",
+#             "cat_l1": {
+#                 "id": 1,
+#                 "title": "Стационарные"
+#             }
+#         },
+#         "lifetime": 2
+#     },
+#     "sub_type": null,
+#     "serial": "272-09",
+#     "inventary": null,
+#     "holder": {
+#         "id": 2,
+#         "username": "cvdwa",
+#         "first_name": "Иван",
+#         "pater_name": "Иванович",
+#         "last_name": "Иванов",
+#         "email": "a@a.com",
+#         "is_active": true,
+#         "empl": {
+#             "id": 86,
+#             "rtuv2": "Дальневосточное таможенное управление",
+#             "custhousev2": "Бурятская таможня",
+#             "custpostv2": "Таможенный пост ЖДПП Наушки"
+#         },
+#         "dept": {
+#             "id": 1,
+#             "title": "ОПИДК"
+#         }
+#     },
+#     "date_prod": "2009-01-01",
+#     "date_expl": "2009-01-01",
+#     "date_prolong": "2009-01-01",
+#     "warr_period": 18,
+#     "date_prod_expired": "2011-01-01",
+#     "date_verif": null,
+#     "cat_number_c": 3,
+#     "cat_number_f": 3,
+#     "cats_corresp": true,
+#     "cp1_acc": {
+#         "id": 11,
+#         "rtuv2": "Дальневосточное таможенное управление",
+#         "custhousev2": "Бурятская таможня",
+#         "custpostv2": null
+#     },
+#     "sour_type": {
+#         "id": 1,
+#         "title": "РФ в лице там.органа"
+#     },
+#     "cost": null,
+#     "condition": true,
+#     "upper_id": null,
+#     "is_si": null,
+#     "is_stud": false,
+#     "status_use": {
+#         "id": 1,
+#         "title": "Используется"
+#     },
+#     "service_type": {
+#         "id": 4,
+#         "title": "Только ремонт"
+#     },
+#     "rels_of_work": [
+#         {
+#             "id": 2,
+#             "cust_pl1": {
+#                 "id": 86,
+#                 "rtuv2": "Дальневосточное таможенное управление",
+#                 "custhousev2": "Бурятская таможня",
+#                 "custpostv2": "Таможенный пост ЖДПП Наушки"
+#             },
+#             "loc": {
+#                 "locname": "Наушки",
+#                 "loctype": "ЖДПП"
+#             },
+#             "is_main_for_cust": true,
+#             "main_for_dev": true
+#         }
+#     ],
+#     "rels_of_contracts": [
+#         {
+#             "id": 4,
+#             "to_contract": {
+#                 "id": 3,
+#                 "title": "Гос.контракт на одновременно техническое обслуживание и ремонт",
+#                 "number": 65,
+#                 "date_of": "2013-04-02"
+#             },
+#             "to_doing": {
+#                 "id": 3,
+#                 "title": "Ремонт"
+#             },
+#             "basis": []
+#         },
+#         {
+#             "id": 6,
+#             "to_contract": {
+#                 "id": 5,
+#                 "title": "Гос.контракт на одновременно техническое обслуживание и ремонт",
+#                 "number": 119,
+#                 "date_of": "2014-10-28"
+#             },
+#             "to_doing": {
+#                 "id": 2,
+#                 "title": "Техническое обслуживание"
+#             },
+#             "basis": [
+#                 {
+#                     "exact_moment": "2014-11-23T00:00:00Z"
+#                 }
+#             ]
+#         }
+#     ],
+#     "note1": null,
+#     "note2": null,
+#     "note3": null
+# }
 
 #########################
 # На высокоуровневых классах REST API

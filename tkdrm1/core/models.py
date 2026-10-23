@@ -204,6 +204,9 @@ class DevTypes(models.Model):
     class Meta:
         """."""
 
+        indexes = [
+            models.Index(fields=['title']),
+        ]
         verbose_name = 'Объект типа прибора'
         verbose_name_plural = 'Объекты типов приборов'
 
@@ -798,6 +801,10 @@ class RelToDev(models.Model):
                 name='uniq_main_for_dev'
             )
         ]
+        indexes = [
+            models.Index(fields=['is_main_for_dev', 'to_dev', 'to_rel']),
+        ]
+        
 
     def __str__(self):
         """."""

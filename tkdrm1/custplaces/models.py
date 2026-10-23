@@ -103,6 +103,9 @@ class Rtu(BaseCPModel):
     class Meta:
         """."""
 
+        indexes = [
+            models.Index(fields=['title']),
+        ]
         verbose_name = 'Региональное таможенное управление'
         verbose_name_plural = 'Региональные таможенные управления'
 
@@ -175,6 +178,9 @@ class CustHouse(BaseCPModel):
     class Meta:
         """."""
 
+        indexes = [
+            models.Index(fields=['title']),
+        ]
         verbose_name = 'Таможня'
         verbose_name_plural = 'Таможни'
 
@@ -257,6 +263,9 @@ class CustPost(BaseCPModel):
     class Meta:
         """."""
 
+        indexes = [
+            models.Index(fields=['title']),
+        ]
         verbose_name = 'Таможенный пост'
         verbose_name_plural = 'Таможенные посты'
 
@@ -726,18 +735,39 @@ class CustPlace1Use(models.Model):
         # Для т.н. внутренних постов устанавливается в True
     )
 
-    # Вычисляемое поле.
+    # Вычисляемые поля.
     # Локатор на один из типов т.органов.
+    # @property
+    # def to_cp(self):
+    #     if self.rtu:
+    #         return self.rtu
+    #     elif self.custhouse:
+    #         return self.custhouse
+    #     elif self.custpost:
+    #         return self.custpost
+    #     else:
+    #         return None
+    #
+    # Локаторы на весь набор т.органов
     @property
-    def to_cp(self):
-        if self.rtu:
-            return self.rtu
-        elif self.custhouse:
-            return self.custhouse
-        elif self.custpost:
+    def custpost3(self):
+        if self.custpost:
             return self.custpost
-        else:
-            return None
+        return None
+    @property
+    def custhouse3(self):
+        if self.custpost:
+            return self.custpost.upper_id
+        if self.custhouse:
+            return self.custhouse
+        return None
+    @property
+    def rtu3(self):
+        if self.custpost:
+            return self.custpost.upper_id.upper_id
+        if self.custhouse:
+            return self.custhouse.upper_id
+        return self.rtu
 
     def delete(self, *args, **kwargs):
         """."""
