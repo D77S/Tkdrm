@@ -105,6 +105,7 @@ class DevViewSet(viewsets.ModelViewSet):
             cpl_subquery_base = CustPlaceToLocation.objects.filter(
                 id=OuterRef('target_cust_place_to_location_id')
             )
+            #####
             temp_qs =  Device.objects.select_related('type').annotate(
                 device_type_title=F('type__title'),
                 target_cust_place_to_location_id=Coalesce(
@@ -133,12 +134,29 @@ class DevViewSet(viewsets.ModelViewSet):
             sort_post_title=Subquery(
                 cpl_subquery_base.values('cust_pl1__custpost__title')[:1]
             ),
-            sort_ppr_id=Subquery(cpl_subquery_base.values('loc__ppr__pptype__title')[:1]),
-            sort_ppr_type_id=Subquery(cpl_subquery_base.values('loc__ppr__title')[:1]),
-            sort_mmpo_id=Subquery(cpl_subquery_base.values('loc__mmpo__title')[:1]),
-            sort_oez_id=Subquery(cpl_subquery_base.values('loc__oez__title')[:1]),
-            sort_ztk_id=Subquery(cpl_subquery_base.values('loc__ztk__title')[:1]),
-            sort_svh_id=Subquery(cpl_subquery_base.values('loc__svh__title')[:1])
+            sort_ppr_title=Subquery(cpl_subquery_base.values('loc__ppr__pptype__title')[:1]),
+            sort_ppr_type_title=Subquery(cpl_subquery_base.values('loc__ppr__title')[:1]),
+            sort_mmpo_title=Subquery(cpl_subquery_base.values('loc__mmpo__title')[:1]),
+            sort_oez_title=Subquery(cpl_subquery_base.values('loc__oez__title')[:1]),
+            sort_ztk_title=Subquery(cpl_subquery_base.values('loc__ztk__title')[:1]),
+            sort_svh_title=Subquery(cpl_subquery_base.values('loc__svh__title')[:1])
+            )
+            #####
+            temp_qs = temp_qs.order_by(
+                # === ПРИОРИТЕТ 1: Структура таможенных органов ===
+                Coalesce('sort_rtu_title', Value('\xff')).asc(),      # 1. Группируем по алфавиту РТУ. Без РТУ — вниз.
+                Coalesce('sort_house_title', Value('\xff')).asc(),    # 2. Внутри одного РТУ — по алфавиту Таможни.
+                Coalesce('sort_post_title', Value('\xff')).asc(),     # 3. Затем по алфавиту Поста.
+                # === ПРИОРИТЕТ 2: Тип сайта и локации эксплуатации ===
+                Coalesce('sort_ppr_type_title', Value('\xff')).asc(), # 4. По типу пункта пропуска.
+                Coalesce('sort_ppr_title', Value('\xff')).asc(),      # 5. По названию пункта пропуска.
+                Coalesce('sort_mmpo_title', Value('\xff')).asc(),     # 6. По названию ММПО.
+                Coalesce('sort_oez_title', Value('\xff')).asc(),      # 7. По названию ОЭЗ.
+                Coalesce('sort_ztk_title', Value('\xff')).asc(),      # 8. По названию ЗТК.
+                Coalesce('sort_svh_title', Value('\xff')).asc(),      # 9. По названию СВХ.
+                # === ПРИОРИТЕТ 3: Характеристики самого прибора ===
+                'device_type_title',                                  # 10. По названию типа технического средства.
+                'id'                                                  # 11. Гарант стабильности пагинации в СУБД.
             )
             return temp_qs
         return queryset.order_by('id')
