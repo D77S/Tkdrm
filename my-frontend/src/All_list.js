@@ -103,11 +103,11 @@ const handleDelete = (id) => {
         <col style={{ width: '60px' }} />   {/* 1. № */}
         <col style={{ width: '23%' }} />  {/* 2. РТУ */}
         <col style={{ width: '15%' }} />  {/* 3. Таможня */}
-        <col style={{ width: '18%' }} />  {/* 4. Пост */}
+        <col style={{ width: '21%' }} />  {/* 4. Пост */}
         <col style={{ width: '80px' }} />   {/* 5. Тип сайта (под ваши 6 символов) */}
         <col style={{ width: '25%' }} />  {/* 6. Название сайта */}
         <col style={{ width: '8%' }} />  {/* 7. Тип прибора */}
-        <col style={{ width: '12%' }} />  {/* 8. Сер. номер */}
+        <col style={{ width: '8%' }} />  {/* 8. Сер. номер */}
         <col style={{ width: '260px' }} />  {/* 9. Дополнительно (кнопки действий) */}
         </colgroup>
         <thead>
@@ -171,7 +171,7 @@ const handleDelete = (id) => {
                 <td style={{ padding: '10px', border: '1px solid #ddd', wordBreak: 'break-word' }}>{device.type?.title || ''}</td>
                 <td style={{ padding: '10px', border: '1px solid #ddd', wordBreak: 'break-word' }}>{device.serial || ''}</td>
                 <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
-                  <Link to={`/devices/${device.id}`} style={{ color: '#007bff', textDecoration: 'none', marginRight: '12px', fontWeight: '500' }}>Подробно</Link>
+                  <Link to={`/devices/${device.id}`} style={{ color: '#007bff', textDecoration: 'underline', marginRight: '12px', fontWeight: '500' }}>Подробно</Link>
                   <span style={{ color: '#28a745', cursor: 'pointer', marginRight: '12px', fontWeight: '500' }}>Редактировать</span>
                   <span onClick={() => handleDelete(device.id)} style={{ color: '#dc3545', cursor: 'pointer', fontWeight: '500', textDecoration: 'underline'}}>
                     Удалить
