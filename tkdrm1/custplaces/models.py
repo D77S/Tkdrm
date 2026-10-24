@@ -286,8 +286,8 @@ class PprType(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект типа пункта пропуска'
-        verbose_name_plural = 'объекты типа пунктов пропуска'
+        verbose_name = 'Тип пункта пропуска'
+        verbose_name_plural = 'Типы пунктов пропуска'
 
     def __str__(self):
         """."""
@@ -315,13 +315,23 @@ class Ppr(models.Model):
         max_length=255,
         unique=False,  # !!!!!!
         null=True,
+        blank=True,
         verbose_name='Сопредельное государство'
     )
 
+    def clean(self):
+        super().clean()
+        if self.pptype and (
+            self.pptype.title == 'МПП' or self.pptype.title == 'ВПП'
+        ) and self.tow_country is not None:
+            raise ValidationError('Для МПП и ВПП запрещена сопредельная страна')
+            
+
+
     def save(self, *args, **kwargs):
         """Создание объекта нового пункта пропуска.
-
         Для него также создается/апдейтится объект модели локации."""
+        self.full_clean()
         if not self.pk:
             with transaction.atomic():
                 super().save(*args, **kwargs)
@@ -335,6 +345,7 @@ class Ppr(models.Model):
                 )
         else:
             with transaction.atomic():
+                super().save(*args, **kwargs)
                 LocationOfUse.objects.update_or_create(
                     ppr=self,
                     defaults={
@@ -349,8 +360,8 @@ class Ppr(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект пункта пропуска'
-        verbose_name_plural = 'объекты пунктов пропуска'
+        verbose_name = 'Пункт пропуска'
+        verbose_name_plural = 'Пункты пропуска'
         constraints = [
             models.UniqueConstraint(
                 fields=['pptype', 'title', 'tow_country'],
@@ -390,6 +401,7 @@ class Mmpo(models.Model):
                 )
         else:
             with transaction.atomic():
+                super().save(*args, **kwargs)
                 LocationOfUse.objects.update_or_create(
                     mmpo=self,
                     defaults={
@@ -404,8 +416,8 @@ class Mmpo(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект ММПО'
-        verbose_name_plural = 'объекты ММПО'
+        verbose_name = 'Объект ММПО'
+        verbose_name_plural = 'Объекты ММПО'
 
     def __str__(self):
         """."""
@@ -439,6 +451,7 @@ class Oez(models.Model):
                 )
         else:
             with transaction.atomic():
+                super().save(*args, **kwargs)
                 LocationOfUse.objects.update_or_create(
                     oez=self,
                     defaults={
@@ -453,8 +466,8 @@ class Oez(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект ОЭЗ'
-        verbose_name_plural = 'объекты ОЭЗ'
+        verbose_name = 'Объект ОЭЗ'
+        verbose_name_plural = 'Объекты ОЭЗ'
 
     def __str__(self):
         """."""
@@ -488,6 +501,7 @@ class Ztk(models.Model):
                 )
         else:
             with transaction.atomic():
+                super().save(*args, **kwargs)
                 LocationOfUse.objects.update_or_create(
                     ztk=self,
                     defaults={
@@ -502,8 +516,8 @@ class Ztk(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект ЗТК'
-        verbose_name_plural = 'объекты ЗТК'
+        verbose_name = 'Объект ЗТК'
+        verbose_name_plural = 'Объекты ЗТК'
 
     def __str__(self):
         """."""
@@ -525,7 +539,7 @@ class Svh(models.Model):
         unique=False,
         blank=False,
         default=False,
-        verbose_name='Является ли гос-м конкретный экземпляр'
+        verbose_name='Является ли государственным'
     )
 
     def save(self, *args, **kwargs):
@@ -559,13 +573,12 @@ class Svh(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект СВХ'
-        verbose_name_plural = 'объекты СВХ'
+        verbose_name = 'Объект СВХ'
+        verbose_name_plural = 'Объекты СВХ'
 
     def __str__(self):
         """."""
         return f'СВХ {self.title}'
-
 
 
 class CustPlace1Acc(models.Model):
@@ -583,7 +596,7 @@ class CustPlace1Acc(models.Model):
     # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     rtu = models.OneToOneField(
         Rtu,
-        verbose_name='Название РТУ',
+        verbose_name='РТУ',
         related_name='rtus1acc',
         on_delete=models.CASCADE,
         null=True,
@@ -592,7 +605,7 @@ class CustPlace1Acc(models.Model):
     )
     custhouse = models.OneToOneField(
         CustHouse,
-        verbose_name='Название таможни',
+        verbose_name='Таможня',
         related_name='cs1acc',
         on_delete=models.CASCADE,
         null=True,
@@ -601,7 +614,7 @@ class CustPlace1Acc(models.Model):
     )
     custpost = models.OneToOneField(
         CustPost,
-        verbose_name='Название поста',
+        verbose_name='Пост',
         related_name='posts1acc',
         on_delete=models.CASCADE,
         null=True,
@@ -654,8 +667,8 @@ class CustPlace1Acc(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Субъект учета для т.органа 1-го типа'
-        verbose_name_plural = 'Субъекты учета для т.органа 1-го типа'
+        verbose_name = 'Обобщенный т.орган, для баланса'
+        verbose_name_plural = 'Обобщенные т.органы, для баланса'
         constraints = [
             models.CheckConstraint(
                 check=(models.Q(rtu__isnull=True) &
@@ -668,6 +681,27 @@ class CustPlace1Acc(models.Model):
                  models.Q(custhouse__isnull=True) &
                  models.Q(custpost__isnull=True)),
                 name='CP1AccNullable'
+            ),
+            models.UniqueConstraint(
+                fields=['rtu',],
+                condition=models.Q(
+                    rtu__isnull=False, custhouse__isnull=True, custpost__isnull=True
+                ),
+                name='Acc_unique_f1_when_f2_f3_null',
+            ),
+            models.UniqueConstraint(
+                fields=['custhouse',],
+                condition=models.Q(
+                    rtu__isnull=True, custhouse__isnull=False, custpost__isnull=True
+                ),
+                name='Acc_unique_f2_when_f1_f3_null',
+            ),
+            models.UniqueConstraint(
+                fields=['custpost',],
+                condition=models.Q(
+                    rtu__isnull=True, custhouse__isnull=True, custpost__isnull=False
+                ),
+                name='Acc_unique_f3_when_f1_f2_null',
             ),
         ]
 
@@ -693,7 +727,7 @@ class CustPlace1Use(models.Model):
     # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     rtu = models.OneToOneField(
         Rtu,
-        verbose_name='Название РТУ',
+        verbose_name='РТУ',
         related_name='rtus1use',
         on_delete=models.CASCADE,
         null=True,
@@ -702,7 +736,7 @@ class CustPlace1Use(models.Model):
     )
     custhouse = models.OneToOneField(
         CustHouse,
-        verbose_name='Название таможни',
+        verbose_name='Таможня',
         related_name='cs1use',
         on_delete=models.CASCADE,
         null=True,
@@ -711,7 +745,7 @@ class CustPlace1Use(models.Model):
     )
     custpost = models.OneToOneField(
         CustPost,
-        verbose_name='Название поста',
+        verbose_name='Пост',
         related_name='posts1use',
         on_delete=models.CASCADE,
         null=True,
@@ -732,7 +766,8 @@ class CustPlace1Use(models.Model):
         blank=False,
         default=False,
         verbose_name='Признак разрешения работать без локации'
-        # Для т.н. внутренних постов устанавливается в True
+        # Для всех таможен, всех внутренних постов,
+        # и некоторых невнутренних постов устанавливается в True
     )
 
     # Вычисляемые поля.
@@ -810,8 +845,8 @@ class CustPlace1Use(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Субъект эксплуатации для т.органа 1-го типа'
-        verbose_name_plural = 'Субъекты эксплуатации для т.органа 1-го типа'
+        verbose_name = 'Обобщенный т.орган, для использования'
+        verbose_name_plural = 'Обобщенные т.органы, для использования'
         constraints = [
             models.CheckConstraint(
                 check=(models.Q(rtu__isnull=True) &
@@ -824,6 +859,27 @@ class CustPlace1Use(models.Model):
                  models.Q(custhouse__isnull=True) &
                  models.Q(custpost__isnull=True)),
                 name='CP1UseNullable'
+            ),
+            models.UniqueConstraint(
+                fields=['rtu',],
+                condition=models.Q(
+                    rtu__isnull=False, custhouse__isnull=True, custpost__isnull=True
+                ),
+                name='Use_unique_f1_when_f2_f3_null',
+            ),
+            models.UniqueConstraint(
+                fields=['custhouse',],
+                condition=models.Q(
+                    rtu__isnull=True, custhouse__isnull=False, custpost__isnull=True
+                ),
+                name='Use_unique_f2_when_f1_f3_null',
+            ),
+            models.UniqueConstraint(
+                fields=['custpost',],
+                condition=models.Q(
+                    rtu__isnull=True, custhouse__isnull=True, custpost__isnull=False
+                ),
+                name='Use_unique_f3_when_f1_f2_null',
             ),
         ]
 
@@ -853,7 +909,7 @@ class LocationOfUse(models.Model):
     # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     ppr = models.OneToOneField(
         Ppr,
-        verbose_name='Название п.пропуска',
+        verbose_name='П.пропуска',
         related_name='pprs',
         on_delete=models.CASCADE,
         null=True,
@@ -862,7 +918,7 @@ class LocationOfUse(models.Model):
     )
     mmpo = models.OneToOneField(
         Mmpo,
-        verbose_name='Название ММПО',
+        verbose_name='ММПО',
         related_name='mmpos',
         on_delete=models.CASCADE,
         null=True,
@@ -871,7 +927,7 @@ class LocationOfUse(models.Model):
     )
     oez = models.OneToOneField(
         Oez,
-        verbose_name='Название ОЭЗ',
+        verbose_name='ОЭЗ',
         related_name='oezs',
         on_delete=models.CASCADE,
         null=True,
@@ -880,7 +936,7 @@ class LocationOfUse(models.Model):
     )
     ztk = models.OneToOneField(
         Ztk,
-        verbose_name='Название ЗТК',
+        verbose_name='ЗТК',
         related_name='ztks',
         on_delete=models.CASCADE,
         null=True,
@@ -889,21 +945,26 @@ class LocationOfUse(models.Model):
     )
     svh = models.OneToOneField(
         Svh,
-        verbose_name='Название СВХ',
+        verbose_name='СВХ',
         related_name='svhs',
         on_delete=models.CASCADE,
         null=True,
         blank=True,
         default=None
     )
-    is_ztk = models.BooleanField(
-        null=False,
-        blank=False,
-        default=False,
-        verbose_name='Является ли ЗТК'
-    )
+    # Вычисляемые поля
+    @property
+    def is_ztk(self):
+        if self.ztk:
+            return True
+        return False
 
-    # Вычисляемое поле.
+    # is_ztk = models.BooleanField(
+    #     null=False,
+    #     blank=False,
+    #     default=False,
+    #     verbose_name='Является ли ЗТК'
+    # )
     # Локатор на один из типов локации пользования.
     @property
     def to_site(self):
@@ -960,8 +1021,8 @@ class LocationOfUse(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект локации'
-        verbose_name_plural = 'объекты локации'
+        verbose_name = 'Обобщенный объект локации'
+        verbose_name_plural = 'Обобщенные объекты локации'
         constraints = [
             models.CheckConstraint(
                 check=(models.Q(ppr__isnull=True) &
@@ -991,6 +1052,61 @@ class LocationOfUse(models.Model):
                   models.Q(svh__isnull=True)),
                 name='Loc_Nullable'
             ),
+            models.UniqueConstraint(
+                fields=['ppr',],
+                condition=models.Q(
+                    ppr__isnull=False,
+                    mmpo__isnull=True,
+                    oez__isnull=True,
+                    ztk__isnull=True,
+                    svh__isnull=True
+                ),
+                name='Loc_unique_f1_when_f2_f3_f4_f5_null',
+            ),
+            models.UniqueConstraint(
+                fields=['mmpo',],
+                condition=models.Q(
+                    ppr__isnull=True,
+                    mmpo__isnull=False,
+                    oez__isnull=True,
+                    ztk__isnull=True,
+                    svh__isnull=True
+                ),
+                name='Loc_unique_f2_when_f1_f3_f4_f5_null',
+            ),
+            models.UniqueConstraint(
+                fields=['oez',],
+                condition=models.Q(
+                    ppr__isnull=True,
+                    mmpo__isnull=True,
+                    oez__isnull=False,
+                    ztk__isnull=True,
+                    svh__isnull=True
+                ),
+                name='Loc_unique_f3_when_f1_f2_f4_f5_null',
+            ),
+            models.UniqueConstraint(
+                fields=['ztk',],
+                condition=models.Q(
+                    ppr__isnull=True,
+                    mmpo__isnull=True,
+                    oez__isnull=True,
+                    ztk__isnull=False,
+                    svh__isnull=True
+                ),
+                name='Loc_unique_f4_when_f1_f2_f3_f5_null',
+            ),
+            models.UniqueConstraint(
+                fields=['svh',],
+                condition=models.Q(
+                    ppr__isnull=True,
+                    mmpo__isnull=True,
+                    oez__isnull=True,
+                    ztk__isnull=True,
+                    svh__isnull=False
+                ),
+                name='Loc_unique_f5_when_f1_f2_f3_f4_null',
+            ),
         ]
 
     def __str__(self):
@@ -1014,13 +1130,13 @@ class CustPlaceToLocation(models.Model):
                                  null=False,
                                  blank=False,
                                  on_delete=models.RESTRICT,
-                                 verbose_name='т. орган_1',
+                                 verbose_name='Таможенный орган-использование',
                                  related_name='to_cp1')
     loc = models.ForeignKey(to=LocationOfUse,
                             null=True,
                             blank=False,
                             on_delete=models.RESTRICT,
-                            verbose_name='локация',
+                            verbose_name='Локация',
                             related_name='to_location')
     is_main_for_cust = models.BooleanField(
         null=False,

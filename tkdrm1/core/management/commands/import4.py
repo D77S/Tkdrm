@@ -174,7 +174,7 @@ class Command(BaseCommand):
             except Exception:
                 curr_date_verif = None
 
-            cat_number_f = int(item[25])
+            cat_number_f = int(item[24])
 
             if item[18] == '' or item[18] == 'Нет данных':
                 curr_cost = None
@@ -189,7 +189,7 @@ class Command(BaseCommand):
                 curr_cond = None
 
             note1 = None
-            note2 = item[39] if item[39] != '' else None
+            note2 = item[38] if item[38] != '' else None
             note3 = None
 
             # создание девайса

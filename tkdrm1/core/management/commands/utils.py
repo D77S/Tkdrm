@@ -623,6 +623,14 @@ def clear_n_init():
             date_start=datetime.date(year=2026, month=7, day=3),
             date_end=datetime.date(year=2026, month=11, day=23)
         )
+        # по м-продлению ср.службы
+        c_2026_m12 = Contracts.objects.create(
+            title=CONTRACT1,
+            number=102,
+            date_of=datetime.date(year=2026, month=10, day=20),
+            date_start=datetime.date(year=2026, month=10, day=20),
+            date_end=datetime.date(year=2027, month=6, day=1)
+        )
 
         # Создание всех отношений между контрактами и действиями по ним
         # 2012
@@ -866,6 +874,13 @@ def clear_n_init():
             min_count=1,
             max_count=1
         )
+        # по м-продлению ср.службы
+        RelContrDoing.objects.create(
+            to_doing=Doings.objects.get_or_create(title=DOING1)[0],
+            to_contract=c_2026_m12,
+            min_count=1,
+            max_count=1
+        )
 
 def get_rtu(
           data_in: list[Union[list[str], str]],
@@ -1066,19 +1081,16 @@ def get_or_cr_curr_reltodev(
         to_dev: Device
     ) -> RelToDev:
     """."""
-    temp_rel_to_dev = RelToDev.objects.filter(to_dev=to_dev)
-    if not temp_rel_to_dev.exists():
-        return RelToDev.objects.create(
+    try:
+        temp = RelToDev.objects.create(
             to_rel=to_rel,
             to_dev=to_dev,
             is_main_for_dev=True
         )
-    else:
-        temp2_rel_to_dev = temp_rel_to_dev.filter(to_rel=to_rel)
-        if not temp2_rel_to_dev.exists():
-            return RelToDev.objects.create(
-                to_rel=to_rel,
-                to_dev=to_dev,
-                is_main_for_dev=False
-            )
-        return temp2_rel_to_dev.first()
+    except Exception:
+        temp = RelToDev.objects.create(
+            to_rel=to_rel,
+            to_dev=to_dev,
+            is_main_for_dev=False
+        )
+    return temp

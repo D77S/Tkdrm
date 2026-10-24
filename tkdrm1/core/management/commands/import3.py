@@ -1365,8 +1365,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[67],
-                pos=67,
+                item_pos=item[64],
+                pos=64,
                 contr_num=47,
                 date_of=datetime.date(year=2025, month=4, day=22),
                 title_of=CONTRACT4,
@@ -1376,8 +1376,8 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[71],
-                pos=71,
+                item_pos=item[68],
+                pos=68,
                 contr_num=68,
                 date_of=datetime.date(year=2025, month=6, day=23),
                 title_of=CONTRACT3,
@@ -1388,13 +1388,25 @@ class Command(BaseCommand):
             cr_rel_to_contrs(
                 curr_dev=curr_dev,
                 item0=item[0],
-                item_pos=item[75],
-                pos=75,
+                item_pos=item[72],
+                pos=72,
                 contr_num=32,
                 date_of=datetime.date(year=2026, month=5, day=6),
                 title_of=CONTRACT4,
                 doing=Doings.objects.get(title=DOING4)
             )
+            # по м-продлению ср.службы
+            cr_rel_to_contrs(
+                curr_dev=curr_dev,
+                item0=item[0],
+                item_pos=item[74],
+                pos=74,
+                contr_num=102,
+                date_of=datetime.date(year=2026, month=10, day=20),
+                title_of=CONTRACT1,
+                doing=Doings.objects.get(title=DOING1)
+            )
+
             # Попытка апдейта фактической категории девайса
             curr_dev.cat_number_f = curr_dev.cat_number_c
             curr_dev.save()

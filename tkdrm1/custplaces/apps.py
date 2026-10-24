@@ -4,3 +4,4 @@ from django.apps import AppConfig
 class CustplacesConfig(AppConfig):
     default_auto_field = 'django.db.models.BigAutoField'
     name = 'custplaces'
+    verbose_name = 'Т.ораганы и их места работы'

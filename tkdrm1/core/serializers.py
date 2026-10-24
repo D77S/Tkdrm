@@ -286,6 +286,9 @@ class AllDevsSerializer(serializers.ModelSerializer):
             'type',
             'serial',
         )
+    def to_representation(self, instance):
+        self.context['dev'] = instance
+        return super().to_representation(instance)
 
 class DevDetailSerializer(serializers.ModelSerializer):
     type = DevTypeSerializer(

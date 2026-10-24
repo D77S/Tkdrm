@@ -1,5 +1,6 @@
 from django.db import models
-from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser, UserManager
+from django.core.exceptions import ValidationError
 from custplaces.models import CustPlace1Use
 
 
@@ -26,6 +27,13 @@ class Departments(models.Model):
         return f'отдел: {self.title}'
 
 
+class TKDRMUserManager(UserManager):
+    def create_superuser(self, username, email=None, password=None, **extra_fields):
+        extra_fields.setdefault('dept', None)
+        extra_fields.setdefault('empl', None)
+        return super().create_superuser(username, email, password, **extra_fields)
+
+
 class TKDRMUser(AbstractUser):
     """Юзеры проекта."""
 
@@ -38,7 +46,7 @@ class TKDRMUser(AbstractUser):
     )
     empl = models.ForeignKey(
         to=CustPlace1Use,
-        null=False,
+        null=True,
         blank=False,
         on_delete=models.PROTECT,
         verbose_name='Т.орган, в котором числится',
@@ -46,12 +54,14 @@ class TKDRMUser(AbstractUser):
     )
     dept = models.ForeignKey(
         to=Departments,
-        null=False,
+        null=True,
         blank=False,
         on_delete=models.PROTECT,
         verbose_name='Отдел т.органа, в к-м числится',
         related_name='from_dept_to_user'
     )
+
+    objects = TKDRMUserManager()
 
     class Meta:
         """."""
@@ -64,6 +74,13 @@ class TKDRMUser(AbstractUser):
                 name='unique_empl_dept'
             )
         ]
+
+    def clean(self):
+        super().clean()
+        if not self.is_superuser and (self.dept is None or self.empl is None):
+            raise ValidationError({
+                'dept': 'Для не superuser обязательно должены быть поля empl и dept оба не Null'
+            })
 
     def __str__(self):
         """."""
