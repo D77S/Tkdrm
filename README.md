@@ -40,9 +40,12 @@ ToDo:
     - Опция2:
         - получить от разработчика файл БД db.sqlite3 и положить его рядом с manage.py
 - python manage.py runserver
+- Обеспечить установленное Node.js
+- cd my-frontend
+- npm start
 
 После запуска проекта будет доступно:
--  http://127.0.0.1:8000/
+-  http://127.0.0.1:8000/admin/
 -  По REST API, в клиенте:
     -  GET http://127.0.0.1:8000/all_list/by_cpl5/
     -  GET http://127.0.0.1:8000/all_list/by_cpl5/ID/
