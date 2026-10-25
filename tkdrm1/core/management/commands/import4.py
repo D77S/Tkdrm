@@ -57,6 +57,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         """."""
+        User = get_user_model()
 
         def get_curr_dev4(
                 item: list[Union[list[str], str]],
@@ -67,7 +68,7 @@ class Command(BaseCommand):
                 all_status_types: QuerySet
         ) -> Device:
             """."""
-
+            User = get_user_model()
             # Определение типа девайса и срока гарантии
             curr_dev_type_temp = item[9]
             curr_dev_warr = int(float(item[15].replace(',', '.')) * 12)
@@ -224,8 +225,6 @@ class Command(BaseCommand):
                 return None
 
             return curr_dev
-
-        User = get_user_model()
 
         # Main begin
         print('import4.py начал работу.')

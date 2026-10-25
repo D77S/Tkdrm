@@ -286,8 +286,8 @@ class Contracts(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект гос.контракта'
-        verbose_name_plural = 'Объекты гос.контрактов'
+        verbose_name = 'Контракт гос. центр.'
+        verbose_name_plural = 'Контракты гос. центр.'
         constraints = [
             models.UniqueConstraint(
                 fields=['number', 'date_of'],
@@ -338,8 +338,8 @@ class RelContrDoing(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект связи действия и контракта'
-        verbose_name_plural = 'Объекты связи действия и контракта'
+        verbose_name = 'Cвязь действия и контракта'
+        verbose_name_plural = 'Связи действия и контракта'
         constraints = [
             models.UniqueConstraint(
                 fields=['to_doing', 'to_contract'],
@@ -349,7 +349,7 @@ class RelContrDoing(models.Model):
 
     def __str__(self):
         """."""
-        return f'По контракту {self.to_contract} действие {self.to_doing}'
+        return f' {self.to_contract} и действие {self.to_doing}'
 
 
 class DTCReal(models.Model):
@@ -376,8 +376,8 @@ class DTCReal(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'объект промежутки'
-        verbose_name_plural = 'объекты промежутки'
+        verbose_name = 'Реальное действие с прибором по контракту'
+        verbose_name_plural = 'Реальные действия с прибором по контракту'
         constraints = [
             models.UniqueConstraint(
                 fields=['basis', 'exact_moment'],
@@ -685,8 +685,8 @@ class Device(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Техническое средство'
-        verbose_name_plural = 'Технические средства'
+        verbose_name = 'Прибор'
+        verbose_name_plural = 'Приборы'
 
     def __str__(self):
         """."""
@@ -727,20 +727,20 @@ class DTCPotential(models.Model):
                             null=False,
                             blank=False,
                             on_delete=models.CASCADE,
-                            verbose_name='прибор',
+                            verbose_name='Прибор',
                             related_name='f_dev_to_doing')
     reltocd = models.ForeignKey(to=RelContrDoing,
                                 null=False,
                                 blank=False,
                                 on_delete=models.PROTECT,
-                                verbose_name='действие',
+                                verbose_name='Действие',
                                 related_name='f_doing_to_dev')
 
     class Meta:
         """."""
 
-        verbose_name = 'объект промежутки'
-        verbose_name_plural = 'объекты промежутки'
+        verbose_name = 'Потенциальное действие с прибором по контракту'
+        verbose_name_plural = 'Потенциальные действия с прибором по контракту'
         constraints = [
             models.UniqueConstraint(
                 fields=['dev', 'reltocd'],
@@ -750,7 +750,7 @@ class DTCPotential(models.Model):
 
     def __str__(self):
         """."""
-        return f'Объект промежутки с id={self.id}'
+        return f'Потенциальное дествие с {self.dev}, по {self.reltocd}, id={self.id}'
 
 
 class RelToDev(models.Model):
@@ -782,14 +782,14 @@ class RelToDev(models.Model):
         null=False,
         blank=False,
         default=False,
-        verbose_name='Флаг приоритетности'
+        verbose_name='Для данного прибора это приоритетное место (одно)'
     )
 
     class Meta:
         """."""
 
-        verbose_name = 'объект промежутки'
-        verbose_name_plural = 'объекты промежутки'
+        verbose_name = 'Связь прибора и места эксплуатации'
+        verbose_name_plural = 'Связи прибора и места эксплуатации'
         constraints = [
             models.UniqueConstraint(
                 fields=['to_rel', 'to_dev'],
@@ -808,4 +808,4 @@ class RelToDev(models.Model):
 
     def __str__(self):
         """."""
-        return f'Объект промежутки с id={self.id}'
+        return f'{self.to_dev} связано с {self.to_rel}, id={self.id}'

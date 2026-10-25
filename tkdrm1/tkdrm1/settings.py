@@ -48,6 +48,10 @@ INSTALLED_APPS = [
     'mainpage.apps.MainpageConfig',
 ]
 
+SWAGGER_SETTINGS = {
+    'SHOW_IN_ADMIN': False,  # Отключает отображение drf_yasg в админ-панели
+}
+
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -129,7 +133,7 @@ REST_FRAMEWORK = {
 
 LANGUAGE_CODE = 'ru-RU'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Moscow'
 
 USE_I18N = True
 

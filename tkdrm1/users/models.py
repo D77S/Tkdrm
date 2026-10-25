@@ -13,7 +13,7 @@ class Departments(models.Model):
         unique=True,
         null=False,
         blank=False,
-        verbose_name='Название отдела т.органа'
+        verbose_name='Отдел т.органа'
     )
 
     class Meta:
