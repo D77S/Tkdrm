@@ -5,6 +5,7 @@ import os
 import pandas
 import sys
 from django.db.models import QuerySet
+from django.contrib.auth import get_user_model
 from typing import Union
 
 from users.models import (TKDRMUser,
@@ -177,7 +178,8 @@ def clear_n_init():
         StatusTypes.objects.all().delete()
         SourceTypes.objects.all().delete()
         # users app
-        TKDRMUser.objects.all().delete()
+        User = get_user_model()
+        User.objects.all().delete()
         Departments.objects.all().delete()
         # custplace app
         CustPlaceToLocation.objects.all().delete()
@@ -210,7 +212,8 @@ def clear_n_init():
         #     'Томск'
         # ]
         # for item in oez_titles:
-        #     Oez.objects.create(title=item)     
+        #     Oez.objects.create(title=item)
+        # 
         # users app
         depts_titles = [
             'ОПИДК',
@@ -232,6 +235,16 @@ def clear_n_init():
         ]
         for item in depts_titles:
             Departments.objects.create(title=item)
+        su_pass = os.environ.get('DJANGO_SUPERUSER_PASSWORD')
+        if not su_pass:
+            raise ValueError(
+                'Критическая ошибка: Переменная окружения DJANGO_SUPERUSER_PASSWORD не задана!'
+            )
+        User.objects.create_superuser(
+            username='admin',
+            email='admin@example.com',
+            password=su_pass,
+        )
         # core app
         source_objs = [SourceTypes(title=i) for i in SOURCE_TITLES]
         SourceTypes.objects.bulk_create(objs=source_objs)

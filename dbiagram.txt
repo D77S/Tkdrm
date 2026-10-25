@@ -87,7 +87,6 @@ Table LocationOfUse{
   oez integer [null, unique, ref: - Oez.id]
   ztk integer [null, unique, ref: - Ztk.id]
   svh integer [null, unique, ref: - Svh.id]
-  is_ztk boolean
 }
 
 Table CustPlaceToLocation{

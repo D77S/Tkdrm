@@ -14,20 +14,20 @@ from .validators import real_date, real_lt, real_cat
 
 
 class SourceTypes(models.Model):
-    """Модель типов источников имущества."""
+    """Модель видов источников имущества."""
 
     title = models.CharField(
         max_length=255,
         unique=True,
         null=False,
-        verbose_name='Тип источника имущества'
+        verbose_name='Вид источника имущества'
     )
 
     class Meta:
         """."""
 
-        verbose_name = 'Источник получения имущества'
-        verbose_name_plural = 'Источники получения имущества'
+        verbose_name = 'Источник имущества'
+        verbose_name_plural = 'Источники имущества'
 
     def __str__(self):
         """."""
@@ -73,8 +73,8 @@ class ServiceTypes(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Вид действия'
-        verbose_name_plural = 'Виды действий'
+        verbose_name = 'Допустимое действие и за чей счет'
+        verbose_name_plural = 'Допустимые действие и за чей счет'
 
     def __str__(self):
         """."""
@@ -95,8 +95,8 @@ class DevCatsL1(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект категории уровня 1 типа прибора'
-        verbose_name_plural = 'Объекты категории уровня 1 типов приборов'
+        verbose_name = 'Категория уровня 1 для прибора'
+        verbose_name_plural = 'Категории уровня 1 для прибора'
 
     def __str__(self):
         """."""
@@ -125,8 +125,8 @@ class DevCatsL2(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект категории уровня 2 типа прибора'
-        verbose_name_plural = 'Объекты категории уровня 2 типов приборов'
+        verbose_name = 'Категории уровня 2 для прибора'
+        verbose_name_plural = 'Категории уровня 2 для прибора'
 
     def __str__(self):
         """."""
@@ -179,7 +179,7 @@ class DevTypes(models.Model):
         null=True,
         default=False,
         blank=True,
-        verbose_name='Признак наличия вышестоящего девайса'
+        verbose_name='Признак наличия вышестоящего'
     )
     # Признак принадлежности к СИ или инд.
     # True: все девайсы данного типа обязаны быть либо СИ, либо инд;
@@ -207,8 +207,8 @@ class DevTypes(models.Model):
         indexes = [
             models.Index(fields=['title']),
         ]
-        verbose_name = 'Объект типа прибора'
-        verbose_name_plural = 'Объекты типов приборов'
+        verbose_name = 'Тип прибора'
+        verbose_name_plural = 'Типы прибора'
 
     def __str__(self):
         """."""
@@ -230,8 +230,8 @@ class Doings(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Объект возможного действия с прибором по контракту'
-        verbose_name_plural = 'Объекты в. д. с п. по к.'
+        verbose_name = 'Допустимое действие по его виду'
+        verbose_name_plural = 'Допустимые действия по их виду'
 
     def __str__(self):
         """."""

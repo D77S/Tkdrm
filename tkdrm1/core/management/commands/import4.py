@@ -142,7 +142,7 @@ class Command(BaseCommand):
             # определение флага включения ТС в ГК
             if item[17] == 'да':
                 curr_serv_type = ServiceTypes.objects.get(
-                    title='Децентрализовано, но за гос.бюджет'
+                    title='Г.бюджет, децентр.'
                 )
             elif item[17] == 'нет':
                 curr_serv_type = ServiceTypes.objects.get(

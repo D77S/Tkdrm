@@ -341,7 +341,6 @@ class Ppr(models.Model):
                     oez=None,
                     ztk=None,
                     svh=None,
-                    is_ztk=False
                 )
         else:
             with transaction.atomic():
@@ -353,7 +352,6 @@ class Ppr(models.Model):
                         'oez': None,
                         'ztk': None,
                         'svh': None,
-                        'is_ztk': False
                     }
                 )
 
@@ -397,7 +395,6 @@ class Mmpo(models.Model):
                     oez=None,
                     ztk=None,
                     svh=None,
-                    is_ztk=False
                 )
         else:
             with transaction.atomic():
@@ -409,7 +406,6 @@ class Mmpo(models.Model):
                         'oez': None,
                         'ztk': None,
                         'svh': None,
-                        'is_ztk': False
                     }
                 )
 
@@ -447,7 +443,6 @@ class Oez(models.Model):
                     oez=self,
                     ztk=None,
                     svh=None,
-                    is_ztk=False
                 )
         else:
             with transaction.atomic():
@@ -459,7 +454,6 @@ class Oez(models.Model):
                         'ppr': None,
                         'ztk': None,
                         'svh': None,
-                        'is_ztk': False
                     }
                 )
 
@@ -497,7 +491,6 @@ class Ztk(models.Model):
                     oez=None,
                     ztk=self,
                     svh=None,
-                    is_ztk=True
                 )
         else:
             with transaction.atomic():
@@ -509,7 +502,6 @@ class Ztk(models.Model):
                         'oez': None,
                         'ppr': None,
                         'svh': None,
-                        'is_ztk': True
                     }
                 )
 
@@ -555,7 +547,6 @@ class Svh(models.Model):
                     oez=None,
                     ztk=None,
                     svh=self,
-                    is_ztk=False
                 )
         else:
             with transaction.atomic():
@@ -566,7 +557,6 @@ class Svh(models.Model):
                         'mmpo': None,
                         'oez': None,
                         'ztk': None,
-                        'is_ztk': False
                     }
                 )
 
@@ -589,9 +579,6 @@ class CustPlace1Acc(models.Model):
     foo1, null, null;
     null, foo2, null;
     null, null, foo3.
-
-    Вариант (null, null, foo3) допустим ТОЛЬКО если по объекту foo3
-    для ОБОИХ уровней его вышестоящих объектов поля title равны "ТНП".
     """
     # https://lukeplant.me.uk/blog/posts/avoid-django-genericforeignkey/
     rtu = models.OneToOneField(

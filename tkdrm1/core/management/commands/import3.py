@@ -59,7 +59,7 @@ from core.models import (
     Doings,
     SourceTypes,
     ServiceTypes,
-    RelToDev,
+    # RelToDev,
     DevTypes,
     StatusTypes,
     # DevCatsL2,
@@ -149,9 +149,9 @@ class Command(BaseCommand):
             ]:
                 print(ERR_TEXT_1.format(row[0], '\'статус ТС\'', ''))
                 return False
-            if row[20] not in ['', '0', '1', '2', '3']:
+            if row[20] not in ['', '2', '3', '4', '5']:
                 print(ERR_TEXT_1.format(
-                    row[0], '\'0\', \'1\', \'2\', \'3\'', ''))
+                    row[0], '\'2\', \'3\', \'4\', \'5\'', ''))
                 return False
             if row[21] not in ['', '0', '1']:
                 print(ERR_TEXT_1.format(row[0], '\'0\', \'1\'', ''))
@@ -541,7 +541,7 @@ class Command(BaseCommand):
 
             # определение флага включения ТС в ГК
             curr_serv_flag = item[20]
-            if curr_serv_flag not in ['0', '1', '2', '3']:
+            if curr_serv_flag not in ['2', '3', '4', '5']:
                 err_report(row=item[0],
                            reason='парсинга флага включения в ГК',
                            st_2=curr_serv_flag)

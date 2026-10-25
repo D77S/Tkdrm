@@ -6,6 +6,8 @@ from rest_framework import permissions
 from drf_yasg.views import get_schema_view
 from drf_yasg import openapi
 
+admin.site.site_url = 'http://127.0.0.1:8000/all_list/by_cpl5/'
+
 schema_view = get_schema_view(
    openapi.Info(
       title="DeV API",
@@ -22,7 +24,7 @@ schema_view = get_schema_view(
 urlpatterns = [
     path('admin/', admin.site.urls),
    #  path('', include('mainpage.urls', namespace='mainpage')),
-   #  path('all_list/', include('core.urls', namespace='core'))
+    path('all_list/', include('core.urls', namespace='core'))
 ]
 
 urlpatterns += [
