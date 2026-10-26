@@ -74,6 +74,9 @@ class TKDRMUser(AbstractUser):
                 name='unique_empl_dept'
             )
         ]
+        indexes = [
+            models.Index(fields=['empl', 'dept']),
+        ]
 
     def clean(self):
         super().clean()

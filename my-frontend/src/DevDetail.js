@@ -222,7 +222,7 @@ function DeviceDetail() {
                         ))}
                       </ul>
                     ) : (
-                      <span style={{ color: '#999', fontStyle: 'italic' }}>Услуг/работ не было, либо данных по ним нет</span>
+                      <span style={{ color: '#999', fontStyle: 'italic' }}>Услуг/работ не было либо данных по ним нет</span>
                     )}
                   </td>
                 </tr>

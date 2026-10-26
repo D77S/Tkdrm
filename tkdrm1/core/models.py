@@ -346,6 +346,9 @@ class RelContrDoing(models.Model):
                 name='unique_dc'
             ),
         ]
+        indexes = [
+            models.Index(fields=['to_contract', 'to_doing']),
+        ]
 
     def __str__(self):
         """."""
@@ -383,6 +386,9 @@ class DTCReal(models.Model):
                 fields=['basis', 'exact_moment'],
                 name='unique_dc_real'
             )
+        ]
+        indexes = [
+            models.Index(fields=['basis', '-exact_moment']), 
         ]
 
     def __str__(self):
@@ -685,8 +691,13 @@ class Device(models.Model):
     class Meta:
         """."""
 
-        verbose_name = 'Прибор'
-        verbose_name_plural = 'Приборы'
+        verbose_name = '_Прибор'
+        verbose_name_plural = '_Приборы'
+        indexes = [
+            models.Index(fields=['serial']),  # Для быстрого поиска по серийнику
+            models.Index(fields=['status_use']), # Для фильтрации по статусу эксплуатации
+            models.Index(fields=['type']),  # Для фильтрации по типу ТС
+        ]
 
     def __str__(self):
         """."""
@@ -746,6 +757,9 @@ class DTCPotential(models.Model):
                 fields=['dev', 'reltocd'],
                 name='unique_dr'
             )
+        ]
+        indexes = [
+            models.Index(fields=['reltocd', 'dev']),
         ]
 
     def __str__(self):

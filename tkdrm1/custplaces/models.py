@@ -759,17 +759,17 @@ class CustPlace1Use(models.Model):
 
     # Вычисляемые поля.
     # Локатор на один из типов т.органов.
-    # @property
-    # def to_cp(self):
-    #     if self.rtu:
-    #         return self.rtu
-    #     elif self.custhouse:
-    #         return self.custhouse
-    #     elif self.custpost:
-    #         return self.custpost
-    #     else:
-    #         return None
-    #
+    @property
+    def to_cp(self):
+        if self.rtu:
+            return self.rtu
+        elif self.custhouse:
+            return self.custhouse
+        elif self.custpost:
+            return self.custpost
+        else:
+            return None
+    
     # Локаторы на весь набор т.органов
     @property
     def custpost3(self):

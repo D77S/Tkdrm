@@ -187,6 +187,8 @@ class CustPlace1AccAdmin(admin.ModelAdmin):
         'custhouse',
         'custpost'
     ]
+    search_fields = ('rtu__title', 'custhouse__title', 'custpost__title', 'rtu__code', 'custhouse__code', 'custpost__code')
+
     list_per_page = 10
     ordering = ('id',)
 
@@ -248,5 +250,13 @@ class CustPlaceToLocationAdmin(admin.ModelAdmin):
         'loc',
         'is_main_for_cust'
     ]
+    search_fields = (
+        'loc__ppr__title', 
+        'loc__mmpo__title', 
+        'loc__oez__title', 
+        'loc__ztk__title', 
+        'loc__svh__title',
+        'cust_pl1__custpost__title'
+    )
     list_per_page = 5
     ordering = ('id',)

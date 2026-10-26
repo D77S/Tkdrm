@@ -34,6 +34,7 @@ class TKDRMUserAdmin(admin.ModelAdmin):
         # 'empl',
         'dept'
     ]
+    search_fields = ('username', 'last_name')
     list_per_page = 10
     ordering = ('id',)
 
