@@ -31,10 +31,18 @@ class TKDRMUserAdmin(admin.ModelAdmin):
         'first_name',
         'pater_name',
         'last_name',
-        # 'empl',
+        'empl',
         'dept'
     ]
-    search_fields = ('username', 'last_name')
+    autocomplete_fields = ('empl',)
+    search_fields = ('username', 'first_name', 'last_name', 'email')
     list_per_page = 10
     ordering = ('id',)
-
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        return qs.select_related(
+            'dept', 
+            'empl__rtu', 
+            'empl__custhouse', 
+            'empl__custpost'
+        )

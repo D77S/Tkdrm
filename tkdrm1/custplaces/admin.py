@@ -211,6 +211,11 @@ class CustPlace1UseAdmin(admin.ModelAdmin):
         'ztk_allowed',
         'standalone_allowed'
     ]
+    search_fields = (
+        'rtu__title', 'rtu__code',
+        'custhouse__title', 'custhouse__code',
+        'custpost__title', 'custpost__code'
+    )
     list_per_page = 10
     ordering = ('id',)
 
