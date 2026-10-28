@@ -19,6 +19,7 @@ urlpatterns = [
     # path('by_cpl4/<int:pk>/edit', views.DevU.as_view()),
     # path('by_cpl4/<int:pk>/del', views.DevD.as_view()),
     # # Для низкоуровневых классов REST API
+    path('dash/', views.DashboardAnalyticsView.as_view(), name='dashboard-analytics'),
     # path('by_cpl3/', views.APIAllList.as_view()),
     # path('by_cpl3/<int:pk>/', views.APIDetail.as_view()),
     # path('by_cpl3/create', views.APIDetail.as_view()),

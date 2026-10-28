@@ -172,7 +172,7 @@ const handleDelete = (id) => {
                 <td style={{ padding: '10px', border: '1px solid #ddd', wordBreak: 'break-word' }}>{device.serial || ''}</td>
                 <td style={{ padding: '10px', border: '1px solid #ddd', textAlign: 'center' }}>
                   <Link to={`/devices/${device.id}`} style={{ color: '#007bff', textDecoration: 'underline', marginRight: '12px', fontWeight: '500' }}>Подробно</Link>
-                  <span style={{ color: '#28a745', cursor: 'pointer', marginRight: '12px', fontWeight: '500' }}>Редактировать</span>
+                  <span style={{ color: '#6c757d', cursor: 'not-allowed', marginRight: '12px', fontWeight: '500', userSelect: 'none' }}>Редактировать</span>
                   <span onClick={() => handleDelete(device.id)} style={{ color: '#dc3545', cursor: 'pointer', fontWeight: '500', textDecoration: 'underline'}}>
                     Удалить
                   </span>

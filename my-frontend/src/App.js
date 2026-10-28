@@ -2,7 +2,8 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
 import Home from './Home';
 import AllList from './All_list';
-import DeviceDetail from './DevDetail'; // Импортируем новый файл детальной страницы
+import DeviceDetail from './DevDetail';
+import Dashboards from './Dashboards'; // Импортируем новый компонент
 
 function App() {
   return (
@@ -19,6 +20,9 @@ function App() {
           <div style={{ maxWidth: '1000px', margin: '0 auto', display: 'flex', gap: '20px', fontWeight: 'bold', alignItems: 'center' }}>
             <Link to="/" style={{ color: '#007bff', textDecoration: 'none' }}>Главная страница</Link>
             <Link to="/all_list/by_cpl5/" style={{ color: '#007bff', textDecoration: 'none' }}>Общий перечень</Link>
+            {/* Новая ссылка на раздел Дашборды */}
+            <Link to="/all_list/dash/" style={{ color: '#007bff', textDecoration: 'none' }}>Дашборды</Link>
+            
             <span style={{ color: '#6c757d', cursor: 'not-allowed', userSelect: 'none' }}>
               Создать прибор
             </span>
@@ -30,8 +34,9 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/all_list/by_cpl5/" element={<AllList />} />
-            {/* Динамический маршрут для детальной страницы */}
             <Route path="/devices/:id" element={<DeviceDetail />} />
+            {/* Маршрут для страницы дашбордов */}
+            <Route path="/all_list/dash/" element={<Dashboards />} />
           </Routes>
         </div>
 
