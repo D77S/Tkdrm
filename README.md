@@ -15,6 +15,11 @@ Done:
 - Шесть операций CRUD для REST API на вьюсетах.
 - Все модели в админке.
 - Начат вайбкодинг фронтенда.
+    - Сделана главная.
+    - Сделан полный список всех объектов Device, каждый выведен вкратце.
+    - Работает ссылка Удалить объект.
+    - Сделана страничка полной детализации каждого объекта.
+    - Начата работа над страничкой дашбордов.
 
 ToDo:
 - апдейтить БД по мере подгрузки легаси-данных.
@@ -47,11 +52,16 @@ ToDo:
 После запуска проекта будет доступно:
 -  http://127.0.0.1:8000/admin/
 -  По REST API, в клиенте:
-    -  GET http://127.0.0.1:8000/all_list/by_cpl5/
-    -  GET http://127.0.0.1:8000/all_list/by_cpl5/ID/
-    -  POST http://127.0.0.1:8000/all_list/by_cpl5/
-    -  PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
-    -  PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
-    -  DELETE http://127.0.0.1:8000/all_list/by_cpl5/ID/
+    - По списку всех объектов:
+        -  GET http://127.0.0.1:8000/all_list/by_cpl5/
+    - По одному конкретному объекту:
+        -  GET http://127.0.0.1:8000/all_list/by_cpl5/ID/
+        To do -  POST http://127.0.0.1:8000/all_list/by_cpl5/
+        To do -  PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
+        To do -  PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
+        -  DELETE http://127.0.0.1:8000/all_list/by_cpl5/ID/
+    - По дашбордам:
+        -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_cat_l2
+        -  GET http://127.0.0.1:8000/all_list/dash/?dashname=device_conditions
     
 Автор: Дмитрий, контакт в профиле github.

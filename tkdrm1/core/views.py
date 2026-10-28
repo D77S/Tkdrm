@@ -408,14 +408,22 @@ class DashboardAnalyticsView(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
         
-        # 1. Дашборд: Состояние парка приборов
-        if dashname == 'device_conditions':
-            queryset = Device.objects.values('condition').annotate(value=Count('id'))
-            print(f'{queryset=}')
+        # 
+        # 1. Дашборд: Деление по типам категорий 2-го уровня
+        if dashname == 'dev_cat_l2':
+            qs = (Device.objects.values(
+                'type__category__cat_l1__title'
+            ).annotate(value=Count('id')))
+            data = [{
+                "name": item["type__category__cat_l1__title"] or "Без категории", "value": item["value"]}
+                for item in qs]
+            return Response(data)
+        # 2. Дашборд: Состояние парка приборов
+        elif dashname == 'device_conditions':
+            qs = Device.objects.values('condition').annotate(value=Count('id'))
             data = [{
                 "name": "Исправен" if item['condition'] else "Неисправен", "value": item['value']
-                } for item in queryset]
-            print(f'{data=}')
+                } for item in qs]
             return Response(data)
         return Response(
             {"error": f"Дашборд с именем '{dashname}' не найден."}, 
