@@ -56,9 +56,9 @@ ToDo:
         -  GET http://127.0.0.1:8000/all_list/by_cpl5/
     - По одному конкретному объекту:
         -  GET http://127.0.0.1:8000/all_list/by_cpl5/ID/
-        To do -  POST http://127.0.0.1:8000/all_list/by_cpl5/
-        To do -  PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
-        To do -  PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
+        -  To do POST http://127.0.0.1:8000/all_list/by_cpl5/
+        -  To do PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
+        -  To do PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
         -  DELETE http://127.0.0.1:8000/all_list/by_cpl5/ID/
     - По дашбордам:
         -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_cat_l2
