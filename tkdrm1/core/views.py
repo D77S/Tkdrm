@@ -3,19 +3,23 @@
 # import sys
 import time
 # from django.db import connection, reset_queries
-from rest_framework.decorators import api_view
-from rest_framework.pagination import PageNumberPagination
+# from rest_framework.decorators import api_view
+# from rest_framework.pagination import PageNumberPagination
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import generics, status, viewsets
-from django.core.paginator import Paginator
+from rest_framework import (
+    # generics,
+    status,
+    viewsets
+)
+# from django.core.paginator import Paginator
 # from django.forms.models import model_to_dict
 from django.db.models import OuterRef, Subquery, F, Value, Count
 from django.db.models.functions import Coalesce
-from django.http import HttpRequest
-from django.shortcuts import get_object_or_404, redirect, render
-from core.constants import ALL_DEV_PAG
-from core.forms import DevDetailForm, DevEditForm
+# from django.http import HttpRequest
+# from django.shortcuts import get_object_or_404, redirect, render
+# from core.constants import ALL_DEV_PAG
+# from core.forms import DevDetailForm, DevEditForm
 from core.models import (
     Device,
     RelToDev,
@@ -25,7 +29,7 @@ from custplaces.models import (
 )
 from core.serializers import (
     AllDevsSerializer,
-    CustPlaceToLocSerializer,
+    # CustPlaceToLocSerializer,
     DevDetailSerializer
 )
 
@@ -407,8 +411,6 @@ class DashboardAnalyticsView(APIView):
                 {"error": "Параметр 'dashname' является обязательным."}, 
                 status=status.HTTP_400_BAD_REQUEST
             )
-        
-        # 
         # 1. Дашборд: Деление по типам категорий 2-го уровня
         if dashname == 'dev_cat_l2':
             qs = (Device.objects.values(
@@ -418,7 +420,30 @@ class DashboardAnalyticsView(APIView):
                 "name": item["type__category__cat_l1__title"] or "Без категории", "value": item["value"]}
                 for item in qs]
             return Response(data)
-        # 2. Дашборд: Состояние парка приборов
+        # 2. Дашборд: Деление по типам категорий 1-го уровня
+        if dashname == 'dev_cat_l1':
+            qs = (Device.objects.values(
+                'type__category__title'
+            ).annotate(value=Count('id')))
+            data = [{
+                "name": item["type__category__title"] or "Без категории", "value": item["value"]}
+                for item in qs]
+            return Response(data)
+        # 3. Дашборд: Деление по типам СТСО
+        if dashname == 'dev_type_cat_l1_Y':
+            qs = Device.objects.filter(
+                 type__category__title='СТСО'
+            ).values(
+                 'type__title'
+            ).annotate(device_count=Count('id')
+            ).order_by('-device_count')
+            data = [{
+                "type_title": item["type__title"],
+                "count": item["device_count"]
+            } for item in qs
+            ]
+            return Response(data)
+        # 4. Дашборд: Состояние парка приборов
         elif dashname == 'device_conditions':
             qs = Device.objects.values('condition').annotate(value=Count('id'))
             data = [{

@@ -51,17 +51,25 @@ ToDo:
 
 После запуска проекта будет доступно:
 -  http://127.0.0.1:8000/admin/
--  По REST API, в клиенте:
-    - По списку всех объектов:
+   (если БД наполняется встроенной mgm-командой, то в БД автоматически создается один суперюзер с логином admin)
+-  Если запущен фронт:
+    -  Главная http://127.0.0.1:3000/
+    -  Список всех объектов http://127.0.0.1:3000/all_list/by_cpl5/
+    -  По одному конкретному объекту: http://127.0.0.1:3000/devices/ID
+    -  По дашбордам: http://127.0.0.1:3000/all_list/dash/
+-  По REST API:
+    -  По списку всех объектов:
         -  GET http://127.0.0.1:8000/all_list/by_cpl5/
-    - По одному конкретному объекту:
+    -  По одному конкретному объекту:
         -  GET http://127.0.0.1:8000/all_list/by_cpl5/ID/
         -  To do POST http://127.0.0.1:8000/all_list/by_cpl5/
         -  To do PUT http://127.0.0.1:8000/all_list/by_cpl5/ID/
         -  To do PATCH http://127.0.0.1:8000/all_list/by_cpl5/ID/
         -  DELETE http://127.0.0.1:8000/all_list/by_cpl5/ID/
-    - По дашбордам:
+    -  По дашбордам:
         -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_cat_l2
+        -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_cat_l1
+        -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_type_cat_l1_Y
         -  GET http://127.0.0.1:8000/all_list/dash/?dashname=device_conditions
     
 Автор: Дмитрий, контакт в профиле github.
