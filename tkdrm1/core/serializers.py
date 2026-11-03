@@ -130,10 +130,14 @@ class CustPlaceToLocSerializer(serializers.ModelSerializer):
         dev = self.context.get('dev')
         if not dev:
             return None
-        rel_obj = obj.from_relation.filter(to_dev=dev).first()
-        if rel_obj:
-            return rel_obj.is_main_for_dev
-        return None
+        # obj.from_relation.all() уже подтянут в кверисет, см. запрос и его prefetch_relatedы
+        rel_objs_for_dev = list(filter(lambda x: x.to_dev_id == dev.id, obj.from_relation.all()))
+        if not rel_objs_for_dev:
+            return None
+        # это же в принципе единственное значение? я бы подстраховалась:
+        if len(rel_objs_for_dev) > 1:
+            raise Exception("Слишком много главных мест для прибора: {}".format(dev.id))
+        return rel_objs_for_dev[0].is_main_for_dev
 
 
 class DevCatL1Serializer(serializers.ModelSerializer):

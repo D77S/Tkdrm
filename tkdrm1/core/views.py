@@ -76,7 +76,8 @@ def time_counter(time_list: list, st: str):
 #     serializer_class = CustPlaceToLocSerializer
 
 class DevViewSet(viewsets.ModelViewSet):
-    queryset=Device.objects.all().order_by('id')
+    # если есть get_queryset, не надо задавать queryset ?
+    queryset=Device.objects.all().order_by('id').select_related('type')
     # Пагинатор настроен в settings, ключи
     # 'DEFAULT_PAGINATION_CLASS' и 'PAGE_SIZE'
     serializer_class=DevDetailSerializer
@@ -117,7 +118,7 @@ class DevViewSet(viewsets.ModelViewSet):
                 id=OuterRef('target_cust_place_to_location_id')
             )
             #####
-            temp_qs =  Device.objects.select_related('type').annotate(
+            temp_qs =  Device.objects.select_related('type__category__cat_l1').prefetch_related('rels_of_work__loc', 'rels_of_work__from_relation', 'rels_of_work__cust_pl1__custpost__upper_id__upper_id', 'rels_of_work__cust_pl1__custhouse__upper_id').annotate(
                 device_type_title=F('type__title'),
                 target_cust_place_to_location_id=Coalesce(
                     Subquery(main_rel_subquery),
@@ -171,6 +172,7 @@ class DevViewSet(viewsets.ModelViewSet):
             )
             return temp_qs
         return queryset.order_by('id')
+    
     def get_serializer_class(self):
         if self.action == 'list':
             return AllDevsSerializer
