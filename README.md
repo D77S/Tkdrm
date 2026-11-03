@@ -51,7 +51,7 @@ ToDo:
 
 После запуска проекта будет доступно:
 -  http://127.0.0.1:8000/admin/
-   (если БД наполняется встроенной mgm-командой, то в БД автоматически создается один суперюзер с логином admin)
+   (если БД наполняется встроенной mgm-командой, то в БД автоматически создается один суперюзер login=admin/pass=2418)
 -  Если запущен фронт:
     -  Главная http://127.0.0.1:3000/
     -  Список всех объектов http://127.0.0.1:3000/all_list/by_cpl5/
@@ -71,5 +71,12 @@ ToDo:
         -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_cat_l1
         -  GET http://127.0.0.1:8000/all_list/dash/?dashname=dev_type_cat_l1_Y
         -  GET http://127.0.0.1:8000/all_list/dash/?dashname=device_conditions
-    
+
+Справночно:
+- Перелить БД из db.sqlite в JSON: python -Xutf8 manage.py dumpdata --exclude contenttypes --exclude auth.permission --indent 2 -o db.json
+- Перелить БД из JSON в db.sqlite:
+    - python manage.py makemigrations
+    - python manage.py migrate
+    - python manage.py loaddata db.json
+
 Автор: Дмитрий, контакт в профиле github.

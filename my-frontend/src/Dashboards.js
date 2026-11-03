@@ -1,7 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { 
-  PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer 
+  PieChart,
+  Pie,
+  Cell,
+  Tooltip,
+  ResponsiveContainer 
 } from 'recharts';
 
 function Dashboards() {
@@ -118,7 +122,7 @@ function Dashboards() {
         </div>
       </div>
 
-  {/* ДАШБОРД2: Категории уровня 1 с независимой HTML-легендой */}
+ {/* ДИАГРАММА 2: Категории уровня 1 с независимой HTML-легендой */}
       <div style={{ 
         maxWidth: '900px', 
         margin: '0 auto 30px auto', 
@@ -204,7 +208,7 @@ function Dashboards() {
         )}
       </div>
 
-      {/* ДИАГРАММА 3: СТСО с независимой HTML-легендой */}
+  {/* ДИАГРАММА 3: СТСО с независимой HTML-легендой */}
       <div style={{ 
         maxWidth: '900px', 
         margin: '0 auto 30px auto', 
@@ -289,7 +293,7 @@ function Dashboards() {
         )}
       </div>
 
-      {/* ДИАГРАММА 4: Исправность (выведена ниже) */}
+  {/* ДИАГРАММА 4: Исправность (выведена ниже) */}
       <div style={{ 
         maxWidth: '900px', 
         margin: '0 auto',

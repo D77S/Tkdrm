@@ -158,7 +158,7 @@ class DevTypes(models.Model):
         blank=False,
         default=2,
         validators=(real_lt,),
-        verbose_name='Срок службы, мес.'
+        verbose_name='Срок службы прибора данного типа, лет'
     )
     # Признак серийного номера:
     # True: он обязан быть у объекта;
@@ -537,19 +537,57 @@ class Device(models.Model):
         )
         date_warr_end = datetime.datetime.combine(date_warr_end, datetime.datetime.min.time())  # noqa
         date_warr_end = timezone.make_aware(date_warr_end)
-        # дата истечения срока службы с проверкой по возможным продлениям её
-        delta = self.type.lifetime
-        date_ret = self.date_expl
-        date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())  # noqa
+
+
+        # Дата истечения срока службы с проверкой по возможным продлениям её.
+        # Рассчитывается и записывается в переменную date_ret.
+        # Справочно: блок-схема связей всех моделей приведена в файле Untitled.pdf в корне проекта.
+        # Описание алгоритма расчёта date_ret:
+        # Для объекта модели Device, того, который сейчас находится в self, нужно:
+        # - найти все объекты модели DTCPotential, такие, которые в поле dev ссылаются на self.
+        # - для каждого из них проверить два условия одновременно:
+        #   - должно существовать не менее одного объекта модели DTCReal, ссылающегося в поле basis на данный объект модели DTCPotential. Если условие не выполняется, то отбрасываем из дальнейшего рассмотрения данный объект модели DTCPotential. Если таких, ссылающихся на данный, объектов DTCReal несколько, то оставляем из них только один, с самой поздней по времени датой в поле exact_moment.
+        #   - в поле reltocontr.to_doing.title (или, что то же самое, в поле reltocontr__to_doing__title) должен быть текст, равный константе DOING1. Если там другой текст, то отбрасываем.
+        # - из отобранных объектов модели DTCPotential отберем только один, такой, у которого в поле exact_moment связаннного с ним объекта DTCReal самая поздняя дата exact_moment.
+        # - эту дату увеличиваем на число лет, взятое из self.self.type.lifetime и записываем в переменную date_ret.
+        #
+        # 
+        # Вариант 1, писал человек (я, автор.)
+        #
+        # delta = self.type.lifetime
+        # date_ret = self.date_expl
+        # date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())  # noqa
+        # date_ret = timezone.make_aware(date_ret)
+        # temps = self.f_dev_to_doing.all()
+        # for item in temps:
+        #     temps2 = list(item.from_dtcp_to_dtcr.all())
+        #     temps2.sort(key=lambda x: x.exact_moment, reverse=True)
+        #     temp2 = temps2[0] if temps2 else None
+        #     if temp2 and item.reltocd.to_doing.title == DOING1:
+        #         date_ret = max(temp2.exact_moment, date_ret)
+        # date_ret += dateutil.relativedelta.relativedelta(years=delta)
+        #
+        # Вариант 2, писал Gemini.
+        #
+        rcd_qs = RelContrDoing.objects.select_related(
+            'to_contract', 'to_doing'
+        ).filter(to_doing__title=DOING1)
+        latest_event_for_device_subquery = DTCReal.objects.filter(basis__dev_id=models.OuterRef('id'), basis__reltocd__in=rcd_qs).order_by('-exact_moment').values('exact_moment')[:1]
+        devices_queryset = Device.objects.annotate(
+                latest_exact_moment=models.Subquery(latest_event_for_device_subquery)).filter(latest_exact_moment__isnull=False)
+        if self in devices_queryset:
+            delta = self.type.lifetime
+            date_ret = (devices_queryset.get(id=self.id).latest_exact_moment +
+                        dateutil.relativedelta.relativedelta(years=delta))
+        else:
+            date_ret = self.date_expl
+
+        # Вариант 3, приглашается написать кто хочет.
+        # На входе self, на выходе надо получить date_ret (или None, если так выдала БД.)
+
+
+        date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())
         date_ret = timezone.make_aware(date_ret)
-        temps = self.f_dev_to_doing.all()
-        for item in temps:
-            temps2 = list(item.from_dtcp_to_dtcr.all())
-            temps2.sort(key=lambda x: x.exact_moment, reverse=True)
-            temp2 = temps2[0] if temps2 else None
-            if temp2 and item.reltocd.to_doing.title == DOING1:
-                date_ret = max(temp2.exact_moment, date_ret)
-        date_ret += dateutil.relativedelta.relativedelta(years=delta)
 
         if date_expl <= today <= date_warr_end:
             return 1
@@ -602,7 +640,7 @@ class Device(models.Model):
         unique=False,
         blank=False,
         default=True,
-        verbose_name='Состояние по исправности на текущий день (включая все блоки и все нижестоящие приборы, если известно, да-исправно, нет-неисправно)'
+        verbose_name='Состояние по исправности на текущий день (включая все блоки, если известно, да-исправно, нет-неисправно)'
     )
     # Вышестоящий прибор (если есть).
     upper_id = models.ForeignKey(to='Device',
@@ -759,6 +797,7 @@ class DTCPotential(models.Model):
         ]
         indexes = [
             models.Index(fields=['reltocd', 'dev']),
+            models.Index(fields=['dev', 'reltocd']),
         ]
 
     def __str__(self):

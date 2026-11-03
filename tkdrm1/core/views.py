@@ -1,10 +1,12 @@
 """."""
 # import functools
 # import sys
+import datetime
 import time
 # from django.db import connection, reset_queries
 # from rest_framework.decorators import api_view
 # from rest_framework.pagination import PageNumberPagination
+from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework import (
@@ -12,9 +14,10 @@ from rest_framework import (
     status,
     viewsets
 )
+from collections import Counter
 # from django.core.paginator import Paginator
 # from django.forms.models import model_to_dict
-from django.db.models import OuterRef, Subquery, F, Value, Count
+from django.db.models import OuterRef, Subquery, F, Value, Count, Prefetch
 from django.db.models.functions import Coalesce
 # from django.http import HttpRequest
 # from django.shortcuts import get_object_or_404, redirect, render
@@ -22,6 +25,9 @@ from django.db.models.functions import Coalesce
 # from core.forms import DevDetailForm, DevEditForm
 from core.models import (
     Device,
+    DTCPotential,
+    RelContrDoing,
+    DTCReal,
     RelToDev,
 )
 from custplaces.models import (
@@ -32,6 +38,7 @@ from core.serializers import (
     # CustPlaceToLocSerializer,
     DevDetailSerializer
 )
+from core.constants import DOING1
 
 # def query_debugger(func):
 #     @functools.wraps(func)
