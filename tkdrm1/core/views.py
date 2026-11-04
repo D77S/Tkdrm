@@ -3,6 +3,7 @@
 # import sys
 import datetime
 import time
+import dateutil
 # from django.db import connection, reset_queries
 # from rest_framework.decorators import api_view
 # from rest_framework.pagination import PageNumberPagination
@@ -408,6 +409,98 @@ class DevViewSet(viewsets.ModelViewSet):
 # На низкоуровневых классах REST API
 #########################
 
+def get_today():
+    today = datetime.date.today()
+    today = datetime.datetime.combine(today, datetime.datetime.min.time())  # noqa
+    today = timezone.make_aware(today)
+    return today
+
+
+# надо переименовать второй параметр
+def get_cat_number_c(device, devices_annotated_lem_not_null):
+    today = get_today()
+    date_expl = device.date_expl
+    date_expl = datetime.datetime.combine(date_expl, datetime.datetime.min.time())  # noqa
+    date_expl = timezone.make_aware(date_expl)
+    # дата истечения гарантии
+    date_warr_end = device.date_expl + dateutil.relativedelta.relativedelta(
+        months=device.warr_period
+    )
+    date_warr_end = datetime.datetime.combine(date_warr_end, datetime.datetime.min.time())  # noqa
+    date_warr_end = timezone.make_aware(date_warr_end)
+    # тоже лучше бы переименовать
+    device_anno_list = list(filter(lambda item: item.id == device.id, devices_annotated_lem_not_null))
+    if device_anno_list:
+        device_anno = device_anno_list[0]
+        delta = device_anno.type.lifetime
+        date_ret = device_anno.latest_exact_moment + dateutil.relativedelta.relativedelta(years=delta)
+    else:
+        date_ret = device.date_expl
+ 
+    date_ret = datetime.datetime.combine(date_ret, datetime.datetime.min.time())
+    date_ret = timezone.make_aware(date_ret)
+    if date_expl <= today <= date_warr_end:
+        return 1
+    if date_warr_end < today <= date_ret:
+        return 2
+    if date_ret < today:
+        return 3
+    # категория может отсутствовать? если нет, то лучше в таком случае делать raise
+    return None
+
+# расчёт по старому алгоритму, для сравнения результатов.
+# выдаёт результат в той же форме, что и новый.
+# логгинг лучше отключить
+def get_many_cat_numbers_old():
+    devices = Device.objects.prefetch_related('type')
+    # не очень хорошо брать len от кверисета, но для наших целей сойдёт
+    devs_count = len(devices)
+    ret = {}
+    counter = 0
+    for item in devices:
+        ret[item.id] = item.cat_number_c
+        # смотрим, сколько % посчитали.
+        # выводим на экран, только когда счётчик кратен 100, а то слишком часто
+        if not counter % 100:
+            print(counter / devs_count * 100, "%")
+        counter += 1
+    return ret
+
+# пишем универсальную функцию для катнамберов. если прибор не уточняется, по всем.
+# запросы, не привязанные к конкретному прибору, делаем здесь, потом обходим каждый прибор в цикле
+def get_many_cat_numbers(device_id=None):
+    devices = Device.objects.prefetch_related('type') if device_id is None else Device.objects.filter(id=device_id)
+    rcd_qs = RelContrDoing.objects.select_related(
+        'to_contract', 'to_doing'
+    ).filter(to_doing__title=DOING1)
+    latest_event_for_device_subquery = DTCReal.objects.filter(basis__dev_id=OuterRef('id'), basis__reltocd__in=rcd_qs).order_by('-exact_moment').values('exact_moment')[:1]
+    # я хз вообще что это, назвала формально, лучше переименовать;
+    # преобразуем в список, а то будет в get_cat_number_c каждый раз дёргать базу (см. "ленивые" кверисеты)
+    devices_annotated_lem_not_null = list(Device.objects.prefetch_related('type').annotate(
+        latest_exact_moment=Subquery(latest_event_for_device_subquery)).filter(latest_exact_moment__isnull=False))
+
+
+    ret = {}
+    for item in devices:
+        ret[item.id] = get_cat_number_c(item, devices_annotated_lem_not_null)
+    return ret
+
+def get_bad_dash_data():
+    cat_numbers = get_many_cat_numbers()
+    result_dct = {}
+    # классический подсчёт повторов со сбором в словарь.
+    # тут интересный момент: если категория может быть None,
+    # надо подумать, какой под этот слчай ключ и как это будет потом сериализовано
+    for cat_number in cat_numbers.values():
+        if cat_number not in result_dct:
+            result_dct[cat_number] = 0
+        result_dct[cat_number] += 1
+    # переводим в список
+    result_lst = []
+    for key in sorted(result_dct.keys()):
+        result_lst.append({"category": key, "value": result_dct[key]})
+    return result_lst
+
 class DashboardAnalyticsView(APIView):
     """
     Эндпоинт для динамической отдачи порций данных дашбордов 
@@ -458,6 +551,9 @@ class DashboardAnalyticsView(APIView):
             data = [{
                 "name": "Исправен" if item['condition'] else "Неисправен", "value": item['value']
                 } for item in qs]
+            return Response(data)
+        elif dashname == 'bad_dash':
+            data = get_bad_dash_data()
             return Response(data)
         return Response(
             {"error": f"Дашборд с именем '{dashname}' не найден."}, 
